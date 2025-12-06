@@ -139,7 +139,7 @@ describe('Purchase Receive Flow', () => {
       });
 
       expect(item).not.toBeNull();
-      expect(item!.quantity).toBe(100);
+      expect(Number(item!.quantity)).toBe(100);
 
       // Calculate new values
       const receiveQty = 50;
@@ -160,9 +160,9 @@ describe('Purchase Receive Flow', () => {
         },
       });
 
-      expect(updatedItem.quantity).toBe(150);
-      expect(updatedItem.averageCost).toBeCloseTo(533.33, 2);
-      expect(updatedItem.lastCost).toBe(600);
+      expect(Number(updatedItem.quantity)).toBe(150);
+      expect(Number(updatedItem.averageCost)).toBeCloseTo(533.33, 2);
+      expect(Number(updatedItem.lastCost)).toBe(600);
     });
 
     it('should create inventory transaction', async () => {
@@ -190,7 +190,7 @@ describe('Purchase Receive Flow', () => {
 
       expect(transaction.direction).toBe('IN');
       expect(transaction.type).toBe('PURCHASE');
-      expect(transaction.quantity).toBe(50);
+      expect(Number(transaction.quantity)).toBe(50);
     });
 
     it('should update purchase item received quantity', async () => {
@@ -199,7 +199,7 @@ describe('Purchase Receive Flow', () => {
         data: { quantityReceived: 50 },
       });
 
-      expect(updated.quantityReceived).toBe(50);
+      expect(Number(updated.quantityReceived)).toBe(50);
     });
 
     it('should update purchase status to RECEIVED', async () => {

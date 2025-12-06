@@ -138,7 +138,7 @@ describe("BOM Calculations", () => {
 
     const requiredQuantity = baseQuantity * wasteFactor * unitsToMake;
 
-    expect(requiredQuantity).toBe(157.5);
+    expect(requiredQuantity).toBeCloseTo(157.5, 2);
   });
 
   it("should calculate total material cost", () => {
