@@ -2,7 +2,15 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { ArrowLeft, Factory, Play, CheckCircle, Clock, Pause, Package } from "lucide-react";
+import {
+  ArrowLeft,
+  Factory,
+  Play,
+  CheckCircle,
+  Clock,
+  Pause,
+  Package,
+} from "lucide-react";
 
 interface Batch {
   id: string;
@@ -31,20 +39,46 @@ interface Batch {
   notes?: string;
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  PLANNED: { label: "Planifié", color: "bg-gray-100 text-gray-700", icon: Clock },
-  IN_PROGRESS: { label: "En cours", color: "bg-blue-100 text-blue-700", icon: Play },
-  COMPLETED: { label: "Terminé", color: "bg-green-100 text-green-700", icon: CheckCircle },
+const statusConfig: Record<
+  string,
+  { label: string; color: string; icon: React.ElementType }
+> = {
+  PLANNED: {
+    label: "Planifié",
+    color: "bg-gray-100 text-gray-700",
+    icon: Clock,
+  },
+  IN_PROGRESS: {
+    label: "En cours",
+    color: "bg-blue-100 text-blue-700",
+    icon: Play,
+  },
+  COMPLETED: {
+    label: "Terminé",
+    color: "bg-green-100 text-green-700",
+    icon: CheckCircle,
+  },
   CANCELLED: { label: "Annulé", color: "bg-red-100 text-red-700", icon: Clock },
-  ON_HOLD: { label: "En pause", color: "bg-yellow-100 text-yellow-700", icon: Pause },
+  ON_HOLD: {
+    label: "En pause",
+    color: "bg-yellow-100 text-yellow-700",
+    icon: Pause,
+  },
 };
 
-export default function ProductionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ProductionDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const [batch, setBatch] = useState<Batch | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [completeForm, setCompleteForm] = useState({ producedQty: 0, wasteQty: 0 });
+  const [completeForm, setCompleteForm] = useState({
+    producedQty: 0,
+    wasteQty: 0,
+  });
   const [completing, setCompleting] = useState(false);
 
   useEffect(() => {
@@ -64,7 +98,8 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
 
   async function handleStatusChange(newStatus: string) {
     const res = await fetch(`/api/v3/compta/production/${id}`, {
-      method: "PUT", credentials: "include",
+      method: "PUT",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus }),
     });
@@ -94,11 +129,17 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
-  const formatDate = (d?: string) => (d ? new Date(d).toLocaleDateString("fr-FR") : "-");
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
+  const formatDate = (d?: string) =>
+    d ? new Date(d).toLocaleDateString("fr-FR") : "-";
 
-  if (loading) return <div className="text-center py-12 text-slate-500">Chargement...</div>;
-  if (!batch) return <div className="text-center py-12 text-red-500">Lot non trouvé</div>;
+  if (loading)
+    return (
+      <div className="text-center py-12 text-slate-500">Chargement...</div>
+    );
+  if (!batch)
+    return <div className="text-center py-12 text-red-500">Lot non trouvé</div>;
 
   const status = statusConfig[batch.status] || statusConfig.PLANNED;
   const StatusIcon = status.icon;
@@ -107,13 +148,18 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/admin/compta/production" className="p-2 hover:bg-slate-100 rounded-lg">
+          <Link
+            href="/admin/compta/production"
+            className="p-2 hover:bg-slate-100 rounded-lg"
+          >
             <ArrowLeft size={20} />
           </Link>
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-serif">{batch.batchNumber}</h1>
-              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${status.color}`}>
+              <span
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${status.color}`}
+              >
                 <StatusIcon size={14} /> {status.label}
               </span>
             </div>
@@ -166,7 +212,9 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
               </div>
               <div>
                 <p className="text-slate-500">Quantité produite</p>
-                <p className="font-medium text-lg text-green-600">{batch.producedQty} unités</p>
+                <p className="font-medium text-lg text-green-600">
+                  {batch.producedQty} unités
+                </p>
               </div>
               <div>
                 <p className="text-slate-500">Date prévue</p>
@@ -208,8 +256,12 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">{c.actualQty}</td>
-                      <td className="px-4 py-3 text-right">{formatCurrency(c.unitCost)}</td>
-                      <td className="px-4 py-3 text-right font-medium">{formatCurrency(c.totalCost)}</td>
+                      <td className="px-4 py-3 text-right">
+                        {formatCurrency(c.unitCost)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium">
+                        {formatCurrency(c.totalCost)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -243,7 +295,9 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                 <div className="border-t pt-3 flex justify-between">
                   <span className="text-slate-600">Coût/unité</span>
                   <span className="font-bold text-green-600">
-                    {formatCurrency(Math.round(batch.totalCost / batch.plannedQty))}
+                    {formatCurrency(
+                      Math.round(batch.totalCost / batch.plannedQty),
+                    )}
                   </span>
                 </div>
               )}
@@ -255,13 +309,19 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
             <h3 className="font-medium mb-4">Progression</h3>
             <div className="relative pt-1">
               <div className="flex mb-2 items-center justify-between text-sm">
-                <span>{batch.producedQty} / {batch.plannedQty}</span>
-                <span>{Math.round((batch.producedQty / batch.plannedQty) * 100)}%</span>
+                <span>
+                  {batch.producedQty} / {batch.plannedQty}
+                </span>
+                <span>
+                  {Math.round((batch.producedQty / batch.plannedQty) * 100)}%
+                </span>
               </div>
               <div className="overflow-hidden h-3 bg-slate-100 rounded-full">
                 <div
                   className="h-full bg-green-500 rounded-full transition-all"
-                  style={{ width: `${Math.min((batch.producedQty / batch.plannedQty) * 100, 100)}%` }}
+                  style={{
+                    width: `${Math.min((batch.producedQty / batch.plannedQty) * 100, 100)}%`,
+                  }}
                 />
               </div>
             </div>
@@ -285,7 +345,10 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                   max={batch.plannedQty}
                   value={completeForm.producedQty}
                   onChange={(e) =>
-                    setCompleteForm({ ...completeForm, producedQty: parseInt(e.target.value) || 0 })
+                    setCompleteForm({
+                      ...completeForm,
+                      producedQty: parseInt(e.target.value) || 0,
+                    })
                   }
                   className="w-full px-3 py-2 border rounded-lg"
                 />
@@ -299,7 +362,10 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                   min="0"
                   value={completeForm.wasteQty}
                   onChange={(e) =>
-                    setCompleteForm({ ...completeForm, wasteQty: parseInt(e.target.value) || 0 })
+                    setCompleteForm({
+                      ...completeForm,
+                      wasteQty: parseInt(e.target.value) || 0,
+                    })
                   }
                   className="w-full px-3 py-2 border rounded-lg"
                 />
@@ -310,8 +376,12 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                   <span className="font-medium">{batch.plannedQty}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Total (produit + déchets):</span>
-                  <span className="font-medium">{completeForm.producedQty + completeForm.wasteQty}</span>
+                  <span className="text-slate-600">
+                    Total (produit + déchets):
+                  </span>
+                  <span className="font-medium">
+                    {completeForm.producedQty + completeForm.wasteQty}
+                  </span>
                 </div>
               </div>
             </div>

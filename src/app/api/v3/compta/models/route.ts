@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     if (existing) {
       return NextResponse.json(
         { success: false, error: "Ce SKU existe déjà" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return handleApiError(err);

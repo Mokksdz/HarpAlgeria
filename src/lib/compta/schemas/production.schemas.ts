@@ -3,7 +3,7 @@
  * Phase 2 - HARP Comptabilité V3
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 // =============================================================================
 // PRODUCTION BATCH SCHEMAS
@@ -13,11 +13,11 @@ import { z } from 'zod';
  * Schema for creating a new production batch
  */
 export const CreateBatchSchema = z.object({
-  modelId: z.string().min(1, 'Modèle requis'),
-  plannedQty: z.number().int().positive('Quantité doit être positive'),
+  modelId: z.string().min(1, "Modèle requis"),
+  plannedQty: z.number().int().positive("Quantité doit être positive"),
   plannedDate: z.string().datetime().optional(),
-  laborCost: z.number().min(0, 'Coût MO invalide').default(0),
-  overheadCost: z.number().min(0, 'Frais atelier invalides').default(0),
+  laborCost: z.number().min(0, "Coût MO invalide").default(0),
+  overheadCost: z.number().min(0, "Frais atelier invalides").default(0),
   notes: z.string().optional(),
 });
 
@@ -32,7 +32,9 @@ export const UpdateBatchSchema = z.object({
   laborCost: z.number().min(0).optional(),
   overheadCost: z.number().min(0).optional(),
   notes: z.string().optional(),
-  status: z.enum(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ON_HOLD']).optional(),
+  status: z
+    .enum(["PLANNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "ON_HOLD"])
+    .optional(),
 });
 
 export type UpdateBatchInput = z.infer<typeof UpdateBatchSchema>;
@@ -41,8 +43,12 @@ export type UpdateBatchInput = z.infer<typeof UpdateBatchSchema>;
  * Schema for completing a production batch
  */
 export const CompleteBatchSchema = z.object({
-  producedQty: z.number().int().nonnegative('Quantité produite doit être >= 0'),
-  wasteQty: z.number().int().nonnegative('Quantité déchets doit être >= 0').default(0),
+  producedQty: z.number().int().nonnegative("Quantité produite doit être >= 0"),
+  wasteQty: z
+    .number()
+    .int()
+    .nonnegative("Quantité déchets doit être >= 0")
+    .default(0),
   notes: z.string().optional(),
 });
 
@@ -56,8 +62,8 @@ export type CompleteBatchInput = z.infer<typeof CompleteBatchSchema>;
  * Schema for a single consumption item
  */
 export const ConsumptionItemSchema = z.object({
-  inventoryItemId: z.string().min(1, 'Article requis'),
-  quantity: z.number().positive('Quantité doit être positive'),
+  inventoryItemId: z.string().min(1, "Article requis"),
+  quantity: z.number().positive("Quantité doit être positive"),
 });
 
 /**
@@ -75,7 +81,9 @@ export type ConsumeInput = z.infer<typeof ConsumeSchema>;
 // =============================================================================
 
 export const BatchFilterSchema = z.object({
-  status: z.enum(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ON_HOLD']).optional(),
+  status: z
+    .enum(["PLANNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "ON_HOLD"])
+    .optional(),
   modelId: z.string().optional(),
   search: z.string().optional(),
   dateFrom: z.string().datetime().optional(),

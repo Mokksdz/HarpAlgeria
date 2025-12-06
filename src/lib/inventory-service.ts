@@ -32,8 +32,8 @@ export const ProductionBatchStatus = {
   CANCELLED: "CANCELLED",
 } as const;
 
-export type TxDirectionType = typeof TxDirection[keyof typeof TxDirection];
-export type TxTypeType = typeof TxType[keyof typeof TxType];
+export type TxDirectionType = (typeof TxDirection)[keyof typeof TxDirection];
+export type TxTypeType = (typeof TxType)[keyof typeof TxType];
 
 // ============================================================================
 // AUDIT LOGGING
@@ -48,7 +48,7 @@ export async function createAuditLog(
   entityId: string,
   changes?: { before?: unknown; after?: unknown },
   userId?: string,
-  userEmail?: string
+  userEmail?: string,
 ) {
   return prisma.auditLog.create({
     data: {
@@ -59,7 +59,7 @@ export async function createAuditLog(
       userEmail,
       before: changes?.before ? JSON.stringify(changes.before) : null,
       after: changes?.after ? JSON.stringify(changes.after) : null,
-    }
+    },
   });
 }
 
@@ -72,9 +72,11 @@ export async function createAuditLog(
  */
 export async function getLowStockItems() {
   const items = await prisma.inventoryItem.findMany({
-    where: { threshold: { not: null } }
+    where: { threshold: { not: null } },
   });
-  return items.filter(item => item.threshold !== null && item.quantity <= item.threshold);
+  return items.filter(
+    (item) => item.threshold !== null && item.quantity <= item.threshold,
+  );
 }
 
 /**
@@ -82,7 +84,10 @@ export async function getLowStockItems() {
  */
 export async function getInventoryValuation() {
   const items = await prisma.inventoryItem.findMany();
-  return items.reduce((total, item) => total + (Number(item.quantity) * Number(item.averageCost)), 0);
+  return items.reduce(
+    (total, item) => total + Number(item.quantity) * Number(item.averageCost),
+    0,
+  );
 }
 
 /**
@@ -96,10 +101,10 @@ export async function createInventoryTransaction(
   unitCost: number,
   referenceType: string,
   referenceId: string,
-  notes?: string
+  notes?: string,
 ) {
   const item = await prisma.inventoryItem.findUnique({
-    where: { id: inventoryItemId }
+    where: { id: inventoryItemId },
   });
 
   if (!item) {
@@ -107,9 +112,10 @@ export async function createInventoryTransaction(
   }
 
   const balanceBefore = Number(item.quantity);
-  const balanceAfter = direction === TxDirection.IN 
-    ? balanceBefore + quantity 
-    : balanceBefore - quantity;
+  const balanceAfter =
+    direction === TxDirection.IN
+      ? balanceBefore + quantity
+      : balanceBefore - quantity;
 
   const valueBefore = Number(item.totalValue);
   const valueAfter = balanceAfter * Number(item.averageCost);
@@ -130,6 +136,6 @@ export async function createInventoryTransaction(
       referenceType,
       referenceId,
       notes,
-    }
+    },
   });
 }

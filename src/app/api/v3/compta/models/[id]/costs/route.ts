@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/auth-helpers";
 // GET: Calculate cost breakdown
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -23,7 +23,7 @@ export async function GET(
     if (!model) {
       return NextResponse.json(
         { success: false, error: "Modèle non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -33,7 +33,10 @@ export async function GET(
     let packagingCost = 0;
 
     for (const bom of model.bom) {
-      const cost = Number(bom.quantity) * Number(bom.wasteFactor) * Number(bom.inventoryItem.averageCost);
+      const cost =
+        Number(bom.quantity) *
+        Number(bom.wasteFactor) *
+        Number(bom.inventoryItem.averageCost);
       switch (bom.inventoryItem.type) {
         case "FABRIC":
           fabricCost += cost;
@@ -55,7 +58,8 @@ export async function GET(
     const atelierCharges = model.charges
       .filter((c) => c.category === "ATELIER")
       .reduce((sum, c) => sum + Number(c.amount), 0);
-    const atelierCost = model.estimatedUnits > 0 ? atelierCharges / model.estimatedUnits : 0;
+    const atelierCost =
+      model.estimatedUnits > 0 ? atelierCharges / model.estimatedUnits : 0;
     const productionCost = laborCost + atelierCost;
 
     // 3. Marketing costs
@@ -77,7 +81,13 @@ export async function GET(
     const returnMargin = Number(model.returnMargin) || 0;
 
     // 5. Total
-    const totalCost = materialsCost + productionCost + marketingCost + transportCost + otherCost + returnMargin;
+    const totalCost =
+      materialsCost +
+      productionCost +
+      marketingCost +
+      transportCost +
+      otherCost +
+      returnMargin;
 
     // 6. Suggested prices
     const round = (n: number) => Math.round(n * 100) / 100;
@@ -90,9 +100,10 @@ export async function GET(
     // 7. Current margin
     const currentPrice = model.sellingPrice ? Number(model.sellingPrice) : null;
     const currentMargin = currentPrice ? currentPrice - totalCost : null;
-    const currentMarginPercent = currentPrice && currentPrice > 0
-      ? round((currentMargin! / currentPrice) * 100)
-      : null;
+    const currentMarginPercent =
+      currentPrice && currentPrice > 0
+        ? round((currentMargin! / currentPrice) * 100)
+        : null;
 
     const breakdown = {
       fabricCost: round(fabricCost),
@@ -123,14 +134,17 @@ export async function GET(
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 // POST: Create cost snapshot
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -167,7 +181,8 @@ export async function POST(
         laborCost: costData.breakdown.laborCost,
         atelierCost: costData.breakdown.atelierCost,
         marketingCost: costData.breakdown.marketingCost,
-        otherCost: costData.breakdown.otherCost + costData.breakdown.transportCost,
+        otherCost:
+          costData.breakdown.otherCost + costData.breakdown.transportCost,
         totalCost: costData.breakdown.totalCost,
         sellingPrice: costData.currentPrice,
         margin: costData.currentMargin,
@@ -178,6 +193,9 @@ export async function POST(
     return NextResponse.json({ success: true, snapshot }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }

@@ -9,7 +9,7 @@ import { computeCostPerUnit, simulatePrice } from "@/lib/accounting/services";
 // GET - Calculer les coûts d'un modèle
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -21,7 +21,7 @@ export async function GET(
     console.error("Error computing costs:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors du calcul des coûts" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -29,13 +29,19 @@ export async function GET(
 // POST - Simuler les coûts avec des paramètres modifiés
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     const body = await req.json();
 
-    const { overrides, estimatedUnits, laborCost, packagingCost, marginTarget } = body;
+    const {
+      overrides,
+      estimatedUnits,
+      laborCost,
+      packagingCost,
+      marginTarget,
+    } = body;
 
     const simulation = await simulatePrice(id, {
       overrides,
@@ -50,7 +56,7 @@ export async function POST(
     console.error("Error simulating costs:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de la simulation" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

@@ -13,21 +13,21 @@ export async function GET(req: NextRequest) {
 
     // Build where clause
     const where: any = {};
-    
+
     if (q.search) {
       where.OR = [
         { email: { contains: q.search } },
         { name: { contains: q.search } },
-        { phone: { contains: q.search } }
+        { phone: { contains: q.search } },
       ];
     }
-    
+
     if (q.vipLevel && q.vipLevel !== "ALL") {
       where.vipLevel = q.vipLevel;
     }
 
     const skip = (q.page - 1) * q.pageSize;
-    
+
     const [items, total] = await prisma.$transaction([
       prisma.user.findMany({
         where,
@@ -57,10 +57,10 @@ export async function GET(req: NextRequest) {
               createdAt: true,
               customerWilaya: true,
               customerCity: true,
-              customerAddress: true
+              customerAddress: true,
             },
             orderBy: { createdAt: "desc" },
-            take: 10
+            take: 10,
           },
           wishlist: {
             select: {
@@ -69,35 +69,35 @@ export async function GET(req: NextRequest) {
               product: {
                 select: {
                   nameFr: true,
-                  price: true
-                }
-              }
-            }
+                  price: true,
+                },
+              },
+            },
           },
           pointHistory: {
             select: {
               id: true,
               amount: true,
               reason: true,
-              createdAt: true
+              createdAt: true,
             },
             orderBy: { createdAt: "desc" },
-            take: 10
+            take: 10,
           },
           _count: {
             select: {
               orders: true,
               wishlist: true,
-              pointHistory: true
-            }
-          }
-        }
+              pointHistory: true,
+            },
+          },
+        },
       }),
-      prisma.user.count({ where })
+      prisma.user.count({ where }),
     ]);
 
     // Transform items with complete data
-    const transformedItems = items.map(item => {
+    const transformedItems = items.map((item) => {
       // Calculate total spent
       const totalSpent = item.orders.reduce((sum, order) => {
         return sum + Number(order.total);
@@ -107,11 +107,13 @@ export async function GET(req: NextRequest) {
       const lastOrder = item.orders[0] || null;
 
       // Get address from last order
-      const lastAddress = lastOrder ? {
-        wilaya: lastOrder.customerWilaya,
-        city: lastOrder.customerCity,
-        address: lastOrder.customerAddress
-      } : null;
+      const lastAddress = lastOrder
+        ? {
+            wilaya: lastOrder.customerWilaya,
+            city: lastOrder.customerCity,
+            address: lastOrder.customerAddress,
+          }
+        : null;
 
       return {
         id: item.id,
@@ -137,7 +139,7 @@ export async function GET(req: NextRequest) {
         // Related data
         recentOrders: item.orders,
         wishlist: item.wishlist,
-        pointHistory: item.pointHistory
+        pointHistory: item.pointHistory,
       };
     });
 
@@ -148,8 +150,8 @@ export async function GET(req: NextRequest) {
         page: q.page,
         pageSize: q.pageSize,
         total,
-        totalPages: Math.ceil(total / q.pageSize)
-      }
+        totalPages: Math.ceil(total / q.pageSize),
+      },
     });
   } catch (err: unknown) {
     return handleApiError(err);

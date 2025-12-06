@@ -52,7 +52,8 @@ export default function NewInventoryItemPage() {
 
     try {
       const res = await fetch("/api/v3/compta/inventory", {
-        method: "POST", credentials: "include",
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
@@ -70,42 +71,59 @@ export default function NewInventoryItemPage() {
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <header className="flex items-center gap-4">
-        <Link href="/admin/compta/stock" className="p-2 hover:bg-slate-100 rounded-lg">
+        <Link
+          href="/admin/compta/stock"
+          className="p-2 hover:bg-slate-100 rounded-lg"
+        >
           <ArrowLeft size={20} />
         </Link>
         <div>
           <h1 className="text-2xl font-serif">Nouvel Article</h1>
-          <p className="text-sm text-slate-600">Ajouter un article à l&apos;inventaire</p>
+          <p className="text-sm text-slate-600">
+            Ajouter un article à l&apos;inventaire
+          </p>
         </div>
       </header>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">{error}</div>
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
+          {error}
+        </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 rounded-2xl shadow space-y-6"
+      >
         <div className="flex items-center gap-3 pb-4 border-b">
           <div className="p-3 bg-blue-100 rounded-xl">
             <Package className="text-blue-600" size={24} />
           </div>
           <div>
             <p className="font-medium">Article Inventaire</p>
-            <p className="text-sm text-slate-500">Matière première, accessoire ou produit fini</p>
+            <p className="text-sm text-slate-500">
+              Matière première, accessoire ou produit fini
+            </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">SKU *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              SKU *
+            </label>
             <input
               type="text"
               value={form.sku}
-              onChange={(e) => setForm({ ...form, sku: e.target.value.toUpperCase() })}
+              onChange={(e) =>
+                setForm({ ...form, sku: e.target.value.toUpperCase() })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20 font-mono"
               placeholder="TISSU-VEL-001"
               required
@@ -113,7 +131,9 @@ export default function NewInventoryItemPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nom *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Nom *
+            </label>
             <input
               type="text"
               value={form.name}
@@ -125,7 +145,9 @@ export default function NewInventoryItemPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Type
+            </label>
             <select
               value={form.type}
               onChange={(e) => setForm({ ...form, type: e.target.value })}
@@ -140,7 +162,9 @@ export default function NewInventoryItemPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Unité</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Unité
+            </label>
             <select
               value={form.unit}
               onChange={(e) => setForm({ ...form, unit: e.target.value })}
@@ -155,42 +179,59 @@ export default function NewInventoryItemPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Quantité initiale</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Quantité initiale
+            </label>
             <input
               type="number"
               min="0"
               step="0.01"
               value={form.quantity}
-              onChange={(e) => setForm({ ...form, quantity: parseFloat(e.target.value) || 0 })}
+              onChange={(e) =>
+                setForm({ ...form, quantity: parseFloat(e.target.value) || 0 })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Coût unitaire (DZD)</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Coût unitaire (DZD)
+            </label>
             <input
               type="number"
               min="0"
               step="0.01"
               value={form.averageCost}
-              onChange={(e) => setForm({ ...form, averageCost: parseFloat(e.target.value) || 0 })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  averageCost: parseFloat(e.target.value) || 0,
+                })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Seuil alerte</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Seuil alerte
+            </label>
             <input
               type="number"
               min="0"
               value={form.minStock}
-              onChange={(e) => setForm({ ...form, minStock: parseFloat(e.target.value) || 0 })}
+              onChange={(e) =>
+                setForm({ ...form, minStock: parseFloat(e.target.value) || 0 })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Emplacement</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Emplacement
+            </label>
             <input
               type="text"
               value={form.location}
@@ -201,7 +242,9 @@ export default function NewInventoryItemPage() {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Notes
+            </label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -216,12 +259,17 @@ export default function NewInventoryItemPage() {
         {form.quantity > 0 && form.averageCost > 0 && (
           <div className="bg-slate-50 p-4 rounded-lg">
             <p className="text-sm font-medium mb-2">Valeur initiale</p>
-            <p className="text-xl font-bold text-green-600">{formatCurrency(form.quantity * form.averageCost)}</p>
+            <p className="text-xl font-bold text-green-600">
+              {formatCurrency(form.quantity * form.averageCost)}
+            </p>
           </div>
         )}
 
         <div className="flex justify-end gap-4 pt-4 border-t">
-          <Link href="/admin/compta/stock" className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+          <Link
+            href="/admin/compta/stock"
+            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+          >
             Annuler
           </Link>
           <button

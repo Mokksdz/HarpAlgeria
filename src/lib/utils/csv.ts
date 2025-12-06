@@ -9,7 +9,7 @@ type CSVField<T> = {
 
 export function generateCSV<T extends Record<string, any>>(
   data: T[],
-  fields: CSVField<T>[]
+  fields: CSVField<T>[],
 ): string {
   // Header row
   const header = fields.map((f) => escapeCSV(f.label)).join(",");

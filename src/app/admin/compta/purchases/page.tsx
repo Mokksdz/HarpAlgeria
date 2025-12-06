@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Eye, Package, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  Eye,
+  Package,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 
 interface Purchase {
   id: string;
@@ -15,12 +22,35 @@ interface Purchase {
   items: Array<{ id: string }>;
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  DRAFT: { label: "Brouillon", color: "bg-gray-100 text-gray-700", icon: Clock },
-  ORDERED: { label: "Commandé", color: "bg-blue-100 text-blue-700", icon: Package },
-  PARTIAL: { label: "Partiel", color: "bg-yellow-100 text-yellow-700", icon: AlertCircle },
-  RECEIVED: { label: "Reçu", color: "bg-green-100 text-green-700", icon: CheckCircle },
-  CANCELLED: { label: "Annulé", color: "bg-red-100 text-red-700", icon: AlertCircle },
+const statusConfig: Record<
+  string,
+  { label: string; color: string; icon: React.ElementType }
+> = {
+  DRAFT: {
+    label: "Brouillon",
+    color: "bg-gray-100 text-gray-700",
+    icon: Clock,
+  },
+  ORDERED: {
+    label: "Commandé",
+    color: "bg-blue-100 text-blue-700",
+    icon: Package,
+  },
+  PARTIAL: {
+    label: "Partiel",
+    color: "bg-yellow-100 text-yellow-700",
+    icon: AlertCircle,
+  },
+  RECEIVED: {
+    label: "Reçu",
+    color: "bg-green-100 text-green-700",
+    icon: CheckCircle,
+  },
+  CANCELLED: {
+    label: "Annulé",
+    color: "bg-red-100 text-red-700",
+    icon: AlertCircle,
+  },
 };
 
 export default function PurchasesPage() {
@@ -36,7 +66,9 @@ export default function PurchasesPage() {
     try {
       const params = new URLSearchParams({ limit: "20" });
       if (filter) params.set("status", filter);
-      const res = await fetch(`/api/v3/compta/purchases?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/v3/compta/purchases?${params}`, {
+        credentials: "include",
+      });
       const data = await res.json();
       if (data.success) setPurchases(data.items);
     } catch (err) {
@@ -46,7 +78,8 @@ export default function PurchasesPage() {
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ", { style: "decimal" }).format(n) + " DZD";
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ", { style: "decimal" }).format(n) + " DZD";
   const formatDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
 
   return (
@@ -54,7 +87,9 @@ export default function PurchasesPage() {
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif">Achats Fournisseurs</h1>
-          <p className="text-sm text-slate-600">Gestion des commandes et réceptions</p>
+          <p className="text-sm text-slate-600">
+            Gestion des commandes et réceptions
+          </p>
         </div>
         <Link
           href="/admin/compta/purchases/new"
@@ -71,7 +106,9 @@ export default function PurchasesPage() {
             key={s}
             onClick={() => setFilter(s)}
             className={`px-3 py-1.5 rounded-lg text-sm ${
-              filter === s ? "bg-harp-brown text-white" : "bg-white text-slate-700 hover:bg-slate-100"
+              filter === s
+                ? "bg-harp-brown text-white"
+                : "bg-white text-slate-700 hover:bg-slate-100"
             }`}
           >
             {s === "" ? "Tous" : statusConfig[s]?.label || s}
@@ -84,7 +121,9 @@ export default function PurchasesPage() {
         {loading ? (
           <div className="p-8 text-center text-slate-500">Chargement...</div>
         ) : purchases.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">Aucun achat trouvé</div>
+          <div className="p-8 text-center text-slate-500">
+            Aucun achat trouvé
+          </div>
         ) : (
           <table className="w-full">
             <thead className="bg-slate-50 text-left text-sm text-slate-600">
@@ -103,23 +142,33 @@ export default function PurchasesPage() {
                 const StatusIcon = status.icon;
                 return (
                   <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium">{p.purchaseNumber}</td>
+                    <td className="px-4 py-3 font-medium">
+                      {p.purchaseNumber}
+                    </td>
                     <td className="px-4 py-3">
                       <div>{p.supplier.name}</div>
-                      <div className="text-xs text-slate-500">{p.supplier.code}</div>
+                      <div className="text-xs text-slate-500">
+                        {p.supplier.code}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div>{formatCurrency(p.totalAmount)}</div>
                       {p.amountDue > 0 && (
-                        <div className="text-xs text-orange-600">Dû: {formatCurrency(p.amountDue)}</div>
+                        <div className="text-xs text-orange-600">
+                          Dû: {formatCurrency(p.amountDue)}
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${status.color}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${status.color}`}
+                      >
                         <StatusIcon size={12} /> {status.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{formatDate(p.createdAt)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      {formatDate(p.createdAt)}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         <Link

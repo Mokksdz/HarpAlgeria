@@ -35,9 +35,9 @@ export function LoyaltyDashboard() {
       const [resLoyalty, resRewards, resProfile] = await Promise.all([
         fetch("/api/v3/loyalty/balance"),
         fetch("/api/v3/loyalty/rewards"),
-        fetch("/api/v3/account/profile")
+        fetch("/api/v3/account/profile"),
       ]);
-      
+
       if (resLoyalty.ok) setLoyalty(await resLoyalty.json());
       if (resRewards.ok) setRewards(await resRewards.json());
       if (resProfile.ok) setUserProfile(await resProfile.json());
@@ -53,9 +53,9 @@ export function LoyaltyDashboard() {
       const res = await fetch("/api/v3/loyalty/redeem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rewardId })
+        body: JSON.stringify({ rewardId }),
       });
-      
+
       if (res.ok) {
         fetchData();
         alert("Récompense débloquée avec succès !");
@@ -73,21 +73,33 @@ export function LoyaltyDashboard() {
     return (
       <div className="p-8 text-center border rounded-2xl bg-gray-50">
         <Crown size={48} className="mx-auto mb-4 text-harp-gold" />
-        <h2 className="text-2xl font-serif mb-2 text-harp-brown">Rejoignez HARP REWARDS</h2>
-        <p className="text-gray-600 mb-6">Connectez-vous pour accéder à vos avantages exclusifs.</p>
-        <a href="/login" className="inline-block bg-harp-brown text-white px-8 py-3 rounded-xl font-medium hover:bg-harp-brown/90 transition-colors">
+        <h2 className="text-2xl font-serif mb-2 text-harp-brown">
+          Rejoignez HARP REWARDS
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Connectez-vous pour accéder à vos avantages exclusifs.
+        </p>
+        <a
+          href="/login"
+          className="inline-block bg-harp-brown text-white px-8 py-3 rounded-xl font-medium hover:bg-harp-brown/90 transition-colors"
+        >
           Se connecter
         </a>
       </div>
     );
   }
 
-  if (loading || !loyalty) return <div className="p-12 text-center text-gray-400">Chargement de votre statut VIP...</div>;
+  if (loading || !loyalty)
+    return (
+      <div className="p-12 text-center text-gray-400">
+        Chargement de votre statut VIP...
+      </div>
+    );
 
   return (
     <div className="space-y-8">
       {/* Profile Completion Banner */}
-      <ProfileCompletionBanner 
+      <ProfileCompletionBanner
         initialName={userProfile?.name}
         initialPhone={userProfile?.phone}
         initialBirthDate={userProfile?.birthDate}
@@ -98,23 +110,33 @@ export function LoyaltyDashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           {/* Left: Status */}
           <div className="flex items-center gap-4">
-            <div className={cn(
-              "w-14 h-14 rounded-xl flex items-center justify-center",
-              loyalty.vipLevel === "BLACK" ? "bg-gray-900" : 
-              loyalty.vipLevel === "GOLD" ? "bg-amber-500" : 
-              "bg-harp-brown"
-            )}>
+            <div
+              className={cn(
+                "w-14 h-14 rounded-xl flex items-center justify-center",
+                loyalty.vipLevel === "BLACK"
+                  ? "bg-gray-900"
+                  : loyalty.vipLevel === "GOLD"
+                    ? "bg-amber-500"
+                    : "bg-harp-brown",
+              )}
+            >
               <Crown className="text-white" size={24} />
             </div>
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Votre statut</p>
-              <h2 className="text-2xl font-serif font-bold text-harp-brown">{loyalty.vipLevel}</h2>
+              <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">
+                Votre statut
+              </p>
+              <h2 className="text-2xl font-serif font-bold text-harp-brown">
+                {loyalty.vipLevel}
+              </h2>
             </div>
           </div>
-          
+
           {/* Right: Points */}
           <div className="text-left md:text-right">
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Points disponibles</p>
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">
+              Points disponibles
+            </p>
             <div className="text-4xl font-serif font-bold text-harp-brown">
               {loyalty.balance.toLocaleString()}
               <span className="text-lg text-gray-400 ml-1">pts</span>
@@ -127,22 +149,35 @@ export function LoyaltyDashboard() {
           <div className="mt-8 pt-6 border-t border-gray-100">
             <div className="flex justify-between items-center text-sm mb-3">
               <span className="text-gray-500">
-                Progression vers <span className="font-medium text-harp-brown">{loyalty.nextLevel.name}</span>
+                Progression vers{" "}
+                <span className="font-medium text-harp-brown">
+                  {loyalty.nextLevel.name}
+                </span>
               </span>
-              <span className="font-medium text-harp-brown">{Math.round(loyalty.progress)}%</span>
+              <span className="font-medium text-harp-brown">
+                {Math.round(loyalty.progress)}%
+              </span>
             </div>
             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div 
+              <div
                 className={cn(
                   "h-full rounded-full transition-all duration-1000 ease-out",
-                  loyalty.vipLevel === "SILVER" ? "bg-harp-brown" :
-                  loyalty.vipLevel === "GOLD" ? "bg-amber-500" : "bg-gray-900"
+                  loyalty.vipLevel === "SILVER"
+                    ? "bg-harp-brown"
+                    : loyalty.vipLevel === "GOLD"
+                      ? "bg-amber-500"
+                      : "bg-gray-900",
                 )}
                 style={{ width: `${Math.max(2, loyalty.progress)}%` }}
               />
             </div>
             <p className="text-xs text-gray-400 mt-2">
-              Plus que {(loyalty.nextLevel.threshold * (1 - loyalty.progress / 100)).toLocaleString()} points
+              Plus que{" "}
+              {(
+                loyalty.nextLevel.threshold *
+                (1 - loyalty.progress / 100)
+              ).toLocaleString()}{" "}
+              points
             </p>
           </div>
         )}
@@ -158,7 +193,10 @@ export function LoyaltyDashboard() {
           </h3>
           <ul className="space-y-4">
             {loyalty.benefits.map((benefit, idx) => (
-              <li key={idx} className="flex items-start gap-3 text-sm text-gray-600">
+              <li
+                key={idx}
+                className="flex items-start gap-3 text-sm text-gray-600"
+              >
                 <div className="p-1 bg-green-100 rounded-full mt-0.5 text-green-600">
                   <Check size={12} strokeWidth={3} />
                 </div>
@@ -174,15 +212,15 @@ export function LoyaltyDashboard() {
             <Gift size={20} />
             Boutique Récompenses
           </h3>
-          
+
           <div className="grid sm:grid-cols-2 gap-4">
             {rewards.length > 0 ? (
               rewards.map((reward) => (
-                <RewardCard 
-                  key={reward.id} 
-                  reward={reward} 
-                  userBalance={loyalty.balance} 
-                  onRedeem={redeem} 
+                <RewardCard
+                  key={reward.id}
+                  reward={reward}
+                  userBalance={loyalty.balance}
+                  onRedeem={redeem}
                 />
               ))
             ) : (
@@ -200,7 +238,7 @@ export function LoyaltyDashboard() {
           <History size={20} />
           Historique des points
         </h3>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
@@ -215,26 +253,38 @@ export function LoyaltyDashboard() {
                 loyalty.history.map((item: any) => (
                   <tr key={item.id} className="hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-gray-600">
-                      {new Date(item.createdAt).toLocaleDateString('fr-FR')}
+                      {new Date(item.createdAt).toLocaleDateString("fr-FR")}
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-900">
                       {item.reason === "PURCHASE" && "Commande confirmée"}
                       {item.reason === "SIGNUP" && "Bienvenue chez HARP"}
-                      {item.reason === "REWARD_REDEMPTION" && "Récompense débloquée"}
+                      {item.reason === "REWARD_REDEMPTION" &&
+                        "Récompense débloquée"}
                       {item.reason === "WISHLIST_ADD" && "Ajout Wishlist"}
-                      {!["PURCHASE", "SIGNUP", "REWARD_REDEMPTION", "WISHLIST_ADD"].includes(item.reason) && item.reason}
+                      {![
+                        "PURCHASE",
+                        "SIGNUP",
+                        "REWARD_REDEMPTION",
+                        "WISHLIST_ADD",
+                      ].includes(item.reason) && item.reason}
                     </td>
-                    <td className={cn(
-                      "px-4 py-3 text-right font-bold font-mono",
-                      item.amount > 0 ? "text-green-600" : "text-red-500"
-                    )}>
-                      {item.amount > 0 ? "+" : ""}{item.amount}
+                    <td
+                      className={cn(
+                        "px-4 py-3 text-right font-bold font-mono",
+                        item.amount > 0 ? "text-green-600" : "text-red-500",
+                      )}
+                    >
+                      {item.amount > 0 ? "+" : ""}
+                      {item.amount}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-gray-400 italic">
+                  <td
+                    colSpan={3}
+                    className="px-4 py-8 text-center text-gray-400 italic"
+                  >
                     Aucun historique disponible.
                   </td>
                 </tr>

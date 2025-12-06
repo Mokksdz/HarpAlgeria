@@ -25,15 +25,16 @@ export async function POST(req: NextRequest) {
     const validation = AdjustmentSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        { 
+        {
           error: "Données invalides",
           details: validation.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { inventoryItemId, quantity, reason, notes, createdBy } = validation.data;
+    const { inventoryItemId, quantity, reason, notes, createdBy } =
+      validation.data;
 
     // Créer l'ajustement
     const result = await createAdjustment(
@@ -41,20 +42,20 @@ export async function POST(req: NextRequest) {
       quantity,
       reason,
       notes,
-      createdBy
+      createdBy,
     );
 
     return NextResponse.json({
       success: true,
       transaction: result.transaction,
       item: result.item,
-      message: `Ajustement de ${quantity >= 0 ? '+' : ''}${quantity} effectué`,
+      message: `Ajustement de ${quantity >= 0 ? "+" : ""}${quantity} effectué`,
     });
   } catch (error: any) {
     console.error("Error creating adjustment:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de l'ajustement" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
           select: { id: true, sku: true, name: true },
         });
         return { ...rec, inventoryItem: item };
-      })
+      }),
     );
 
     return NextResponse.json({
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching reconciliations:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération des réconciliations" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -64,11 +64,11 @@ export async function POST(req: NextRequest) {
     const validation = ReconcileSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        { 
+        {
           error: "Données invalides",
           details: validation.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -80,9 +80,9 @@ export async function POST(req: NextRequest) {
     // Statistiques
     const stats = {
       total: results.length,
-      ok: results.filter(r => r.status === "OK").length,
-      warning: results.filter(r => r.status === "WARNING").length,
-      critical: results.filter(r => r.status === "CRITICAL").length,
+      ok: results.filter((r) => r.status === "OK").length,
+      warning: results.filter((r) => r.status === "WARNING").length,
+      critical: results.filter((r) => r.status === "CRITICAL").length,
     };
 
     return NextResponse.json({
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     console.error("Error during reconciliation:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de la réconciliation" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -108,7 +108,7 @@ export async function PATCH(req: NextRequest) {
     if (!reconciliationId || !status) {
       return NextResponse.json(
         { error: "reconciliationId et status requis" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -127,7 +127,7 @@ export async function PATCH(req: NextRequest) {
     console.error("Error updating reconciliation:", error);
     return NextResponse.json(
       { error: "Erreur lors de la mise à jour" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -10,7 +10,7 @@ import { shipOrderStock, cancelShipment } from "@/lib/accounting/services";
 // POST - Expédier la commande
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -23,20 +23,21 @@ export async function POST(
     if (!order) {
       return NextResponse.json(
         { error: "Commande non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (order.status === "SHIPPED" || order.status === "DELIVERED") {
       return NextResponse.json(
         { error: "Cette commande a déjà été expédiée" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Préparer les items à expédier
-    const itemsToShip: Array<{ inventoryItemId: string; quantity: number }> = [];
-    
+    const itemsToShip: Array<{ inventoryItemId: string; quantity: number }> =
+      [];
+
     for (const item of order.items) {
       if (item.modelId) {
         const bom = await prisma.bomItem.findMany({
@@ -44,9 +45,14 @@ export async function POST(
         });
 
         for (const bomItem of bom) {
-          const qty = Number(bomItem.quantity) * Number(bomItem.wasteFactor) * item.quantity;
-          
-          const existing = itemsToShip.find(i => i.inventoryItemId === bomItem.inventoryItemId);
+          const qty =
+            Number(bomItem.quantity) *
+            Number(bomItem.wasteFactor) *
+            item.quantity;
+
+          const existing = itemsToShip.find(
+            (i) => i.inventoryItemId === bomItem.inventoryItemId,
+          );
           if (existing) {
             existing.quantity += qty;
           } else {
@@ -83,7 +89,7 @@ export async function POST(
     console.error("Error shipping order:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de l'expédition" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -91,7 +97,7 @@ export async function POST(
 // DELETE - Annuler l'expédition (remettre le stock)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -104,14 +110,14 @@ export async function DELETE(
     if (!order) {
       return NextResponse.json(
         { error: "Commande non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (order.status !== "SHIPPED") {
       return NextResponse.json(
         { error: "Cette commande n'a pas été expédiée" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -124,7 +130,7 @@ export async function DELETE(
       },
     });
 
-    const itemsToReturn = shipments.map(s => ({
+    const itemsToReturn = shipments.map((s) => ({
       inventoryItemId: s.inventoryItemId,
       quantity: Number(s.quantity),
     }));
@@ -150,7 +156,7 @@ export async function DELETE(
     console.error("Error cancelling shipment:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de l'annulation" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

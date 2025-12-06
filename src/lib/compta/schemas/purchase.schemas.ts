@@ -3,7 +3,7 @@
  * Phase 1 - HARP Comptabilité V3
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 // =============================================================================
 // PURCHASE SCHEMAS
@@ -13,21 +13,21 @@ import { z } from 'zod';
  * Schema for creating a new purchase item
  */
 export const PurchaseItemCreateSchema = z.object({
-  inventoryItemId: z.string().min(1, 'Article requis'),
-  quantityOrdered: z.number().positive('Quantité doit être positive'),
-  unitPrice: z.number().min(0, 'Prix unitaire invalide'),
+  inventoryItemId: z.string().min(1, "Article requis"),
+  quantityOrdered: z.number().positive("Quantité doit être positive"),
+  unitPrice: z.number().min(0, "Prix unitaire invalide"),
 });
 
 /**
  * Schema for creating a new purchase
  */
 export const PurchaseCreateSchema = z.object({
-  supplierId: z.string().min(1, 'Fournisseur requis'),
+  supplierId: z.string().min(1, "Fournisseur requis"),
   invoiceNumber: z.string().optional(),
   invoiceDate: z.string().datetime().optional(),
   expectedDate: z.string().datetime().optional(),
   notes: z.string().optional(),
-  items: z.array(PurchaseItemCreateSchema).min(1, 'Au moins un article requis'),
+  items: z.array(PurchaseItemCreateSchema).min(1, "Au moins un article requis"),
 });
 
 export type PurchaseCreateInput = z.infer<typeof PurchaseCreateSchema>;
@@ -36,15 +36,15 @@ export type PurchaseCreateInput = z.infer<typeof PurchaseCreateSchema>;
  * Schema for receiving a single purchase item
  */
 export const ReceiveItemSchema = z.object({
-  purchaseItemId: z.string().min(1, 'ID article achat requis'),
-  quantityReceived: z.number().min(0, 'Quantité reçue doit être >= 0'),
+  purchaseItemId: z.string().min(1, "ID article achat requis"),
+  quantityReceived: z.number().min(0, "Quantité reçue doit être >= 0"),
 });
 
 /**
  * Schema for receiving a purchase
  */
 export const ReceivePurchaseSchema = z.object({
-  items: z.array(ReceiveItemSchema).min(1, 'Au moins un article à recevoir'),
+  items: z.array(ReceiveItemSchema).min(1, "Au moins un article à recevoir"),
   receivedBy: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -65,13 +65,16 @@ export type PreviewReceiveInput = z.infer<typeof PreviewReceiveSchema>;
  * Schema for creating a new inventory item
  */
 export const InventoryItemCreateSchema = z.object({
-  sku: z.string().min(1, 'SKU requis').max(50, 'SKU trop long'),
-  name: z.string().min(1, 'Nom requis').max(200, 'Nom trop long'),
-  type: z.enum(['FABRIC', 'ACCESSORY', 'PACKAGING', 'FINISHED', 'TRIM', 'LABEL'], {
-    message: 'Type invalide',
-  }),
-  unit: z.enum(['METER', 'ROLL', 'PIECE', 'KG', 'LITER', 'SET'], {
-    message: 'Unité invalide',
+  sku: z.string().min(1, "SKU requis").max(50, "SKU trop long"),
+  name: z.string().min(1, "Nom requis").max(200, "Nom trop long"),
+  type: z.enum(
+    ["FABRIC", "ACCESSORY", "PACKAGING", "FINISHED", "TRIM", "LABEL"],
+    {
+      message: "Type invalide",
+    },
+  ),
+  unit: z.enum(["METER", "ROLL", "PIECE", "KG", "LITER", "SET"], {
+    message: "Unité invalide",
   }),
   quantity: z.number().min(0).optional().default(0),
   averageCost: z.number().min(0).optional().default(0),
@@ -85,22 +88,26 @@ export const InventoryItemCreateSchema = z.object({
   notes: z.string().optional(),
 });
 
-export type InventoryItemCreateInput = z.infer<typeof InventoryItemCreateSchema>;
+export type InventoryItemCreateInput = z.infer<
+  typeof InventoryItemCreateSchema
+>;
 
 /**
  * Schema for inventory adjustment
  */
 export const InventoryAdjustmentSchema = z.object({
-  inventoryItemId: z.string().min(1, 'Article requis'),
-  adjustmentType: z.enum(['ADD', 'REMOVE', 'SET'], {
-    message: 'Type ajustement invalide (ADD, REMOVE, SET)',
+  inventoryItemId: z.string().min(1, "Article requis"),
+  adjustmentType: z.enum(["ADD", "REMOVE", "SET"], {
+    message: "Type ajustement invalide (ADD, REMOVE, SET)",
   }),
-  quantity: z.number().min(0, 'Quantité doit être >= 0'),
-  reason: z.string().min(1, 'Raison requise').max(500, 'Raison trop longue'),
+  quantity: z.number().min(0, "Quantité doit être >= 0"),
+  reason: z.string().min(1, "Raison requise").max(500, "Raison trop longue"),
   notes: z.string().optional(),
 });
 
-export type InventoryAdjustmentInput = z.infer<typeof InventoryAdjustmentSchema>;
+export type InventoryAdjustmentInput = z.infer<
+  typeof InventoryAdjustmentSchema
+>;
 
 // =============================================================================
 // PAGINATION SCHEMAS
@@ -118,13 +125,17 @@ export type PaginationInput = z.infer<typeof PaginationSchema>;
 // =============================================================================
 
 export const PurchaseFilterSchema = z.object({
-  status: z.enum(['DRAFT', 'ORDERED', 'PARTIAL', 'RECEIVED', 'CANCELLED']).optional(),
+  status: z
+    .enum(["DRAFT", "ORDERED", "PARTIAL", "RECEIVED", "CANCELLED"])
+    .optional(),
   supplierId: z.string().optional(),
   search: z.string().optional(),
 });
 
 export const InventoryFilterSchema = z.object({
-  type: z.enum(['FABRIC', 'ACCESSORY', 'PACKAGING', 'FINISHED', 'TRIM', 'LABEL']).optional(),
+  type: z
+    .enum(["FABRIC", "ACCESSORY", "PACKAGING", "FINISHED", "TRIM", "LABEL"])
+    .optional(),
   lowStock: z.coerce.boolean().optional(),
   search: z.string().optional(),
   isActive: z.coerce.boolean().optional(),

@@ -9,7 +9,8 @@ export const InventoryType = {
   PACKAGING: "PACKAGING",
   FINISHED: "FINISHED",
 } as const;
-export type InventoryTypeValue = typeof InventoryType[keyof typeof InventoryType];
+export type InventoryTypeValue =
+  (typeof InventoryType)[keyof typeof InventoryType];
 
 // Inventory Units
 export const InventoryUnit = {
@@ -19,7 +20,8 @@ export const InventoryUnit = {
   KG: "KG",
   LITER: "LITER",
 } as const;
-export type InventoryUnitValue = typeof InventoryUnit[keyof typeof InventoryUnit];
+export type InventoryUnitValue =
+  (typeof InventoryUnit)[keyof typeof InventoryUnit];
 
 // Purchase Status
 export const PurchaseStatus = {
@@ -29,7 +31,8 @@ export const PurchaseStatus = {
   RECEIVED: "RECEIVED",
   CANCELLED: "CANCELLED",
 } as const;
-export type PurchaseStatusValue = typeof PurchaseStatus[keyof typeof PurchaseStatus];
+export type PurchaseStatusValue =
+  (typeof PurchaseStatus)[keyof typeof PurchaseStatus];
 
 // Supplier Advance Status
 export const AdvanceStatus = {
@@ -38,7 +41,8 @@ export const AdvanceStatus = {
   APPLIED: "APPLIED",
   REFUNDED: "REFUNDED",
 } as const;
-export type AdvanceStatusValue = typeof AdvanceStatus[keyof typeof AdvanceStatus];
+export type AdvanceStatusValue =
+  (typeof AdvanceStatus)[keyof typeof AdvanceStatus];
 
 // Charge Categories
 export const ChargeCategory = {
@@ -50,7 +54,8 @@ export const ChargeCategory = {
   LABOR: "LABOR",
   OTHER: "OTHER",
 } as const;
-export type ChargeCategoryValue = typeof ChargeCategory[keyof typeof ChargeCategory];
+export type ChargeCategoryValue =
+  (typeof ChargeCategory)[keyof typeof ChargeCategory];
 
 // Charge Scope
 export const ChargeScope = {
@@ -58,14 +63,14 @@ export const ChargeScope = {
   COLLECTION: "COLLECTION",
   MODEL: "MODEL",
 } as const;
-export type ChargeScopeValue = typeof ChargeScope[keyof typeof ChargeScope];
+export type ChargeScopeValue = (typeof ChargeScope)[keyof typeof ChargeScope];
 
 // Transaction Direction
 export const TxDirection = {
   IN: "IN",
   OUT: "OUT",
 } as const;
-export type TxDirectionValue = typeof TxDirection[keyof typeof TxDirection];
+export type TxDirectionValue = (typeof TxDirection)[keyof typeof TxDirection];
 
 // Transaction Types
 export const TxType = {
@@ -77,7 +82,7 @@ export const TxType = {
   RELEASE: "RELEASE",
   INITIAL: "INITIAL",
 } as const;
-export type TxTypeValue = typeof TxType[keyof typeof TxType];
+export type TxTypeValue = (typeof TxType)[keyof typeof TxType];
 
 // Production Batch Status
 export const BatchStatus = {
@@ -86,7 +91,7 @@ export const BatchStatus = {
   COMPLETED: "COMPLETED",
   CANCELLED: "CANCELLED",
 } as const;
-export type BatchStatusValue = typeof BatchStatus[keyof typeof BatchStatus];
+export type BatchStatusValue = (typeof BatchStatus)[keyof typeof BatchStatus];
 
 // Reconciliation Status
 export const ReconcileStatus = {
@@ -95,7 +100,8 @@ export const ReconcileStatus = {
   ADJUSTED: "ADJUSTED",
   IGNORED: "IGNORED",
 } as const;
-export type ReconcileStatusValue = typeof ReconcileStatus[keyof typeof ReconcileStatus];
+export type ReconcileStatusValue =
+  (typeof ReconcileStatus)[keyof typeof ReconcileStatus];
 
 // Payment Methods
 export const PaymentMethod = {
@@ -104,7 +110,8 @@ export const PaymentMethod = {
   TRANSFER: "TRANSFER",
   CCP: "CCP",
 } as const;
-export type PaymentMethodValue = typeof PaymentMethod[keyof typeof PaymentMethod];
+export type PaymentMethodValue =
+  (typeof PaymentMethod)[keyof typeof PaymentMethod];
 
 // Platforms (for marketing)
 export const Platform = {
@@ -114,7 +121,7 @@ export const Platform = {
   GOOGLE: "GOOGLE",
   OTHER: "OTHER",
 } as const;
-export type PlatformValue = typeof Platform[keyof typeof Platform];
+export type PlatformValue = (typeof Platform)[keyof typeof Platform];
 
 // =============================================================================
 // LABELS (pour l'UI)
@@ -192,7 +199,10 @@ export const BatchStatusLabels: Record<BatchStatusValue, string> = {
 // COULEURS STATUS
 // =============================================================================
 
-export const PurchaseStatusColors: Record<PurchaseStatusValue, { bg: string; text: string }> = {
+export const PurchaseStatusColors: Record<
+  PurchaseStatusValue,
+  { bg: string; text: string }
+> = {
   DRAFT: { bg: "bg-gray-100", text: "text-gray-700" },
   ORDERED: { bg: "bg-blue-100", text: "text-blue-700" },
   PARTIAL: { bg: "bg-orange-100", text: "text-orange-700" },
@@ -200,14 +210,20 @@ export const PurchaseStatusColors: Record<PurchaseStatusValue, { bg: string; tex
   CANCELLED: { bg: "bg-red-100", text: "text-red-700" },
 };
 
-export const AdvanceStatusColors: Record<AdvanceStatusValue, { bg: string; text: string }> = {
+export const AdvanceStatusColors: Record<
+  AdvanceStatusValue,
+  { bg: string; text: string }
+> = {
   PENDING: { bg: "bg-amber-100", text: "text-amber-700" },
   PARTIAL: { bg: "bg-blue-100", text: "text-blue-700" },
   APPLIED: { bg: "bg-green-100", text: "text-green-700" },
   REFUNDED: { bg: "bg-gray-100", text: "text-gray-700" },
 };
 
-export const BatchStatusColors: Record<BatchStatusValue, { bg: string; text: string }> = {
+export const BatchStatusColors: Record<
+  BatchStatusValue,
+  { bg: string; text: string }
+> = {
   PLANNED: { bg: "bg-gray-100", text: "text-gray-700" },
   IN_PROGRESS: { bg: "bg-blue-100", text: "text-blue-700" },
   COMPLETED: { bg: "bg-green-100", text: "text-green-700" },
@@ -219,10 +235,10 @@ export const BatchStatusColors: Record<BatchStatusValue, { bg: string; text: str
 // =============================================================================
 
 export const DEFAULTS = {
-  MARGIN_TARGET: 40,        // 40% marge cible
-  RETURN_MARGIN: 150,       // 150 DZD marge retours
-  WASTE_FACTOR: 1.05,       // 5% perte matière
-  ESTIMATED_UNITS: 100,     // Unités estimées par défaut
+  MARGIN_TARGET: 40, // 40% marge cible
+  RETURN_MARGIN: 150, // 150 DZD marge retours
+  WASTE_FACTOR: 1.05, // 5% perte matière
+  ESTIMATED_UNITS: 100, // Unités estimées par défaut
   CURRENCY: "DZD",
   LOW_STOCK_THRESHOLD: 10,
 } as const;

@@ -4,34 +4,31 @@ import { prisma } from "@/lib/prisma";
 // GET single inventory item
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    
+
     const item = await prisma.inventoryItem.findUnique({
       where: { id },
       include: {
         bomItems: {
-          include: { model: true }
+          include: { model: true },
         },
         purchaseItems: {
           include: { purchase: true },
           orderBy: { createdAt: "desc" },
-          take: 10
+          take: 10,
         },
         transactions: {
           orderBy: { createdAt: "desc" },
-          take: 20
-        }
-      }
+          take: 20,
+        },
+      },
     });
 
     if (!item) {
-      return NextResponse.json(
-        { error: "Item not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
     return NextResponse.json(item);
@@ -39,7 +36,7 @@ export async function GET(
     console.error("Error fetching inventory item:", error);
     return NextResponse.json(
       { error: "Failed to fetch inventory item" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -47,7 +44,7 @@ export async function GET(
 // PUT update inventory item
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -71,7 +68,7 @@ export async function PUT(
     console.error("Error updating inventory item:", error);
     return NextResponse.json(
       { error: "Failed to update inventory item" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -79,25 +76,25 @@ export async function PUT(
 // DELETE inventory item
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
 
     // Check if item is used in any BOM
     const bomCount = await prisma.bomItem.count({
-      where: { inventoryItemId: id }
+      where: { inventoryItemId: id },
     });
 
     if (bomCount > 0) {
       return NextResponse.json(
         { error: "Cannot delete: item is used in Bill of Materials" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     await prisma.inventoryItem.delete({
-      where: { id }
+      where: { id },
     });
 
     return NextResponse.json({ success: true });
@@ -105,7 +102,7 @@ export async function DELETE(
     console.error("Error deleting inventory item:", error);
     return NextResponse.json(
       { error: "Failed to delete inventory item" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

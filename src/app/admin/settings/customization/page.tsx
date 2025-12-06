@@ -22,7 +22,9 @@ export default async function CustomizationPage() {
 
       {/* Hero Section */}
       <div className="bg-gray-50 rounded-2xl p-6">
-        <h2 className="text-lg font-semibold text-harp-brown mb-4">Section Hero</h2>
+        <h2 className="text-lg font-semibold text-harp-brown mb-4">
+          Section Hero
+        </h2>
         <AdminHeroEditor initial={settings} />
       </div>
     </div>

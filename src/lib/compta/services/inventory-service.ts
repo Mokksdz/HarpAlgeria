@@ -3,15 +3,15 @@
  * Handles inventory operations: list, detail, transactions, adjustments, reconciliation
  */
 
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
-import { calculateCUMP, calculateTotalValue } from '../accounting';
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { calculateCUMP, calculateTotalValue } from "../accounting";
 import type {
   InventoryItemCreateInput,
   InventoryAdjustmentInput,
   PaginatedResponse,
   ReconciliationMismatch,
-} from '../schemas/purchase.schemas';
+} from "../schemas/purchase.schemas";
 
 // =============================================================================
 // TYPES
@@ -41,7 +41,7 @@ interface InventoryDetail extends InventoryItem {
  */
 export async function getInventoryList(
   { page = 1, pageSize = 20 }: { page?: number; pageSize?: number } = {},
-  filters: InventoryListFilters = {}
+  filters: InventoryListFilters = {},
 ): Promise<PaginatedResponse<InventoryItem>> {
   const skip = (page - 1) * pageSize;
 
@@ -68,7 +68,7 @@ export async function getInventoryList(
     where,
     take: pageSize * 2, // Fetch more for lowStock filtering
     skip: filters.lowStock ? 0 : skip,
-    orderBy: { name: 'asc' },
+    orderBy: { name: "asc" },
   });
 
   // Apply lowStock filter in memory
@@ -90,7 +90,9 @@ export async function getInventoryList(
       page,
       pageSize,
       total: filters.lowStock ? items.length : total,
-      totalPages: Math.ceil((filters.lowStock ? items.length : total) / pageSize),
+      totalPages: Math.ceil(
+        (filters.lowStock ? items.length : total) / pageSize,
+      ),
     },
   };
 }
@@ -98,7 +100,9 @@ export async function getInventoryList(
 /**
  * Get inventory item detail with transactions and supplier
  */
-export async function getInventoryDetail(id: string): Promise<InventoryDetail | null> {
+export async function getInventoryDetail(
+  id: string,
+): Promise<InventoryDetail | null> {
   const item = await prisma.inventoryItem.findUnique({
     where: { id },
     include: {
@@ -106,7 +110,7 @@ export async function getInventoryDetail(id: string): Promise<InventoryDetail | 
         select: { id: true, name: true, code: true },
       },
       transactions: {
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: 50,
       },
     },
@@ -123,7 +127,7 @@ export async function getInventoryDetail(id: string): Promise<InventoryDetail | 
  * Create a new inventory item
  */
 export async function createInventoryItem(
-  data: InventoryItemCreateInput
+  data: InventoryItemCreateInput,
 ): Promise<InventoryItem> {
   // Check SKU uniqueness
   const existing = await prisma.inventoryItem.findUnique({
@@ -134,8 +138,11 @@ export async function createInventoryItem(
     throw new Error(`SKU "${data.sku}" existe déjà`);
   }
 
-  const totalValue = calculateTotalValue(data.quantity ?? 0, data.averageCost ?? 0);
-  const available = (data.quantity ?? 0); // No reserved initially
+  const totalValue = calculateTotalValue(
+    data.quantity ?? 0,
+    data.averageCost ?? 0,
+  );
+  const available = data.quantity ?? 0; // No reserved initially
 
   const item = await prisma.inventoryItem.create({
     data: {
@@ -164,11 +171,11 @@ export async function createInventoryItem(
   if ((data.quantity ?? 0) > 0) {
     await createInventoryTransaction({
       inventoryItemId: item.id,
-      direction: 'IN',
-      type: 'ADJUSTMENT',
+      direction: "IN",
+      type: "ADJUSTMENT",
       quantity: data.quantity!,
       unitCost: data.averageCost ?? 0,
-      reason: 'Stock initial',
+      reason: "Stock initial",
       balanceBefore: 0,
       balanceAfter: data.quantity!,
     });
@@ -183,8 +190,14 @@ export async function createInventoryItem(
 
 interface CreateTransactionParams {
   inventoryItemId: string;
-  direction: 'IN' | 'OUT';
-  type: 'PURCHASE' | 'PRODUCTION' | 'SALE' | 'ADJUSTMENT' | 'RESERVE' | 'RELEASE';
+  direction: "IN" | "OUT";
+  type:
+    | "PURCHASE"
+    | "PRODUCTION"
+    | "SALE"
+    | "ADJUSTMENT"
+    | "RESERVE"
+    | "RELEASE";
   quantity: number;
   unitCost?: number;
   referenceType?: string;
@@ -205,7 +218,7 @@ interface CreateTransactionParams {
  */
 export async function createInventoryTransaction(
   params: CreateTransactionParams,
-  tx?: Prisma.TransactionClient
+  tx?: Prisma.TransactionClient,
 ): Promise<InventoryTransaction> {
   const client = tx ?? prisma;
 
@@ -242,7 +255,7 @@ export async function createInventoryTransaction(
  */
 export async function applyAdjustment(
   data: InventoryAdjustmentInput,
-  userId?: string
+  userId?: string,
 ): Promise<{ item: InventoryItem; transaction: InventoryTransaction }> {
   return prisma.$transaction(async (tx) => {
     // Get current item
@@ -251,39 +264,44 @@ export async function applyAdjustment(
     });
 
     if (!item) {
-      throw new Error('Article non trouvé');
+      throw new Error("Article non trouvé");
     }
 
     // Calculate new quantity
     let newQuantity: number;
     let adjustedQty: number;
-    let direction: 'IN' | 'OUT';
+    let direction: "IN" | "OUT";
 
     switch (data.adjustmentType) {
-      case 'ADD':
+      case "ADD":
         newQuantity = Number(item.quantity) + data.quantity;
         adjustedQty = data.quantity;
-        direction = 'IN';
+        direction = "IN";
         break;
-      case 'REMOVE':
+      case "REMOVE":
         newQuantity = Number(item.quantity) - data.quantity;
         adjustedQty = data.quantity;
-        direction = 'OUT';
+        direction = "OUT";
         if (newQuantity < 0) {
-          throw new Error(`Stock insuffisant: ${item.quantity} disponible, ${data.quantity} demandé`);
+          throw new Error(
+            `Stock insuffisant: ${item.quantity} disponible, ${data.quantity} demandé`,
+          );
         }
         break;
-      case 'SET':
+      case "SET":
         adjustedQty = Math.abs(data.quantity - Number(item.quantity));
-        direction = data.quantity >= Number(item.quantity) ? 'IN' : 'OUT';
+        direction = data.quantity >= Number(item.quantity) ? "IN" : "OUT";
         newQuantity = data.quantity;
         break;
       default:
-        throw new Error('Type ajustement invalide');
+        throw new Error("Type ajustement invalide");
     }
 
     const newAvailable = newQuantity - Number(item.reserved);
-    const newTotalValue = calculateTotalValue(newQuantity, Number(item.averageCost));
+    const newTotalValue = calculateTotalValue(
+      newQuantity,
+      Number(item.averageCost),
+    );
 
     // Update item
     const updatedItem = await tx.inventoryItem.update({
@@ -300,7 +318,7 @@ export async function applyAdjustment(
       {
         inventoryItemId: item.id,
         direction,
-        type: 'ADJUSTMENT',
+        type: "ADJUSTMENT",
         quantity: adjustedQty,
         unitCost: Number(item.averageCost),
         balanceBefore: Number(item.quantity),
@@ -311,14 +329,14 @@ export async function applyAdjustment(
         notes: data.notes,
         createdBy: userId,
       },
-      tx
+      tx,
     );
 
     // Create audit log
     await tx.auditLog.create({
       data: {
-        action: 'ADJUSTMENT',
-        entity: 'InventoryItem',
+        action: "ADJUSTMENT",
+        entity: "InventoryItem",
         entityId: item.id,
         userId,
         before: JSON.stringify({
@@ -368,7 +386,7 @@ export async function reconcileInventory(): Promise<ReconciliationMismatch[]> {
     const inSum = await prisma.inventoryTransaction.aggregate({
       where: {
         inventoryItemId: item.id,
-        direction: 'IN',
+        direction: "IN",
       },
       _sum: {
         quantity: true,
@@ -379,7 +397,7 @@ export async function reconcileInventory(): Promise<ReconciliationMismatch[]> {
     const outSum = await prisma.inventoryTransaction.aggregate({
       where: {
         inventoryItemId: item.id,
-        direction: 'OUT',
+        direction: "OUT",
       },
       _sum: {
         quantity: true,
@@ -401,7 +419,8 @@ export async function reconcileInventory(): Promise<ReconciliationMismatch[]> {
         expectedQty,
         actualQty,
         variance,
-        variancePercent: expectedQty !== 0 ? (variance / expectedQty) * 100 : 100,
+        variancePercent:
+          expectedQty !== 0 ? (variance / expectedQty) * 100 : 100,
       });
     }
   }

@@ -4,22 +4,29 @@
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { consumeProductionBatch, previewConsumption } from "@/lib/accounting/services";
+import {
+  consumeProductionBatch,
+  previewConsumption,
+} from "@/lib/accounting/services";
 import { z } from "zod";
 
 // Schema de validation
 const ConsumeSchema = z.object({
-  consumptions: z.array(z.object({
-    inventoryItemId: z.string().min(1),
-    quantity: z.number().positive(),
-  })).optional(),
+  consumptions: z
+    .array(
+      z.object({
+        inventoryItemId: z.string().min(1),
+        quantity: z.number().positive(),
+      }),
+    )
+    .optional(),
   createdBy: z.string().optional(),
 });
 
 // GET - Prévisualiser la consommation
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -31,7 +38,7 @@ export async function GET(
     console.error("Error generating consumption preview:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de la prévisualisation" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -39,7 +46,7 @@ export async function GET(
 // POST - Consommer les matières
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -49,11 +56,11 @@ export async function POST(
     const validation = ConsumeSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        { 
+        {
           error: "Données invalides",
           details: validation.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,7 +78,7 @@ export async function POST(
     console.error("Error consuming materials:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de la consommation" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

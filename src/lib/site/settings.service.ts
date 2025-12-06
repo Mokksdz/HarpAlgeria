@@ -26,7 +26,7 @@ export interface HeroSettings {
  */
 export async function getSiteSettings() {
   let settings = await prisma.siteSetting.findUnique({
-    where: { id: "default" }
+    where: { id: "default" },
   });
 
   // Create default settings if not exists
@@ -37,8 +37,8 @@ export async function getSiteSettings() {
         heroActive: true,
         heroOverlayOpacity: 0.35,
         heroPreset: "classic",
-        heroVariant: "image"
-      }
+        heroVariant: "image",
+      },
     });
   }
 
@@ -56,7 +56,7 @@ export async function updateHeroSettings(data: HeroSettings, userId?: string) {
     // Ensure settings exist
     if (!prev) {
       await tx.siteSetting.create({
-        data: { id: "default" }
+        data: { id: "default" },
       });
     }
 
@@ -66,8 +66,8 @@ export async function updateHeroSettings(data: HeroSettings, userId?: string) {
         data: {
           settingId: "default",
           snapshot: JSON.stringify(prev),
-          userId
-        }
+          userId,
+        },
       });
     }
 
@@ -76,8 +76,8 @@ export async function updateHeroSettings(data: HeroSettings, userId?: string) {
       where: { id: "default" },
       data: {
         ...data,
-        lastUpdatedById: userId || null
-      }
+        lastUpdatedById: userId || null,
+      },
     });
 
     // Create audit log
@@ -88,8 +88,8 @@ export async function updateHeroSettings(data: HeroSettings, userId?: string) {
         entityId: "default",
         userId: userId || null,
         before: prev ? JSON.stringify(prev) : null,
-        after: JSON.stringify(updated)
-      }
+        after: JSON.stringify(updated),
+      },
     });
 
     return { prev, updated };
@@ -103,7 +103,7 @@ export async function getSettingsHistory(limit = 10) {
   return prisma.siteSettingHistory.findMany({
     where: { settingId: "default" },
     orderBy: { createdAt: "desc" },
-    take: limit
+    take: limit,
   });
 }
 
@@ -112,7 +112,7 @@ export async function getSettingsHistory(limit = 10) {
  */
 export async function rollbackSettings(historyId: string, userId?: string) {
   const history = await prisma.siteSettingHistory.findUnique({
-    where: { id: historyId }
+    where: { id: historyId },
   });
 
   if (!history) {
@@ -120,7 +120,7 @@ export async function rollbackSettings(historyId: string, userId?: string) {
   }
 
   const snapshot = JSON.parse(history.snapshot);
-  
+
   // Remove fields that shouldn't be restored
   delete snapshot.id;
   delete snapshot.createdAt;
@@ -137,11 +137,14 @@ export function isHeroActive(settings: any): boolean {
   if (!settings?.heroActive) return false;
 
   const now = new Date();
-  
-  if (settings.heroScheduleStart && new Date(settings.heroScheduleStart) > now) {
+
+  if (
+    settings.heroScheduleStart &&
+    new Date(settings.heroScheduleStart) > now
+  ) {
     return false;
   }
-  
+
   if (settings.heroScheduleEnd && new Date(settings.heroScheduleEnd) < now) {
     return false;
   }
@@ -162,19 +165,22 @@ export function generateCloudinarySignature(folder: string = "harp/hero") {
   }
 
   const timestamp = Math.floor(Date.now() / 1000);
-  
+
   // Create signature string
   const signatureString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
-  
+
   // Create SHA1 hash
   const crypto = require("crypto");
-  const signature = crypto.createHash("sha1").update(signatureString).digest("hex");
+  const signature = crypto
+    .createHash("sha1")
+    .update(signatureString)
+    .digest("hex");
 
   return {
     signature,
     timestamp,
     apiKey,
     cloudName,
-    folder
+    folder,
   };
 }

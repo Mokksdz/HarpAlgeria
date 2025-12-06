@@ -16,12 +16,35 @@ interface Batch {
   createdAt: string;
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  PLANNED: { label: "Planifié", color: "bg-gray-100 text-gray-700", icon: Clock },
-  IN_PROGRESS: { label: "En cours", color: "bg-blue-100 text-blue-700", icon: Play },
-  COMPLETED: { label: "Terminé", color: "bg-green-100 text-green-700", icon: CheckCircle },
-  CANCELLED: { label: "Annulé", color: "bg-red-100 text-red-700", icon: XCircle },
-  ON_HOLD: { label: "En pause", color: "bg-yellow-100 text-yellow-700", icon: Pause },
+const statusConfig: Record<
+  string,
+  { label: string; color: string; icon: React.ElementType }
+> = {
+  PLANNED: {
+    label: "Planifié",
+    color: "bg-gray-100 text-gray-700",
+    icon: Clock,
+  },
+  IN_PROGRESS: {
+    label: "En cours",
+    color: "bg-blue-100 text-blue-700",
+    icon: Play,
+  },
+  COMPLETED: {
+    label: "Terminé",
+    color: "bg-green-100 text-green-700",
+    icon: CheckCircle,
+  },
+  CANCELLED: {
+    label: "Annulé",
+    color: "bg-red-100 text-red-700",
+    icon: XCircle,
+  },
+  ON_HOLD: {
+    label: "En pause",
+    color: "bg-yellow-100 text-yellow-700",
+    icon: Pause,
+  },
 };
 
 export default function ProductionPage() {
@@ -37,7 +60,9 @@ export default function ProductionPage() {
     try {
       const params = new URLSearchParams({ limit: "20" });
       if (filter) params.set("status", filter);
-      const res = await fetch(`/api/v3/compta/production?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/v3/compta/production?${params}`, {
+        credentials: "include",
+      });
       const data = await res.json();
       if (data.success) setBatches(data.items);
     } catch (err) {
@@ -47,7 +72,8 @@ export default function ProductionPage() {
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
   const formatDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
 
   return (
@@ -55,7 +81,9 @@ export default function ProductionPage() {
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif">Production</h1>
-          <p className="text-sm text-slate-600">Gestion des lots de production</p>
+          <p className="text-sm text-slate-600">
+            Gestion des lots de production
+          </p>
         </div>
         <Link
           href="/admin/compta/production/new"
@@ -72,7 +100,9 @@ export default function ProductionPage() {
             key={s}
             onClick={() => setFilter(s)}
             className={`px-3 py-1.5 rounded-lg text-sm ${
-              filter === s ? "bg-harp-brown text-white" : "bg-white text-slate-700 hover:bg-slate-100"
+              filter === s
+                ? "bg-harp-brown text-white"
+                : "bg-white text-slate-700 hover:bg-slate-100"
             }`}
           >
             {s === "" ? "Tous" : statusConfig[s]?.label || s}
@@ -108,30 +138,41 @@ export default function ProductionPage() {
                     <td className="px-4 py-3 font-medium">{b.batchNumber}</td>
                     <td className="px-4 py-3">
                       <div>{b.model.name}</div>
-                      <div className="text-xs text-slate-500 font-mono">{b.model.sku}</div>
+                      <div className="text-xs text-slate-500 font-mono">
+                        {b.model.sku}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="font-medium">{b.producedQty}</span>
                       <span className="text-slate-400"> / {b.plannedQty}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${status.color}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${status.color}`}
+                      >
                         <StatusIcon size={12} /> {status.label}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       {b.totalCost > 0 ? (
                         <div>
-                          <div className="font-medium">{formatCurrency(b.totalCost)}</div>
+                          <div className="font-medium">
+                            {formatCurrency(b.totalCost)}
+                          </div>
                           <div className="text-xs text-slate-500">
-                            {formatCurrency(b.plannedQty > 0 ? b.totalCost / b.plannedQty : 0)}/u
+                            {formatCurrency(
+                              b.plannedQty > 0 ? b.totalCost / b.plannedQty : 0,
+                            )}
+                            /u
                           </div>
                         </div>
                       ) : (
                         <span className="text-slate-400">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{formatDate(b.createdAt)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      {formatDate(b.createdAt)}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         <Link

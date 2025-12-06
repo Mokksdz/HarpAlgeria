@@ -57,7 +57,8 @@ describe("Cost Calculations", () => {
       const laborCost = 1500;
       const marketingCost = 500;
       const transportCost = 200;
-      const totalCost = materialsCost + laborCost + marketingCost + transportCost;
+      const totalCost =
+        materialsCost + laborCost + marketingCost + transportCost;
 
       expect(totalCost).toBe(5000);
     });
@@ -89,7 +90,12 @@ describe("Cost Calculations", () => {
       const cost = 60000;
       const profit = revenue - cost;
       const marginPercent = (profit / revenue) * 100;
-      const status = marginPercent >= 10 ? "PROFITABLE" : profit >= 0 ? "BREAK_EVEN" : "LOSS";
+      const status =
+        marginPercent >= 10
+          ? "PROFITABLE"
+          : profit >= 0
+            ? "BREAK_EVEN"
+            : "LOSS";
 
       expect(profit).toBe(40000);
       expect(marginPercent).toBe(40);
@@ -101,7 +107,8 @@ describe("Cost Calculations", () => {
       const cost = 60000;
       const profit = revenue - cost;
       const marginPercent = (profit / revenue) * 100;
-      const status = profit < 0 ? "LOSS" : marginPercent < 10 ? "BREAK_EVEN" : "PROFITABLE";
+      const status =
+        profit < 0 ? "LOSS" : marginPercent < 10 ? "BREAK_EVEN" : "PROFITABLE";
 
       expect(profit).toBe(-10000);
       expect(marginPercent).toBe(-20);
@@ -113,7 +120,8 @@ describe("Cost Calculations", () => {
       const cost = 95000;
       const profit = revenue - cost;
       const marginPercent = (profit / revenue) * 100;
-      const status = profit < 0 ? "LOSS" : marginPercent < 10 ? "BREAK_EVEN" : "PROFITABLE";
+      const status =
+        profit < 0 ? "LOSS" : marginPercent < 10 ? "BREAK_EVEN" : "PROFITABLE";
 
       expect(profit).toBe(5000);
       expect(marginPercent).toBe(5);

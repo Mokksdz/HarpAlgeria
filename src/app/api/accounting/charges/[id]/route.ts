@@ -9,11 +9,11 @@ import { prisma } from "@/lib/prisma";
 // GET - Récupérer une charge par ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    
+
     const charge = await prisma.charge.findUnique({
       where: { id },
       include: {
@@ -21,11 +21,11 @@ export async function GET(
         collection: { select: { id: true, nameFr: true } },
       },
     });
-    
+
     if (!charge) {
       return NextResponse.json(
         { error: "Charge non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -34,7 +34,7 @@ export async function GET(
     console.error("Error fetching charge:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération de la charge" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -42,7 +42,7 @@ export async function GET(
 // PUT - Mettre à jour une charge
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -55,7 +55,7 @@ export async function PUT(
     if (!existing) {
       return NextResponse.json(
         { error: "Charge non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -104,7 +104,7 @@ export async function PUT(
     console.error("Error updating charge:", error);
     return NextResponse.json(
       { error: "Erreur lors de la mise à jour" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -112,7 +112,7 @@ export async function PUT(
 // DELETE - Supprimer une charge
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -124,7 +124,7 @@ export async function DELETE(
     if (!existing) {
       return NextResponse.json(
         { error: "Charge non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -145,7 +145,7 @@ export async function DELETE(
     console.error("Error deleting charge:", error);
     return NextResponse.json(
       { error: "Erreur lors de la suppression" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

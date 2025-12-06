@@ -6,7 +6,10 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { BatchStatus, TxDirection, TxType } from "../constants";
-import { createInventoryMovement, checkStockAvailability } from "./inventory.service";
+import {
+  createInventoryMovement,
+  checkStockAvailability,
+} from "./inventory.service";
 
 // Types
 export interface BatchCreateInput {
@@ -82,7 +85,9 @@ async function generateBatchNumber(): Promise<string> {
 /**
  * Crée un nouveau lot de production
  */
-export async function createProductionBatch(input: BatchCreateInput): Promise<any> {
+export async function createProductionBatch(
+  input: BatchCreateInput,
+): Promise<any> {
   return prisma.$transaction(async (tx) => {
     // Vérifier que le modèle existe
     const model = await tx.model.findUnique({
@@ -106,7 +111,10 @@ export async function createProductionBatch(input: BatchCreateInput): Promise<an
     const consumptions = [];
 
     for (const bomItem of model.bom) {
-      const requiredQty = Number(bomItem.quantity) * Number(bomItem.wasteFactor) * input.plannedQty;
+      const requiredQty =
+        Number(bomItem.quantity) *
+        Number(bomItem.wasteFactor) *
+        input.plannedQty;
       const itemCost = requiredQty * Number(bomItem.inventoryItem.averageCost);
       materialsCost += itemCost;
 
@@ -119,7 +127,8 @@ export async function createProductionBatch(input: BatchCreateInput): Promise<an
       });
     }
 
-    const laborCost = input.laborCost || Number(model.laborCost) * input.plannedQty;
+    const laborCost =
+      input.laborCost || Number(model.laborCost) * input.plannedQty;
     const overheadCost = input.overheadCost || 0;
     const totalCost = materialsCost + laborCost + overheadCost;
     const costPerUnit = input.plannedQty > 0 ? totalCost / input.plannedQty : 0;
@@ -173,7 +182,9 @@ export async function createProductionBatch(input: BatchCreateInput): Promise<an
 /**
  * Génère un aperçu de la consommation de matières pour un lot
  */
-export async function previewConsumption(batchId: string): Promise<BatchConsumptionPreview> {
+export async function previewConsumption(
+  batchId: string,
+): Promise<BatchConsumptionPreview> {
   const batch = await prisma.productionBatch.findUnique({
     where: { id: batchId },
     include: {
@@ -198,7 +209,8 @@ export async function previewConsumption(batchId: string): Promise<BatchConsumpt
   let maxProducible = batch.plannedQty;
 
   for (const bomItem of batch.model.bom) {
-    const requiredQty = Number(bomItem.quantity) * Number(bomItem.wasteFactor) * batch.plannedQty;
+    const requiredQty =
+      Number(bomItem.quantity) * Number(bomItem.wasteFactor) * batch.plannedQty;
     const inv = bomItem.inventoryItem;
     const shortage = Math.max(0, requiredQty - Number(inv.available));
     const totalCost = requiredQty * Number(inv.averageCost);
@@ -207,7 +219,8 @@ export async function previewConsumption(batchId: string): Promise<BatchConsumpt
       canProduce = false;
       // Calculer combien on peut produire
       const possibleWithStock = Math.floor(
-        Number(inv.available) / (Number(bomItem.quantity) * Number(bomItem.wasteFactor))
+        Number(inv.available) /
+          (Number(bomItem.quantity) * Number(bomItem.wasteFactor)),
       );
       maxProducible = Math.min(maxProducible, possibleWithStock);
     }
@@ -310,7 +323,7 @@ export async function startBatch(batchId: string): Promise<any> {
 export async function consumeProductionBatch(
   batchId: string,
   actualConsumptions?: ConsumptionInput[],
-  createdBy?: string
+  createdBy?: string,
 ): Promise<any> {
   return prisma.$transaction(async (tx) => {
     const batch = await tx.productionBatch.findUnique({
@@ -350,7 +363,10 @@ export async function consumeProductionBatch(
     } else {
       // Consommations selon BOM
       for (const bomItem of batch.model.bom) {
-        const requiredQty = Number(bomItem.quantity) * Number(bomItem.wasteFactor) * batch.plannedQty;
+        const requiredQty =
+          Number(bomItem.quantity) *
+          Number(bomItem.wasteFactor) *
+          batch.plannedQty;
         toConsume.set(bomItem.inventoryItemId, requiredQty);
       }
     }
@@ -393,14 +409,14 @@ export async function consumeProductionBatch(
           notes: `Production lot ${batch.batchNumber}`,
           createdBy,
         },
-        tx
+        tx,
       );
 
       actualMaterialsCost += quantity * Number(inv.averageCost);
 
       // Mettre à jour la consommation
       const consumption = batch.consumptions.find(
-        (c) => c.inventoryItemId === inventoryItemId
+        (c) => c.inventoryItemId === inventoryItemId,
       );
       if (consumption) {
         await tx.batchConsumption.update({
@@ -415,7 +431,10 @@ export async function consumeProductionBatch(
     }
 
     // Mettre à jour les coûts du lot
-    const totalCost = actualMaterialsCost + Number(batch.laborCost) + Number(batch.overheadCost);
+    const totalCost =
+      actualMaterialsCost +
+      Number(batch.laborCost) +
+      Number(batch.overheadCost);
     const costPerUnit = batch.plannedQty > 0 ? totalCost / batch.plannedQty : 0;
 
     const updated = await tx.productionBatch.update({
@@ -436,7 +455,10 @@ export async function consumeProductionBatch(
         action: "CONSUME",
         entity: "ProductionBatch",
         entityId: batchId,
-        after: JSON.stringify({ materialsCost: actualMaterialsCost, items: Array.from(toConsume) }),
+        after: JSON.stringify({
+          materialsCost: actualMaterialsCost,
+          items: Array.from(toConsume),
+        }),
         userId: createdBy,
       },
     });
@@ -455,7 +477,7 @@ export async function consumeProductionBatch(
 export async function completeBatch(
   batchId: string,
   producedQty: number,
-  wasteQty?: number
+  wasteQty?: number,
 ): Promise<any> {
   return prisma.$transaction(async (tx) => {
     const batch = await tx.productionBatch.findUnique({
@@ -472,7 +494,8 @@ export async function completeBatch(
     }
 
     // Recalculer le coût par unité avec la quantité réelle
-    const costPerUnit = producedQty > 0 ? Number(batch.totalCost) / producedQty : 0;
+    const costPerUnit =
+      producedQty > 0 ? Number(batch.totalCost) / producedQty : 0;
 
     const updated = await tx.productionBatch.update({
       where: { id: batchId },
@@ -550,7 +573,7 @@ export async function cancelBatch(batchId: string): Promise<any> {
             reason: "Annulation lot production",
             notes: `Retour stock suite annulation lot ${batch.batchNumber}`,
           },
-          tx
+          tx,
         );
       }
     }

@@ -24,7 +24,11 @@ const modules = [
   { href: "/admin/compta/reports", label: "Rapports", icon: BarChart3 },
 ];
 
-export default function AdminComptaLayout({ children }: { children: React.ReactNode }) {
+export default function AdminComptaLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
 
   return (
@@ -43,10 +47,13 @@ export default function AdminComptaLayout({ children }: { children: React.ReactN
                     "relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
                     isActive
                       ? "bg-gray-900 text-white shadow-sm"
-                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
                   )}
                 >
-                  <m.icon size={16} className={isActive ? "text-white" : "text-gray-400"} />
+                  <m.icon
+                    size={16}
+                    className={isActive ? "text-white" : "text-gray-400"}
+                  />
                   <span>{m.label}</span>
                 </Link>
               );
@@ -56,7 +63,7 @@ export default function AdminComptaLayout({ children }: { children: React.ReactN
         {/* Fade indicators for scroll */}
         <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none md:hidden" />
       </div>
-      
+
       {children}
     </div>
   );

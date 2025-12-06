@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 const rollbackSchema = z.object({
-  historyId: z.string()
+  historyId: z.string(),
 });
 
 // POST - Rollback to a previous version (admin only)
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     const admin = await requireAdmin(req);
     const body = await req.json();
-    
+
     const { historyId } = rollbackSchema.parse(body);
 
     const { updated } = await rollbackSettings(historyId, admin.user.id);

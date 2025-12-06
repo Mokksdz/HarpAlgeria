@@ -4,18 +4,18 @@
  * POST /api/v3/compta/purchases - Create new purchase (DRAFT)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, handleApiError } from '@/lib/auth-helpers';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin, handleApiError } from "@/lib/auth-helpers";
+import { z } from "zod";
 import {
   PurchaseCreateSchema,
   PaginationSchema,
   PurchaseFilterSchema,
-} from '@/lib/compta/schemas/purchase.schemas';
+} from "@/lib/compta/schemas/purchase.schemas";
 import {
   getPurchaseList,
   createPurchase,
-} from '@/lib/compta/services/purchases-service';
+} from "@/lib/compta/services/purchases-service";
 
 /**
  * GET /api/v3/compta/purchases
@@ -29,15 +29,15 @@ export async function GET(req: NextRequest) {
 
     // Parse pagination
     const pagination = PaginationSchema.parse({
-      page: searchParams.get('page') ?? 1,
-      pageSize: searchParams.get('pageSize') ?? searchParams.get('limit') ?? 20,
+      page: searchParams.get("page") ?? 1,
+      pageSize: searchParams.get("pageSize") ?? searchParams.get("limit") ?? 20,
     });
 
     // Parse filters
     const filters = PurchaseFilterSchema.parse({
-      status: searchParams.get('status') ?? undefined,
-      supplierId: searchParams.get('supplierId') ?? undefined,
-      search: searchParams.get('search') ?? undefined,
+      status: searchParams.get("status") ?? undefined,
+      supplierId: searchParams.get("supplierId") ?? undefined,
+      search: searchParams.get("search") ?? undefined,
     });
 
     const result = await getPurchaseList(pagination, filters);
@@ -49,8 +49,12 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Paramètres invalides', details: err.flatten().fieldErrors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Paramètres invalides",
+          details: err.flatten().fieldErrors,
+        },
+        { status: 400 },
       );
     }
     return handleApiError(err);
@@ -70,15 +74,16 @@ export async function POST(req: NextRequest) {
 
     const purchase = await createPurchase(data);
 
-    return NextResponse.json(
-      { success: true, purchase },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true, purchase }, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Validation échouée', details: err.flatten().fieldErrors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Validation échouée",
+          details: err.flatten().fieldErrors,
+        },
+        { status: 400 },
       );
     }
     return handleApiError(err);

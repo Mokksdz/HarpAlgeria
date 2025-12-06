@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 async function generateAdvanceNumber(): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `AVA-${year}-`;
-  
+
   const last = await prisma.supplierAdvance.findFirst({
     where: { advanceNumber: { startsWith: prefix } },
     orderBy: { advanceNumber: "desc" },
@@ -44,11 +44,14 @@ export async function GET(req: NextRequest) {
     const totals = {
       total: advances.reduce((sum, a) => sum + Number(a.amount), 0),
       used: advances.reduce((sum, a) => sum + Number(a.amountUsed), 0),
-      available: advances.reduce((sum, a) => sum + Number(a.amountRemaining), 0),
+      available: advances.reduce(
+        (sum, a) => sum + Number(a.amountRemaining),
+        0,
+      ),
     };
 
     // Map to expected format for UI
-    const mappedAdvances = advances.map(a => ({
+    const mappedAdvances = advances.map((a) => ({
       ...a,
       date: a.paymentDate,
       currency: "DZD",
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching advances:", error);
     return NextResponse.json(
       { error: "Failed to fetch advances" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -72,7 +75,7 @@ export async function POST(req: NextRequest) {
     if (!data.supplierId || !data.amount || data.amount <= 0) {
       return NextResponse.json(
         { error: "supplierId and amount are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -113,7 +116,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating advance:", error);
     return NextResponse.json(
       { error: "Failed to create advance" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

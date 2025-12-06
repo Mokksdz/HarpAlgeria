@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, Package, AlertTriangle, RefreshCw, X, Minus, PlusIcon } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Package,
+  AlertTriangle,
+  RefreshCw,
+  X,
+  Minus,
+  PlusIcon,
+} from "lucide-react";
 
 interface InventoryItem {
   id: string;
@@ -38,7 +47,7 @@ export default function StockPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  
+
   // Adjustment modal state
   const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null);
   const [adjustType, setAdjustType] = useState<"ADD" | "REMOVE" | "SET">("ADD");
@@ -55,7 +64,9 @@ export default function StockPage() {
       const params = new URLSearchParams({ limit: "50" });
       if (typeFilter) params.set("type", typeFilter);
       if (search) params.set("search", search);
-      const res = await fetch(`/api/v3/compta/inventory?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/v3/compta/inventory?${params}`, {
+        credentials: "include",
+      });
       const data = await res.json();
       if (data.success) {
         setItems(data.items);
@@ -88,11 +99,12 @@ export default function StockPage() {
 
   async function handleAdjust() {
     if (!adjustItem || adjustQty <= 0 || !adjustReason.trim()) return;
-    
+
     setAdjusting(true);
     try {
       const res = await fetch("/api/v3/compta/inventory/adjustment", {
-        method: "POST", credentials: "include",
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inventoryItemId: adjustItem.id,
@@ -101,7 +113,7 @@ export default function StockPage() {
           reason: adjustReason.trim(),
         }),
       });
-      
+
       const result = await res.json();
       if (result.success) {
         closeAdjustModal();
@@ -117,14 +129,17 @@ export default function StockPage() {
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
 
   return (
     <div className="space-y-6">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif">Inventaire Stock</h1>
-          <p className="text-sm text-slate-600">Gestion des articles et mouvements</p>
+          <p className="text-sm text-slate-600">
+            Gestion des articles et mouvements
+          </p>
         </div>
         <div className="flex gap-2">
           <Link
@@ -147,7 +162,9 @@ export default function StockPage() {
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-xl shadow">
             <p className="text-sm text-slate-500">Valeur Totale</p>
-            <p className="text-xl font-bold text-green-600">{formatCurrency(stats.totalValue)}</p>
+            <p className="text-xl font-bold text-green-600">
+              {formatCurrency(stats.totalValue)}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow">
             <p className="text-sm text-slate-500">Articles</p>
@@ -155,7 +172,9 @@ export default function StockPage() {
           </div>
           <div className="bg-white p-4 rounded-xl shadow">
             <p className="text-sm text-slate-500">Quantité Totale</p>
-            <p className="text-xl font-bold">{Math.round(stats.totalQuantity)}</p>
+            <p className="text-xl font-bold">
+              {Math.round(stats.totalQuantity)}
+            </p>
           </div>
         </div>
       )}
@@ -163,7 +182,10 @@ export default function StockPage() {
       {/* Filtres */}
       <div className="flex gap-4 items-center">
         <form onSubmit={handleSearch} className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Rechercher par SKU ou nom..."
@@ -179,7 +201,9 @@ export default function StockPage() {
         >
           <option value="">Tous types</option>
           {Object.entries(typeLabels).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
+            <option key={k} value={k}>
+              {v}
+            </option>
           ))}
         </select>
       </div>
@@ -189,7 +213,9 @@ export default function StockPage() {
         {loading ? (
           <div className="p-8 text-center text-slate-500">Chargement...</div>
         ) : items.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">Aucun article trouvé</div>
+          <div className="p-8 text-center text-slate-500">
+            Aucun article trouvé
+          </div>
         ) : (
           <table className="w-full">
             <thead className="bg-slate-50 text-left text-sm text-slate-600">
@@ -208,7 +234,10 @@ export default function StockPage() {
               {items.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
-                    <Link href={`/admin/compta/stock/${item.id}`} className="font-mono text-sm hover:text-harp-brown">
+                    <Link
+                      href={`/admin/compta/stock/${item.id}`}
+                      className="font-mono text-sm hover:text-harp-brown"
+                    >
                       {item.sku}
                     </Link>
                   </td>
@@ -217,19 +246,30 @@ export default function StockPage() {
                       <Package size={16} className="text-slate-400" />
                       {item.name}
                       {item.available < 10 && (
-                        <span title="Stock bas"><AlertTriangle size={14} className="text-orange-500" /></span>
+                        <span title="Stock bas">
+                          <AlertTriangle
+                            size={14}
+                            className="text-orange-500"
+                          />
+                        </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{typeLabels[item.type] || item.type}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    {typeLabels[item.type] || item.type}
+                  </td>
                   <td className="px-4 py-3 text-right font-medium">
                     {item.quantity} {item.unit.toLowerCase()}
                   </td>
                   <td className="px-4 py-3 text-right text-sm text-orange-600">
                     {item.reserved > 0 ? item.reserved : "-"}
                   </td>
-                  <td className="px-4 py-3 text-right text-sm">{formatCurrency(item.averageCost)}</td>
-                  <td className="px-4 py-3 text-right font-medium text-green-600">{formatCurrency(item.totalValue)}</td>
+                  <td className="px-4 py-3 text-right text-sm">
+                    {formatCurrency(item.averageCost)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-medium text-green-600">
+                    {formatCurrency(item.totalValue)}
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => openAdjustModal(item)}
@@ -251,7 +291,10 @@ export default function StockPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Ajuster le stock</h2>
-              <button onClick={closeAdjustModal} className="p-1 hover:bg-slate-100 rounded">
+              <button
+                onClick={closeAdjustModal}
+                className="p-1 hover:bg-slate-100 rounded"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -260,18 +303,22 @@ export default function StockPage() {
               <div className="font-medium">{adjustItem.name}</div>
               <div className="text-sm text-slate-500">{adjustItem.sku}</div>
               <div className="text-sm mt-1">
-                Stock actuel : <span className="font-bold">{adjustItem.quantity}</span> {adjustItem.unit.toLowerCase()}
+                Stock actuel :{" "}
+                <span className="font-bold">{adjustItem.quantity}</span>{" "}
+                {adjustItem.unit.toLowerCase()}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Type d'ajustement</label>
+              <label className="block text-sm font-medium mb-2">
+                Type d'ajustement
+              </label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setAdjustType("ADD")}
                   className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 ${
-                    adjustType === "ADD" 
-                      ? "bg-green-100 text-green-700 border-2 border-green-300" 
+                    adjustType === "ADD"
+                      ? "bg-green-100 text-green-700 border-2 border-green-300"
                       : "bg-slate-100 text-slate-700"
                   }`}
                 >
@@ -280,8 +327,8 @@ export default function StockPage() {
                 <button
                   onClick={() => setAdjustType("REMOVE")}
                   className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 ${
-                    adjustType === "REMOVE" 
-                      ? "bg-red-100 text-red-700 border-2 border-red-300" 
+                    adjustType === "REMOVE"
+                      ? "bg-red-100 text-red-700 border-2 border-red-300"
                       : "bg-slate-100 text-slate-700"
                   }`}
                 >
@@ -303,7 +350,8 @@ export default function StockPage() {
               />
               {adjustType === "REMOVE" && adjustQty > adjustItem.available && (
                 <p className="text-red-500 text-xs mt-1">
-                  Quantité supérieure au stock disponible ({adjustItem.available})
+                  Quantité supérieure au stock disponible (
+                  {adjustItem.available})
                 </p>
               )}
             </div>

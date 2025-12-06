@@ -5,23 +5,24 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPurchaseById, orderPurchase, cancelPurchase } from "@/lib/accounting/services";
+import {
+  getPurchaseById,
+  orderPurchase,
+  cancelPurchase,
+} from "@/lib/accounting/services";
 
 // GET - Récupérer un achat par ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    
+
     const purchase = await getPurchaseById(id);
-    
+
     if (!purchase) {
-      return NextResponse.json(
-        { error: "Achat non trouvé" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Achat non trouvé" }, { status: 404 });
     }
 
     return NextResponse.json(purchase);
@@ -29,7 +30,7 @@ export async function GET(
     console.error("Error fetching purchase:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération de l'achat" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -37,7 +38,7 @@ export async function GET(
 // PUT - Mettre à jour un achat (brouillon uniquement)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -49,16 +50,13 @@ export async function PUT(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Achat non trouvé" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Achat non trouvé" }, { status: 404 });
     }
 
     if (existing.status !== "DRAFT") {
       return NextResponse.json(
         { error: "Seuls les achats en brouillon peuvent être modifiés" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,7 +66,9 @@ export async function PUT(
       data: {
         invoiceNumber: data.invoiceNumber,
         invoiceDate: data.invoiceDate ? new Date(data.invoiceDate) : undefined,
-        expectedDate: data.expectedDate ? new Date(data.expectedDate) : undefined,
+        expectedDate: data.expectedDate
+          ? new Date(data.expectedDate)
+          : undefined,
         taxAmount: data.taxAmount,
         shippingCost: data.shippingCost,
         notes: data.notes,
@@ -86,7 +86,7 @@ export async function PUT(
     console.error("Error updating purchase:", error);
     return NextResponse.json(
       { error: "Erreur lors de la mise à jour" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -94,7 +94,7 @@ export async function PUT(
 // PATCH - Actions sur l'achat (order, cancel)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -112,7 +112,7 @@ export async function PATCH(
       default:
         return NextResponse.json(
           { error: `Action inconnue: ${action}` },
-          { status: 400 }
+          { status: 400 },
         );
     }
 
@@ -121,7 +121,7 @@ export async function PATCH(
     console.error("Error patching purchase:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de l'action" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -129,7 +129,7 @@ export async function PATCH(
 // DELETE - Supprimer un achat (brouillon uniquement)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -139,16 +139,13 @@ export async function DELETE(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Achat non trouvé" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Achat non trouvé" }, { status: 404 });
     }
 
     if (existing.status !== "DRAFT") {
       return NextResponse.json(
         { error: "Seuls les achats en brouillon peuvent être supprimés" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -159,7 +156,7 @@ export async function DELETE(
     console.error("Error deleting purchase:", error);
     return NextResponse.json(
       { error: "Erreur lors de la suppression" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

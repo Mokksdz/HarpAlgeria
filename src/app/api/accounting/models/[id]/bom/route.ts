@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 // GET BOM for a model
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -12,34 +12,35 @@ export async function GET(
     const bom = await prisma.bomItem.findMany({
       where: { modelId: id },
       include: { inventoryItem: true },
-      orderBy: { createdAt: "asc" }
+      orderBy: { createdAt: "asc" },
     });
 
     // Add calculated cost per item
-    const bomWithCosts = bom.map(item => ({
+    const bomWithCosts = bom.map((item) => ({
       ...item,
-      costPerUnit: Number(item.quantity) * (Number(item.inventoryItem.averageCost) || 0)
+      costPerUnit:
+        Number(item.quantity) * (Number(item.inventoryItem.averageCost) || 0),
     }));
 
-    const totalMaterialCost = bomWithCosts.reduce((sum, item) => sum + item.costPerUnit, 0);
+    const totalMaterialCost = bomWithCosts.reduce(
+      (sum, item) => sum + item.costPerUnit,
+      0,
+    );
 
     return NextResponse.json({
       items: bomWithCosts,
-      totalMaterialCost
+      totalMaterialCost,
     });
   } catch (error) {
     console.error("Error fetching BOM:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch BOM" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch BOM" }, { status: 500 });
   }
 }
 
 // POST add item to BOM
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -48,7 +49,7 @@ export async function POST(
     if (!data.inventoryItemId || !data.quantity) {
       return NextResponse.json(
         { error: "Inventory item and quantity are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,8 +57,8 @@ export async function POST(
     const existing = await prisma.bomItem.findFirst({
       where: {
         modelId: id,
-        inventoryItemId: data.inventoryItemId
-      }
+        inventoryItemId: data.inventoryItemId,
+      },
     });
 
     if (existing) {
@@ -65,7 +66,7 @@ export async function POST(
       const updated = await prisma.bomItem.update({
         where: { id: existing.id },
         data: { quantity: data.quantity, notes: data.notes },
-        include: { inventoryItem: true }
+        include: { inventoryItem: true },
       });
       return NextResponse.json(updated);
     }
@@ -77,7 +78,7 @@ export async function POST(
         quantity: data.quantity,
         notes: data.notes,
       },
-      include: { inventoryItem: true }
+      include: { inventoryItem: true },
     });
 
     return NextResponse.json(bomItem, { status: 201 });
@@ -85,7 +86,7 @@ export async function POST(
     console.error("Error adding BOM item:", error);
     return NextResponse.json(
       { error: "Failed to add BOM item" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -93,7 +94,7 @@ export async function POST(
 // DELETE remove item from BOM
 export async function DELETE(
   req: NextRequest,
-  _context: { params: Promise<{ id: string }> }
+  _context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { searchParams } = new URL(req.url);
@@ -102,12 +103,12 @@ export async function DELETE(
     if (!bomItemId) {
       return NextResponse.json(
         { error: "BOM item ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     await prisma.bomItem.delete({
-      where: { id: bomItemId }
+      where: { id: bomItemId },
     });
 
     return NextResponse.json({ success: true });
@@ -115,7 +116,7 @@ export async function DELETE(
     console.error("Error deleting BOM item:", error);
     return NextResponse.json(
       { error: "Failed to delete BOM item" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

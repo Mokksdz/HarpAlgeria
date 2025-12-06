@@ -42,8 +42,12 @@ export default function ComptaPage() {
       {/* Header avec titre + action */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-medium text-gray-900">Vue d'ensemble</h1>
-          <p className="text-sm text-gray-500 mt-1">Activité des 30 derniers jours</p>
+          <h1 className="text-3xl font-serif font-medium text-gray-900">
+            Vue d'ensemble
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Activité des 30 derniers jours
+          </p>
         </div>
         <Link
           href="/admin/compta/purchases/new"
@@ -64,14 +68,23 @@ export default function ComptaPage() {
             <AlertTriangle size={20} />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-900">Stock critique détecté</p>
+            <p className="text-sm font-semibold text-gray-900">
+              Stock critique détecté
+            </p>
             <p className="text-sm text-gray-500 mt-0.5">
-              <span className="font-medium text-amber-600">{data.stock.lowStockItems} article{data.stock.lowStockItems > 1 ? "s" : ""}</span> en rupture imminente
+              <span className="font-medium text-amber-600">
+                {data.stock.lowStockItems} article
+                {data.stock.lowStockItems > 1 ? "s" : ""}
+              </span>{" "}
+              en rupture imminente
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm font-medium text-gray-900 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm group-hover:border-amber-200 transition-colors">
             Gérer le stock
-            <ArrowRight size={16} className="text-gray-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
+            <ArrowRight
+              size={16}
+              className="text-gray-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all"
+            />
           </div>
         </Link>
       )}
@@ -90,7 +103,11 @@ export default function ComptaPage() {
           label="Achats (30j)"
           value={loading ? "—" : fmt(data?.purchases.total || 0)}
           unit="DZD"
-          sub={data?.purchases.pending ? `${data.purchases.pending} en attente` : "Tout réglé"}
+          sub={
+            data?.purchases.pending
+              ? `${data.purchases.pending} en attente`
+              : "Tout réglé"
+          }
           icon={ShoppingCart}
           color="blue"
           badge={data?.purchases.pending}
@@ -115,12 +132,34 @@ export default function ComptaPage() {
 
       {/* Accès rapides - Grille compacte */}
       <div className="pt-4">
-        <h2 className="text-lg font-serif font-medium text-gray-900 mb-6">Actions rapides</h2>
+        <h2 className="text-lg font-serif font-medium text-gray-900 mb-6">
+          Actions rapides
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <QuickAction href="/admin/compta/purchases/new" label="Nouvel achat" desc="Enregistrer une dépense" icon={ShoppingCart} />
-            <QuickAction href="/admin/compta/production/new" label="Nouveau lot" desc="Lancer une production" icon={Factory} />
-            <QuickAction href="/admin/compta/charges/new" label="Nouvelle charge" desc="Frais généraux" icon={Receipt} />
-            <QuickAction href="/admin/compta/stock" label="Voir le stock" desc="Inventaire complet" icon={Boxes} />
+          <QuickAction
+            href="/admin/compta/purchases/new"
+            label="Nouvel achat"
+            desc="Enregistrer une dépense"
+            icon={ShoppingCart}
+          />
+          <QuickAction
+            href="/admin/compta/production/new"
+            label="Nouveau lot"
+            desc="Lancer une production"
+            icon={Factory}
+          />
+          <QuickAction
+            href="/admin/compta/charges/new"
+            label="Nouvelle charge"
+            desc="Frais généraux"
+            icon={Receipt}
+          />
+          <QuickAction
+            href="/admin/compta/stock"
+            label="Voir le stock"
+            desc="Inventaire complet"
+            icon={Boxes}
+          />
         </div>
       </div>
     </div>
@@ -154,7 +193,12 @@ function KpiCard({
   return (
     <div className="bg-white p-6 rounded-2xl border border-gray-100/50 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
       <div className="flex items-start justify-between mb-4 relative z-10">
-        <div className={cn("p-3 rounded-xl border transition-colors", colors[color])}>
+        <div
+          className={cn(
+            "p-3 rounded-xl border transition-colors",
+            colors[color],
+          )}
+        >
           <Icon size={22} strokeWidth={1.5} />
         </div>
         {badge && badge > 0 && (
@@ -165,24 +209,30 @@ function KpiCard({
         )}
       </div>
       <div className="space-y-1 relative z-10">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{label}</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+          {label}
+        </p>
         <div className="flex items-baseline gap-1">
           <p className="text-2xl font-serif font-medium text-gray-900">
-            {value} 
+            {value}
           </p>
-          <span className="text-xs font-medium text-gray-400 uppercase">{unit}</span>
+          <span className="text-xs font-medium text-gray-400 uppercase">
+            {unit}
+          </span>
         </div>
         {sub && <p className="text-xs text-gray-500 font-medium mt-1">{sub}</p>}
       </div>
-      
+
       {/* Decorative background gradient */}
-      <div className={cn(
-        "absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity blur-2xl",
-        color === 'emerald' && "bg-emerald-500",
-        color === 'blue' && "bg-blue-500",
-        color === 'purple' && "bg-purple-500",
-        color === 'amber' && "bg-amber-500",
-      )} />
+      <div
+        className={cn(
+          "absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity blur-2xl",
+          color === "emerald" && "bg-emerald-500",
+          color === "blue" && "bg-blue-500",
+          color === "purple" && "bg-purple-500",
+          color === "amber" && "bg-amber-500",
+        )}
+      />
     </div>
   );
 }
@@ -207,7 +257,9 @@ function QuickAction({
         <Icon size={24} strokeWidth={1.5} />
       </div>
       <div>
-        <span className="block text-base font-medium text-gray-900 mb-1 group-hover:translate-x-1 transition-transform">{label}</span>
+        <span className="block text-base font-medium text-gray-900 mb-1 group-hover:translate-x-1 transition-transform">
+          {label}
+        </span>
         <span className="block text-xs text-gray-500">{desc}</span>
       </div>
     </Link>

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, handleApiError } from "@/lib/auth-helpers";
-import { updateHeroSettings, getSiteSettings } from "@/lib/site/settings.service";
+import {
+  updateHeroSettings,
+  getSiteSettings,
+} from "@/lib/site/settings.service";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -17,12 +20,15 @@ const heroSchema = z.object({
   heroCtaTextAr: z.string().optional().nullable(),
   heroCtaUrl: z.string().optional().nullable(),
   heroOverlayOpacity: z.number().min(0).max(1).optional().nullable(),
-  heroPreset: z.enum(["classic", "minimal", "glass", "centered"]).optional().nullable(),
+  heroPreset: z
+    .enum(["classic", "minimal", "glass", "centered"])
+    .optional()
+    .nullable(),
   heroActive: z.boolean().optional(),
   heroScheduleStart: z.string().datetime().optional().nullable(),
   heroScheduleEnd: z.string().datetime().optional().nullable(),
   heroVariant: z.enum(["image", "video", "carousel"]).optional().nullable(),
-  heroCarouselItems: z.string().optional().nullable()
+  heroCarouselItems: z.string().optional().nullable(),
 });
 
 // GET - Get current hero settings (admin)
@@ -41,10 +47,10 @@ export async function PUT(req: NextRequest) {
   try {
     const admin = await requireAdmin(req);
     const body = await req.json();
-    
+
     // Validate input
     const validated = heroSchema.parse(body);
-    
+
     // Convert date strings to Date objects
     const data: any = { ...validated };
     if (validated.heroScheduleStart) {

@@ -17,10 +17,15 @@ export async function GET(req: NextRequest) {
     const lastExport = exportRateLimit.get(adminEmail);
     const now = Date.now();
     if (lastExport && now - lastExport < RATE_LIMIT_MS) {
-      const waitSeconds = Math.ceil((RATE_LIMIT_MS - (now - lastExport)) / 1000);
+      const waitSeconds = Math.ceil(
+        (RATE_LIMIT_MS - (now - lastExport)) / 1000,
+      );
       return NextResponse.json(
-        { success: false, error: `Veuillez attendre ${waitSeconds}s avant un nouvel export` },
-        { status: 429 }
+        {
+          success: false,
+          error: `Veuillez attendre ${waitSeconds}s avant un nouvel export`,
+        },
+        { status: 429 },
       );
     }
     exportRateLimit.set(adminEmail, now);
@@ -35,7 +40,7 @@ export async function GET(req: NextRequest) {
       where.OR = [
         { email: { contains: q.search } },
         { name: { contains: q.search } },
-        { phone: { contains: q.search } }
+        { phone: { contains: q.search } },
       ];
     }
     if (q.vipLevel && q.vipLevel !== "ALL") {
@@ -57,9 +62,9 @@ export async function GET(req: NextRequest) {
         vipLevel: true,
         isEmailVerified: true,
         _count: {
-          select: { orders: true }
-        }
-      }
+          select: { orders: true },
+        },
+      },
     });
 
     // Log export for audit
@@ -73,13 +78,13 @@ export async function GET(req: NextRequest) {
           format: q.format,
           filters: { vipLevel: q.vipLevel, search: q.search },
           count: users.length,
-          timestamp: new Date().toISOString()
-        })
-      }
+          timestamp: new Date().toISOString(),
+        }),
+      },
     });
 
     // Transform data
-    const exportData = users.map(u => ({
+    const exportData = users.map((u) => ({
       id: u.id,
       email: u.email,
       name: u.name || "",
@@ -88,7 +93,7 @@ export async function GET(req: NextRequest) {
       loyaltyPoints: u.loyaltyPoints,
       vipLevel: u.vipLevel,
       isVerified: u.isEmailVerified ? "Oui" : "Non",
-      orderCount: u._count.orders
+      orderCount: u._count.orders,
     }));
 
     if (q.format === "json") {
@@ -96,7 +101,7 @@ export async function GET(req: NextRequest) {
         success: true,
         exportedAt: new Date().toISOString(),
         count: exportData.length,
-        items: exportData
+        items: exportData,
       });
     }
 
@@ -110,7 +115,7 @@ export async function GET(req: NextRequest) {
       { label: "Points fidélité", value: "loyaltyPoints" },
       { label: "Niveau VIP", value: "vipLevel" },
       { label: "Email vérifié", value: "isVerified" },
-      { label: "Nb commandes", value: "orderCount" }
+      { label: "Nb commandes", value: "orderCount" },
     ]);
 
     const filename = `harp_clients_${new Date().toISOString().slice(0, 10)}.csv`;
@@ -119,8 +124,8 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`
-      }
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      },
     });
   } catch (err: unknown) {
     return handleApiError(err);

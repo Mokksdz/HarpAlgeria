@@ -17,8 +17,10 @@ export async function GET(req: NextRequest) {
     if (status) where.status = status;
     if (startDate || endDate) {
       where.orderDate = {};
-      if (startDate) (where.orderDate as Record<string, Date>).gte = new Date(startDate);
-      if (endDate) (where.orderDate as Record<string, Date>).lte = new Date(endDate);
+      if (startDate)
+        (where.orderDate as Record<string, Date>).gte = new Date(startDate);
+      if (endDate)
+        (where.orderDate as Record<string, Date>).lte = new Date(endDate);
     }
 
     const skip = (page - 1) * limit;
@@ -30,11 +32,11 @@ export async function GET(req: NextRequest) {
         take: limit,
         include: {
           supplier: true,
-          items: { include: { inventoryItem: true } }
+          items: { include: { inventoryItem: true } },
         },
-        orderBy: { orderDate: "desc" }
+        orderBy: { orderDate: "desc" },
       }),
-      prisma.purchase.count({ where })
+      prisma.purchase.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -43,14 +45,14 @@ export async function GET(req: NextRequest) {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     console.error("Error fetching purchases:", error);
     return NextResponse.json(
       { error: "Failed to fetch purchases" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -59,7 +61,7 @@ export async function GET(req: NextRequest) {
 async function generatePurchaseNumber(): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `ACH-${year}-`;
-  
+
   const last = await prisma.purchase.findFirst({
     where: { purchaseNumber: { startsWith: prefix } },
     orderBy: { purchaseNumber: "desc" },
@@ -83,15 +85,15 @@ export async function POST(req: NextRequest) {
     if (!data.items || data.items.length === 0) {
       return NextResponse.json(
         { error: "At least one item is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Calculate subtotal and total
     const subtotal = data.items.reduce(
-      (sum: number, item: { quantity: number; unitPrice: number }) => 
-        sum + item.quantity * item.unitPrice, 
-      0
+      (sum: number, item: { quantity: number; unitPrice: number }) =>
+        sum + item.quantity * item.unitPrice,
+      0,
     );
     const taxAmount = data.taxAmount || 0;
     const shippingCost = data.shippingCost || 0;
@@ -122,25 +124,27 @@ export async function POST(req: NextRequest) {
         status,
         notes: data.notes,
         items: {
-          create: data.items.map((item: { 
-            inventoryItemId: string; 
-            quantity: number; 
-            unitPrice: number;
-            unit?: string;
-          }) => ({
-            inventoryItemId: item.inventoryItemId,
-            quantityOrdered: item.quantity,
-            quantityReceived: autoReceive ? item.quantity : 0,
-            unit: item.unit || "PIECE",
-            unitPrice: item.unitPrice,
-            totalPrice: item.quantity * item.unitPrice,
-          }))
-        }
+          create: data.items.map(
+            (item: {
+              inventoryItemId: string;
+              quantity: number;
+              unitPrice: number;
+              unit?: string;
+            }) => ({
+              inventoryItemId: item.inventoryItemId,
+              quantityOrdered: item.quantity,
+              quantityReceived: autoReceive ? item.quantity : 0,
+              unit: item.unit || "PIECE",
+              unitPrice: item.unitPrice,
+              totalPrice: item.quantity * item.unitPrice,
+            }),
+          ),
+        },
       },
       include: {
         items: { include: { inventoryItem: true } },
-        supplier: true
-      }
+        supplier: true,
+      },
     });
 
     // If autoReceive, update inventory immediately
@@ -153,7 +157,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating purchase:", error);
     return NextResponse.json(
       { error: "Failed to create purchase" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -170,7 +174,7 @@ async function receiveInventory(purchase: {
 }) {
   for (const item of purchase.items) {
     const inv = await prisma.inventoryItem.findUnique({
-      where: { id: item.inventoryItemId }
+      where: { id: item.inventoryItemId },
     });
 
     if (inv) {
@@ -179,9 +183,8 @@ async function receiveInventory(purchase: {
       const qty = Number(item.quantityOrdered);
       const price = Number(item.unitPrice);
       const newQty = currentQty + qty;
-      const newAvg = newQty > 0 
-        ? ((currentQty * currentAvg) + (qty * price)) / newQty 
-        : price;
+      const newAvg =
+        newQty > 0 ? (currentQty * currentAvg + qty * price) / newQty : price;
       const newValue = newQty * newAvg;
 
       await prisma.inventoryItem.update({
@@ -193,7 +196,7 @@ async function receiveInventory(purchase: {
           lastCost: price,
           totalValue: newValue,
           lastReceivedAt: new Date(),
-        }
+        },
       });
 
       // Create inventory transaction
@@ -212,8 +215,8 @@ async function receiveInventory(purchase: {
           avgCostAfter: newAvg,
           referenceType: "PURCHASE",
           referenceId: purchase.id,
-          notes: `Réception ${purchase.purchaseNumber}`
-        }
+          notes: `Réception ${purchase.purchaseNumber}`,
+        },
       });
     }
   }

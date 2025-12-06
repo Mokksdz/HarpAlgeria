@@ -15,7 +15,7 @@ const ModelUpdateSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -38,20 +38,23 @@ export async function GET(
     if (!model) {
       return NextResponse.json(
         { success: false, error: "Modèle non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json({ success: true, model });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -70,17 +73,20 @@ export async function PUT(
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -97,14 +103,18 @@ export async function DELETE(
     if (!model) {
       return NextResponse.json(
         { success: false, error: "Modèle non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (model._count.batches > 0) {
       return NextResponse.json(
-        { success: false, error: "Impossible de supprimer un modèle avec des lots de production" },
-        { status: 422 }
+        {
+          success: false,
+          error:
+            "Impossible de supprimer un modèle avec des lots de production",
+        },
+        { status: 422 },
       );
     }
 
@@ -118,6 +128,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }

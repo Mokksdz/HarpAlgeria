@@ -9,12 +9,14 @@ const BatchUpdateSchema = z.object({
   laborCost: z.number().min(0).optional(),
   overheadCost: z.number().min(0).optional(),
   notes: z.string().optional(),
-  status: z.enum(["PLANNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "ON_HOLD"]).optional(),
+  status: z
+    .enum(["PLANNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "ON_HOLD"])
+    .optional(),
 });
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -35,20 +37,23 @@ export async function GET(
     if (!batch) {
       return NextResponse.json(
         { success: false, error: "Lot non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json({ success: true, batch });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -60,14 +65,17 @@ export async function PUT(
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Lot non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (existing.status === "COMPLETED" || existing.status === "CANCELLED") {
       return NextResponse.json(
-        { success: false, error: "Impossible de modifier un lot terminé ou annulé" },
-        { status: 422 }
+        {
+          success: false,
+          error: "Impossible de modifier un lot terminé ou annulé",
+        },
+        { status: 422 },
       );
     }
 
@@ -81,8 +89,11 @@ export async function PUT(
       const allowed = validTransitions[existing.status] || [];
       if (!allowed.includes(data.status) && data.status !== existing.status) {
         return NextResponse.json(
-          { success: false, error: `Transition ${existing.status} → ${data.status} non autorisée` },
-          { status: 422 }
+          {
+            success: false,
+            error: `Transition ${existing.status} → ${data.status} non autorisée`,
+          },
+          { status: 422 },
         );
       }
     }
@@ -105,17 +116,20 @@ export async function PUT(
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -125,14 +139,17 @@ export async function DELETE(
     if (!batch) {
       return NextResponse.json(
         { success: false, error: "Lot non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (batch.status !== "PLANNED") {
       return NextResponse.json(
-        { success: false, error: "Seuls les lots planifiés peuvent être supprimés" },
-        { status: 422 }
+        {
+          success: false,
+          error: "Seuls les lots planifiés peuvent être supprimés",
+        },
+        { status: 422 },
       );
     }
 
@@ -141,6 +158,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }

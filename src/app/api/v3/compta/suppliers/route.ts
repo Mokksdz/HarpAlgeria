@@ -51,7 +51,10 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
@@ -68,10 +71,13 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }

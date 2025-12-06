@@ -16,20 +16,20 @@ export async function getUserWishlist(userId: string) {
           price: true,
           images: true,
           stock: true,
-        }
-      }
+        },
+      },
     },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
   });
 
   return {
-    items: items.map(item => ({
+    items: items.map((item) => ({
       id: item.id,
       productId: item.productId,
       product: item.product,
-      addedAt: item.createdAt
+      addedAt: item.createdAt,
     })),
-    count: items.length
+    count: items.length,
   };
 }
 
@@ -39,18 +39,18 @@ export async function getUserWishlist(userId: string) {
 export async function toggleWishlist(userId: string, productId: string) {
   const existing = await prisma.wishlistItem.findUnique({
     where: {
-      userId_productId: { userId, productId }
-    }
+      userId_productId: { userId, productId },
+    },
   });
 
   if (existing) {
     await prisma.wishlistItem.delete({
-      where: { id: existing.id }
+      where: { id: existing.id },
     });
     return { added: false, productId };
   } else {
     await prisma.wishlistItem.create({
-      data: { userId, productId }
+      data: { userId, productId },
     });
     return { added: true, productId };
   }
@@ -62,7 +62,7 @@ export async function toggleWishlist(userId: string, productId: string) {
 export async function addToWishlist(userId: string, productId: string) {
   try {
     await prisma.wishlistItem.create({
-      data: { userId, productId }
+      data: { userId, productId },
     });
     return { added: true, productId };
   } catch (e: any) {
@@ -81,8 +81,8 @@ export async function removeFromWishlist(userId: string, productId: string) {
   try {
     await prisma.wishlistItem.delete({
       where: {
-        userId_productId: { userId, productId }
-      }
+        userId_productId: { userId, productId },
+      },
     });
     return { removed: true, productId };
   } catch (e: any) {
@@ -104,7 +104,7 @@ export async function syncLocalWishlist(userId: string, productIds: string[]) {
   for (const productId of productIds) {
     try {
       await prisma.wishlistItem.create({
-        data: { userId, productId }
+        data: { userId, productId },
       });
       addedCount++;
     } catch (e: any) {
@@ -117,18 +117,21 @@ export async function syncLocalWishlist(userId: string, productIds: string[]) {
     success: true,
     added: addedCount,
     skipped: skippedCount,
-    total: productIds.length
+    total: productIds.length,
   };
 }
 
 /**
  * Check if a product is in user's wishlist
  */
-export async function isInWishlist(userId: string, productId: string): Promise<boolean> {
+export async function isInWishlist(
+  userId: string,
+  productId: string,
+): Promise<boolean> {
   const item = await prisma.wishlistItem.findUnique({
     where: {
-      userId_productId: { userId, productId }
-    }
+      userId_productId: { userId, productId },
+    },
   });
   return !!item;
 }
@@ -138,6 +141,6 @@ export async function isInWishlist(userId: string, productId: string): Promise<b
  */
 export async function getWishlistCount(userId: string): Promise<number> {
   return prisma.wishlistItem.count({
-    where: { userId }
+    where: { userId },
   });
 }

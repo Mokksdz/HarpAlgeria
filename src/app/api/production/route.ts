@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 async function generateBatchNumber(): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `LOT-${year}-`;
-  
+
   const last = await prisma.productionBatch.findFirst({
     where: { batchNumber: { startsWith: prefix } },
     orderBy: { batchNumber: "desc" },
@@ -38,12 +38,12 @@ export async function GET(req: NextRequest) {
         model: {
           include: {
             bom: {
-              include: { inventoryItem: true }
-            }
-          }
-        }
+              include: { inventoryItem: true },
+            },
+          },
+        },
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
 
     // Add material requirements check for each batch
@@ -51,10 +51,10 @@ export async function GET(req: NextRequest) {
       batches.map(async (batch) => {
         const availability = await checkMaterialAvailability(
           batch.modelId,
-          batch.plannedQty
+          batch.plannedQty,
         );
         return { ...batch, availability };
-      })
+      }),
     );
 
     return NextResponse.json(batchesWithAvailability);
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching production batches:", error);
     return NextResponse.json(
       { error: "Failed to fetch production batches" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     if (!data.modelId || !plannedQty || plannedQty < 1) {
       return NextResponse.json(
         { error: "modelId and plannedQty are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -84,30 +84,27 @@ export async function POST(req: NextRequest) {
     const model = await prisma.model.findUnique({
       where: { id: data.modelId },
       include: {
-        bom: { include: { inventoryItem: true } }
-      }
+        bom: { include: { inventoryItem: true } },
+      },
     });
 
     if (!model) {
-      return NextResponse.json(
-        { error: "Model not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Model not found" }, { status: 404 });
     }
 
     // Check material availability
     const availability = await checkMaterialAvailability(
       data.modelId,
-      plannedQty
+      plannedQty,
     );
 
     if (!availability.canProduce && !data.allowInsufficient) {
       return NextResponse.json(
-        { 
+        {
           error: "Insufficient materials",
-          details: availability.shortages
+          details: availability.shortages,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -123,13 +120,13 @@ export async function POST(req: NextRequest) {
         status: data.status || "PLANNED",
         laborCost: data.laborCost || 0,
         plannedDate: data.plannedDate ? new Date(data.plannedDate) : null,
-        notes: data.notes
+        notes: data.notes,
       },
       include: {
         model: {
-          include: { bom: { include: { inventoryItem: true } } }
-        }
-      }
+          include: { bom: { include: { inventoryItem: true } } },
+        },
+      },
     });
 
     return NextResponse.json(batch, { status: 201 });
@@ -137,7 +134,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating production batch:", error);
     return NextResponse.json(
       { error: "Failed to create production batch" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -147,8 +144,8 @@ async function checkMaterialAvailability(modelId: string, plannedQty: number) {
   const model = await prisma.model.findUnique({
     where: { id: modelId },
     include: {
-      bom: { include: { inventoryItem: true } }
-    }
+      bom: { include: { inventoryItem: true } },
+    },
   });
 
   if (!model || !model.bom) {
@@ -173,7 +170,8 @@ async function checkMaterialAvailability(modelId: string, plannedQty: number) {
   }> = [];
 
   for (const bomItem of model.bom) {
-    const required = Number(bomItem.quantity) * Number(bomItem.wasteFactor) * plannedQty;
+    const required =
+      Number(bomItem.quantity) * Number(bomItem.wasteFactor) * plannedQty;
     const available = Number(bomItem.inventoryItem.available);
     const sufficient = available >= required;
 
@@ -183,7 +181,7 @@ async function checkMaterialAvailability(modelId: string, plannedQty: number) {
       sku: bomItem.inventoryItem.sku,
       required: Math.round(required * 100) / 100,
       available: Number(available),
-      sufficient
+      sufficient,
     });
 
     if (!sufficient) {
@@ -192,7 +190,7 @@ async function checkMaterialAvailability(modelId: string, plannedQty: number) {
         name: bomItem.inventoryItem.name,
         required: Math.round(required * 100) / 100,
         available: Number(available),
-        shortage: Math.round((required - available) * 100) / 100
+        shortage: Math.round((required - available) * 100) / 100,
       });
     }
   }
@@ -200,6 +198,6 @@ async function checkMaterialAvailability(modelId: string, plannedQty: number) {
   return {
     canProduce: shortages.length === 0,
     shortages,
-    materials
+    materials,
   };
 }

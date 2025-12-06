@@ -48,8 +48,12 @@ export default function NewPurchasePage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/v3/compta/suppliers?limit=100", { credentials: "include" }).then((r) => r.json()),
-      fetch("/api/v3/compta/inventory?limit=200", { credentials: "include" }).then((r) => r.json()),
+      fetch("/api/v3/compta/suppliers?limit=100", {
+        credentials: "include",
+      }).then((r) => r.json()),
+      fetch("/api/v3/compta/inventory?limit=200", {
+        credentials: "include",
+      }).then((r) => r.json()),
     ]).then(([suppData, invData]) => {
       if (suppData.success) setSuppliers(suppData.items);
       if (invData.success) setInventoryItems(invData.items);
@@ -57,14 +61,21 @@ export default function NewPurchasePage() {
   }, []);
 
   function addItem() {
-    setItems([...items, { inventoryItemId: "", quantityOrdered: 1, unitPrice: 0, unit: "PIECE" }]);
+    setItems([
+      ...items,
+      { inventoryItemId: "", quantityOrdered: 1, unitPrice: 0, unit: "PIECE" },
+    ]);
   }
 
   function removeItem(index: number) {
     setItems(items.filter((_, i) => i !== index));
   }
 
-  function updateItem(index: number, field: keyof PurchaseItem, value: string | number | InventoryItem | undefined) {
+  function updateItem(
+    index: number,
+    field: keyof PurchaseItem,
+    value: string | number | InventoryItem | undefined,
+  ) {
     const updated = [...items];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (updated[index] as any)[field] = value;
@@ -81,7 +92,10 @@ export default function NewPurchasePage() {
     setItems(updated);
   }
 
-  const subtotal = items.reduce((sum, i) => sum + i.quantityOrdered * i.unitPrice, 0);
+  const subtotal = items.reduce(
+    (sum, i) => sum + i.quantityOrdered * i.unitPrice,
+    0,
+  );
   const total = subtotal + form.taxAmount + form.shippingCost;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -100,11 +114,14 @@ export default function NewPurchasePage() {
 
     try {
       const res = await fetch("/api/v3/compta/purchases", {
-        method: "POST", credentials: "include",
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          expectedDate: form.expectedDate ? new Date(form.expectedDate).toISOString() : undefined,
+          expectedDate: form.expectedDate
+            ? new Date(form.expectedDate).toISOString()
+            : undefined,
           items: items.map((i) => ({
             inventoryItemId: i.inventoryItemId,
             quantityOrdered: i.quantityOrdered,
@@ -127,22 +144,30 @@ export default function NewPurchasePage() {
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
 
   return (
     <div className="space-y-6">
       <header className="flex items-center gap-4">
-        <Link href="/admin/compta/purchases" className="p-2 hover:bg-slate-100 rounded-lg">
+        <Link
+          href="/admin/compta/purchases"
+          className="p-2 hover:bg-slate-100 rounded-lg"
+        >
           <ArrowLeft size={20} />
         </Link>
         <div>
           <h1 className="text-2xl font-serif">Nouvel Achat</h1>
-          <p className="text-sm text-slate-600">Créer une nouvelle commande fournisseur</p>
+          <p className="text-sm text-slate-600">
+            Créer une nouvelle commande fournisseur
+          </p>
         </div>
       </header>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">{error}</div>
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
+          {error}
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-3 gap-6">
@@ -153,10 +178,14 @@ export default function NewPurchasePage() {
             <h3 className="font-medium mb-4">Informations générales</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Fournisseur *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Fournisseur *
+                </label>
                 <select
                   value={form.supplierId}
-                  onChange={(e) => setForm({ ...form, supplierId: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, supplierId: e.target.value })
+                  }
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
                   required
                 >
@@ -169,26 +198,36 @@ export default function NewPurchasePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">N° Facture</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  N° Facture
+                </label>
                 <input
                   type="text"
                   value={form.invoiceNumber}
-                  onChange={(e) => setForm({ ...form, invoiceNumber: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, invoiceNumber: e.target.value })
+                  }
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
                   placeholder="FAC-2024-XXX"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Date livraison prévue</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Date livraison prévue
+                </label>
                 <input
                   type="date"
                   value={form.expectedDate}
-                  onChange={(e) => setForm({ ...form, expectedDate: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, expectedDate: e.target.value })
+                  }
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Notes
+                </label>
                 <input
                   type="text"
                   value={form.notes}
@@ -214,7 +253,9 @@ export default function NewPurchasePage() {
             </div>
 
             {items.length === 0 ? (
-              <p className="text-slate-500 text-center py-8">Aucun article. Cliquez sur &quot;Ajouter article&quot;</p>
+              <p className="text-slate-500 text-center py-8">
+                Aucun article. Cliquez sur &quot;Ajouter article&quot;
+              </p>
             ) : (
               <table className="w-full">
                 <thead className="text-left text-sm text-slate-600 border-b">
@@ -232,7 +273,9 @@ export default function NewPurchasePage() {
                       <td className="py-2">
                         <select
                           value={item.inventoryItemId}
-                          onChange={(e) => updateItem(index, "inventoryItemId", e.target.value)}
+                          onChange={(e) =>
+                            updateItem(index, "inventoryItemId", e.target.value)
+                          }
                           className="w-full px-2 py-1.5 border rounded text-sm"
                           required
                         >
@@ -250,7 +293,13 @@ export default function NewPurchasePage() {
                           min="0.01"
                           step="0.01"
                           value={item.quantityOrdered}
-                          onChange={(e) => updateItem(index, "quantityOrdered", parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            updateItem(
+                              index,
+                              "quantityOrdered",
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
                           className="w-full px-2 py-1.5 border rounded text-sm"
                           required
                         />
@@ -261,7 +310,13 @@ export default function NewPurchasePage() {
                           min="0"
                           step="0.01"
                           value={item.unitPrice}
-                          onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            updateItem(
+                              index,
+                              "unitPrice",
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
                           className="w-full px-2 py-1.5 border rounded text-sm"
                           required
                         />
@@ -303,7 +358,12 @@ export default function NewPurchasePage() {
                   type="number"
                   min="0"
                   value={form.taxAmount}
-                  onChange={(e) => setForm({ ...form, taxAmount: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      taxAmount: parseFloat(e.target.value) || 0,
+                    })
+                  }
                   className="w-24 px-2 py-1 border rounded text-right text-sm"
                 />
               </div>
@@ -314,7 +374,12 @@ export default function NewPurchasePage() {
                   type="number"
                   min="0"
                   value={form.shippingCost}
-                  onChange={(e) => setForm({ ...form, shippingCost: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      shippingCost: parseFloat(e.target.value) || 0,
+                    })
+                  }
                   className="w-24 px-2 py-1 border rounded text-right text-sm"
                 />
               </div>

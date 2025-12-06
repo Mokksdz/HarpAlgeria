@@ -6,18 +6,18 @@ export default withAuth(
     const token = req.nextauth.token;
     const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
     const isAdminLogin = req.nextUrl.pathname === "/admin/login";
-    
+
     // Allow access to admin login page without auth
     if (isAdminLogin) {
       return NextResponse.next();
     }
-    
+
     // For admin routes, check if user has admin role
     if (isAdminRoute && token?.role !== "admin") {
       // Redirect non-admin users to admin login
       return NextResponse.redirect(new URL("/admin/login", req.url));
     }
-    
+
     return NextResponse.next();
   },
   {
@@ -34,7 +34,7 @@ export default withAuth(
     pages: {
       signIn: "/admin/login", // Redirect to admin login for admin routes
     },
-  }
+  },
 );
 
 export const config = {

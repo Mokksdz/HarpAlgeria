@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 // PUT update supplier
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -26,7 +26,7 @@ export async function PUT(
     console.error("Error updating supplier:", error);
     return NextResponse.json(
       { error: "Failed to update supplier" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -34,25 +34,25 @@ export async function PUT(
 // DELETE supplier
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
 
     // Check if supplier has purchases
     const purchaseCount = await prisma.purchase.count({
-      where: { supplierId: id }
+      where: { supplierId: id },
     });
 
     if (purchaseCount > 0) {
       return NextResponse.json(
         { error: "Cannot delete supplier with existing purchases" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     await prisma.supplier.delete({
-      where: { id }
+      where: { id },
     });
 
     return NextResponse.json({ success: true });
@@ -60,7 +60,7 @@ export async function DELETE(
     console.error("Error deleting supplier:", error);
     return NextResponse.json(
       { error: "Failed to delete supplier" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

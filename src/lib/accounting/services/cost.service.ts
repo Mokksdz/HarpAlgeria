@@ -13,23 +13,23 @@ export interface CostBreakdown {
   accessoryCost: number;
   packagingCost: number;
   materialsCost: number;
-  
+
   // Production
   laborCost: number;
   atelierCost: number;
   productionCost: number;
-  
+
   // Marketing
   adsCost: number;
   shootingCost: number;
   influencerCost: number;
   marketingCost: number;
-  
+
   // Autres
   transportCost: number;
   otherCost: number;
   returnMargin: number;
-  
+
   // Total
   totalCost: number;
 }
@@ -118,8 +118,11 @@ export async function computeCostPerUnit(modelId: string): Promise<CostResult> {
   let accessoryCost = 0;
 
   for (const bomItem of model.bom) {
-    const itemCost = Number(bomItem.quantity) * Number(bomItem.wasteFactor) * Number(bomItem.inventoryItem.averageCost);
-    
+    const itemCost =
+      Number(bomItem.quantity) *
+      Number(bomItem.wasteFactor) *
+      Number(bomItem.inventoryItem.averageCost);
+
     if (bomItem.inventoryItem.type === "FABRIC") {
       fabricCost += itemCost;
     } else {
@@ -128,64 +131,80 @@ export async function computeCostPerUnit(modelId: string): Promise<CostResult> {
   }
 
   // Packaging détaillé
-  const packagingCost = 
-    Number(model.packagingBox) + 
-    Number(model.packagingBag) + 
-    Number(model.packagingLabel) + 
-    Number(model.packagingTag) + 
-    Number(model.packagingCard) + 
+  const packagingCost =
+    Number(model.packagingBox) +
+    Number(model.packagingBag) +
+    Number(model.packagingLabel) +
+    Number(model.packagingTag) +
+    Number(model.packagingCard) +
     Number(model.packagingOther);
 
   const materialsCost = fabricCost + accessoryCost + packagingCost;
 
   // === COÛTS PRODUCTION ===
   const laborCost = Number(model.laborCost);
-  
+
   // Charges atelier allouées à ce modèle
   const atelierCharges = model.charges.filter(
-    c => c.category === "ATELIER" && c.scope === ChargeScope.MODEL
+    (c) => c.category === "ATELIER" && c.scope === ChargeScope.MODEL,
   );
-  const atelierCost = atelierCharges.reduce((sum, c) => sum + Number(c.amount), 0) / units;
-  
+  const atelierCost =
+    atelierCharges.reduce((sum, c) => sum + Number(c.amount), 0) / units;
+
   const productionCost = laborCost + atelierCost;
 
   // === COÛTS MARKETING ===
   // Charges directes au modèle
-  const modelCharges = model.charges.filter(c => c.scope === ChargeScope.MODEL);
-  
-  const adsCost = modelCharges
-    .filter(c => c.category === "ADS")
-    .reduce((sum, c) => sum + Number(c.amount), 0) / units;
+  const modelCharges = model.charges.filter(
+    (c) => c.scope === ChargeScope.MODEL,
+  );
 
-  const shootingCost = modelCharges
-    .filter(c => c.category === "SHOOTING")
-    .reduce((sum, c) => sum + Number(c.amount), 0) / units;
+  const adsCost =
+    modelCharges
+      .filter((c) => c.category === "ADS")
+      .reduce((sum, c) => sum + Number(c.amount), 0) / units;
 
-  const influencerCost = modelCharges
-    .filter(c => c.category === "INFLUENCER")
-    .reduce((sum, c) => sum + Number(c.amount), 0) / units;
+  const shootingCost =
+    modelCharges
+      .filter((c) => c.category === "SHOOTING")
+      .reduce((sum, c) => sum + Number(c.amount), 0) / units;
+
+  const influencerCost =
+    modelCharges
+      .filter((c) => c.category === "INFLUENCER")
+      .reduce((sum, c) => sum + Number(c.amount), 0) / units;
 
   const marketingCost = adsCost + shootingCost + influencerCost;
 
   // === AUTRES COÛTS ===
-  const transportCost = modelCharges
-    .filter(c => c.category === "TRANSPORT")
-    .reduce((sum, c) => sum + Number(c.amount), 0) / units;
+  const transportCost =
+    modelCharges
+      .filter((c) => c.category === "TRANSPORT")
+      .reduce((sum, c) => sum + Number(c.amount), 0) / units;
 
-  const otherCost = Number(model.otherCost) + modelCharges
-    .filter(c => c.category === "OTHER")
-    .reduce((sum, c) => sum + Number(c.amount), 0) / units;
+  const otherCost =
+    Number(model.otherCost) +
+    modelCharges
+      .filter((c) => c.category === "OTHER")
+      .reduce((sum, c) => sum + Number(c.amount), 0) /
+      units;
 
   const returnMargin = Number(model.returnMargin) / units;
 
   // === TOTAL ===
-  const totalCost = materialsCost + productionCost + marketingCost + transportCost + otherCost + returnMargin;
+  const totalCost =
+    materialsCost +
+    productionCost +
+    marketingCost +
+    transportCost +
+    otherCost +
+    returnMargin;
 
   // === PRIX SUGGÉRÉS ===
   const suggestedPrices = {
-    margin30: Math.round(totalCost / 0.70),
-    margin40: Math.round(totalCost / 0.60),
-    margin50: Math.round(totalCost / 0.50),
+    margin30: Math.round(totalCost / 0.7),
+    margin40: Math.round(totalCost / 0.6),
+    margin50: Math.round(totalCost / 0.5),
   };
 
   // === MARGE ACTUELLE ===
@@ -243,7 +262,7 @@ export async function computeCostPerUnit(modelId: string): Promise<CostResult> {
  */
 export async function simulatePrice(
   modelId: string,
-  params: SimulationParams
+  params: SimulationParams,
 ): Promise<CostResult> {
   const model = await prisma.model.findUnique({
     where: { id: modelId },
@@ -267,9 +286,12 @@ export async function simulatePrice(
   let accessoryCost = 0;
 
   for (const bomItem of model.bom) {
-    const unitCost = overrides[bomItem.inventoryItemId] ?? Number(bomItem.inventoryItem.averageCost);
-    const itemCost = Number(bomItem.quantity) * Number(bomItem.wasteFactor) * unitCost;
-    
+    const unitCost =
+      overrides[bomItem.inventoryItemId] ??
+      Number(bomItem.inventoryItem.averageCost);
+    const itemCost =
+      Number(bomItem.quantity) * Number(bomItem.wasteFactor) * unitCost;
+
     if (bomItem.inventoryItem.type === "FABRIC") {
       fabricCost += itemCost;
     } else {
@@ -277,28 +299,35 @@ export async function simulatePrice(
     }
   }
 
-  const packagingCost = params.packagingCost ?? (
-    Number(model.packagingBox) + 
-    Number(model.packagingBag) + 
-    Number(model.packagingLabel) + 
-    Number(model.packagingTag) + 
-    Number(model.packagingCard) + 
-    Number(model.packagingOther)
-  );
+  const packagingCost =
+    params.packagingCost ??
+    Number(model.packagingBox) +
+      Number(model.packagingBag) +
+      Number(model.packagingLabel) +
+      Number(model.packagingTag) +
+      Number(model.packagingCard) +
+      Number(model.packagingOther);
 
   const materialsCost = fabricCost + accessoryCost + packagingCost;
   const laborCost = params.laborCost ?? Number(model.laborCost);
 
   // Charges réparties sur les unités
-  const modelCharges = model.charges.filter(c => c.scope === ChargeScope.MODEL);
-  const chargesPerUnit = modelCharges.reduce((sum, c) => sum + Number(c.amount), 0) / units;
+  const modelCharges = model.charges.filter(
+    (c) => c.scope === ChargeScope.MODEL,
+  );
+  const chargesPerUnit =
+    modelCharges.reduce((sum, c) => sum + Number(c.amount), 0) / units;
 
-  const totalCost = materialsCost + laborCost + chargesPerUnit + Number(model.returnMargin) / units;
+  const totalCost =
+    materialsCost +
+    laborCost +
+    chargesPerUnit +
+    Number(model.returnMargin) / units;
 
   const suggestedPrices = {
-    margin30: Math.round(totalCost / 0.70),
-    margin40: Math.round(totalCost / 0.60),
-    margin50: Math.round(totalCost / 0.50),
+    margin30: Math.round(totalCost / 0.7),
+    margin40: Math.round(totalCost / 0.6),
+    margin50: Math.round(totalCost / 0.5),
   };
 
   // Prix pour marge cible
@@ -346,7 +375,9 @@ export async function simulatePrice(
 /**
  * Calcule la rentabilité d'un modèle basée sur les ventes réelles
  */
-export async function computeModelProfitability(modelId: string): Promise<ProfitabilityResult> {
+export async function computeModelProfitability(
+  modelId: string,
+): Promise<ProfitabilityResult> {
   const model = await prisma.model.findUnique({
     where: { id: modelId },
   });
@@ -364,21 +395,26 @@ export async function computeModelProfitability(modelId: string): Promise<Profit
   });
 
   // Filtrer les commandes complétées/livrées
-  const completedItems = orderItems.filter(
-    item => ["DELIVERED", "COMPLETED", "SHIPPED"].includes(item.order.status)
+  const completedItems = orderItems.filter((item) =>
+    ["DELIVERED", "COMPLETED", "SHIPPED"].includes(item.order.status),
   );
 
-  const unitsSold = completedItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalRevenue = completedItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
+  const unitsSold = completedItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  );
+  const totalRevenue = completedItems.reduce(
+    (sum, item) => sum + Number(item.totalPrice),
+    0,
+  );
 
   // Calculer le coût
   const costResult = await computeCostPerUnit(modelId);
   const totalCost = unitsSold * costResult.costPerUnit;
 
   const grossProfit = totalRevenue - totalCost;
-  const grossMarginPercent = totalRevenue > 0 
-    ? (grossProfit / totalRevenue) * 100 
-    : 0;
+  const grossMarginPercent =
+    totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
   const avgSellingPrice = unitsSold > 0 ? totalRevenue / unitsSold : 0;
   const avgCostPerUnit = costResult.costPerUnit;
@@ -413,7 +449,7 @@ export async function computeModelProfitability(modelId: string): Promise<Profit
  * Calcule la rentabilité d'une collection
  */
 export async function computeCollectionProfitability(
-  collectionId: string
+  collectionId: string,
 ): Promise<CollectionProfitability> {
   const collection = await prisma.collection.findUnique({
     where: { id: collectionId },
@@ -450,13 +486,15 @@ export async function computeCollectionProfitability(
     },
   });
 
-  const chargesTotal = collectionCharges.reduce((sum, c) => sum + Number(c.amount), 0);
+  const chargesTotal = collectionCharges.reduce(
+    (sum, c) => sum + Number(c.amount),
+    0,
+  );
   totalCost += chargesTotal;
 
   const grossProfit = totalRevenue - totalCost;
-  const grossMarginPercent = totalRevenue > 0 
-    ? (grossProfit / totalRevenue) * 100 
-    : 0;
+  const grossMarginPercent =
+    totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
   return {
     collectionId: collection.id,
@@ -480,7 +518,7 @@ export async function computeCollectionProfitability(
 export async function createCostSnapshot(
   modelId: string,
   batchId?: string,
-  createdBy?: string
+  createdBy?: string,
 ): Promise<any> {
   const costResult = await computeCostPerUnit(modelId);
   const breakdown = costResult.breakdown;
@@ -488,7 +526,7 @@ export async function createCostSnapshot(
   // Générer numéro de snapshot
   const year = new Date().getFullYear();
   const prefix = `SNP-${year}-`;
-  
+
   const last = await prisma.costSnapshot.findFirst({
     where: { snapshotNumber: { startsWith: prefix } },
     orderBy: { snapshotNumber: "desc" },
@@ -568,14 +606,20 @@ export async function getGlobalCostReport(): Promise<{
     }
   }
 
-  const profitableModels = results.filter(r => r.status === "PROFITABLE").length;
-  const lossModels = results.filter(r => r.status === "LOSS").length;
-  const avgMargin = results.length > 0
-    ? results.reduce((sum, r) => sum + r.grossMarginPercent, 0) / results.length
-    : 0;
+  const profitableModels = results.filter(
+    (r) => r.status === "PROFITABLE",
+  ).length;
+  const lossModels = results.filter((r) => r.status === "LOSS").length;
+  const avgMargin =
+    results.length > 0
+      ? results.reduce((sum, r) => sum + r.grossMarginPercent, 0) /
+        results.length
+      : 0;
 
   // Trier pour top/worst
-  const sorted = [...results].sort((a, b) => b.grossMarginPercent - a.grossMarginPercent);
+  const sorted = [...results].sort(
+    (a, b) => b.grossMarginPercent - a.grossMarginPercent,
+  );
   const topProfitable = sorted.slice(0, 5);
   const worstPerformers = sorted.slice(-5).reverse();
 

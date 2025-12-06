@@ -3,7 +3,13 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Package, AlertTriangle, CheckCircle, Play } from "lucide-react";
+import {
+  ArrowLeft,
+  Package,
+  AlertTriangle,
+  CheckCircle,
+  Play,
+} from "lucide-react";
 
 interface Requirement {
   inventoryItemId: string;
@@ -19,7 +25,12 @@ interface Requirement {
 }
 
 interface PreviewData {
-  batch: { id: string; batchNumber: string; plannedQty: number; status: string };
+  batch: {
+    id: string;
+    batchNumber: string;
+    plannedQty: number;
+    status: string;
+  };
   model: { id: string; sku: string; name: string };
   requirements: Requirement[];
   hasShortage: boolean;
@@ -27,7 +38,11 @@ interface PreviewData {
   canProceed: boolean;
 }
 
-export default function ConsumeProductionPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ConsumeProductionPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
   const [data, setData] = useState<PreviewData | null>(null);
@@ -49,7 +64,8 @@ export default function ConsumeProductionPage({ params }: { params: Promise<{ id
     setSubmitting(true);
     try {
       const res = await fetch(`/api/v3/compta/production/${id}/consume`, {
-        method: "POST", credentials: "include",
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
@@ -65,31 +81,47 @@ export default function ConsumeProductionPage({ params }: { params: Promise<{ id
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
 
-  if (loading) return <div className="text-center py-12 text-slate-500">Chargement...</div>;
-  if (!data) return <div className="text-center py-12 text-red-500">Lot non trouvé</div>;
+  if (loading)
+    return (
+      <div className="text-center py-12 text-slate-500">Chargement...</div>
+    );
+  if (!data)
+    return <div className="text-center py-12 text-red-500">Lot non trouvé</div>;
 
   return (
     <div className="space-y-6">
       <header className="flex items-center gap-4">
-        <Link href={`/admin/compta/production/${id}`} className="p-2 hover:bg-slate-100 rounded-lg">
+        <Link
+          href={`/admin/compta/production/${id}`}
+          className="p-2 hover:bg-slate-100 rounded-lg"
+        >
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-serif">Démarrer Production — {data.batch.batchNumber}</h1>
-          <p className="text-sm text-slate-600">{data.model.name} • {data.batch.plannedQty} unités</p>
+          <h1 className="text-2xl font-serif">
+            Démarrer Production — {data.batch.batchNumber}
+          </h1>
+          <p className="text-sm text-slate-600">
+            {data.model.name} • {data.batch.plannedQty} unités
+          </p>
         </div>
       </header>
 
       {/* Warning if shortage */}
       {data.hasShortage && (
         <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3">
-          <AlertTriangle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+          <AlertTriangle
+            className="text-red-600 flex-shrink-0 mt-0.5"
+            size={20}
+          />
           <div>
             <p className="font-medium text-red-800">Stock insuffisant</p>
             <p className="text-sm text-red-700">
-              Certains articles n&apos;ont pas assez de stock disponible. Passez une commande ou réduisez la quantité.
+              Certains articles n&apos;ont pas assez de stock disponible. Passez
+              une commande ou réduisez la quantité.
             </p>
           </div>
         </div>
@@ -98,11 +130,15 @@ export default function ConsumeProductionPage({ params }: { params: Promise<{ id
       {/* Info Banner */}
       {!data.hasShortage && (
         <div className="bg-green-50 border border-green-200 p-4 rounded-xl flex items-start gap-3">
-          <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
+          <CheckCircle
+            className="text-green-600 flex-shrink-0 mt-0.5"
+            size={20}
+          />
           <div>
             <p className="font-medium text-green-800">Stock disponible</p>
             <p className="text-sm text-green-700">
-              Toutes les matières sont disponibles. Le stock sera automatiquement déduit au démarrage.
+              Toutes les matières sont disponibles. Le stock sera
+              automatiquement déduit au démarrage.
             </p>
           </div>
         </div>
@@ -127,7 +163,10 @@ export default function ConsumeProductionPage({ params }: { params: Promise<{ id
           </thead>
           <tbody className="divide-y">
             {data.requirements.map((req) => (
-              <tr key={req.inventoryItemId} className={req.shortage > 0 ? "bg-red-50" : ""}>
+              <tr
+                key={req.inventoryItemId}
+                className={req.shortage > 0 ? "bg-red-50" : ""}
+              >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <Package size={16} className="text-slate-400" />
@@ -143,13 +182,19 @@ export default function ConsumeProductionPage({ params }: { params: Promise<{ id
                 <td className="px-4 py-3 text-right">{req.available}</td>
                 <td className="px-4 py-3 text-right">
                   {req.shortage > 0 ? (
-                    <span className="text-red-600 font-medium">-{req.shortage}</span>
+                    <span className="text-red-600 font-medium">
+                      -{req.shortage}
+                    </span>
                   ) : (
                     <span className="text-green-600">✓</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-right text-sm">{formatCurrency(req.unitCost)}</td>
-                <td className="px-4 py-3 text-right font-medium">{formatCurrency(req.totalCost)}</td>
+                <td className="px-4 py-3 text-right text-sm">
+                  {formatCurrency(req.unitCost)}
+                </td>
+                <td className="px-4 py-3 text-right font-medium">
+                  {formatCurrency(req.totalCost)}
+                </td>
                 <td className="px-4 py-3 text-center">
                   {req.canConsume ? (
                     <span className="inline-flex items-center gap-1 text-green-600 text-sm">
@@ -181,7 +226,12 @@ export default function ConsumeProductionPage({ params }: { params: Promise<{ id
       {/* Actions */}
       <div className="flex justify-between items-center">
         <div className="text-sm text-slate-600">
-          Coût/unité estimé: <span className="font-bold">{formatCurrency(Math.round(data.totalMaterialsCost / data.batch.plannedQty))}</span>
+          Coût/unité estimé:{" "}
+          <span className="font-bold">
+            {formatCurrency(
+              Math.round(data.totalMaterialsCost / data.batch.plannedQty),
+            )}
+          </span>
         </div>
         <div className="flex gap-4">
           <Link

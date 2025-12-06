@@ -4,15 +4,15 @@
  * POST /api/v3/compta/purchases/[id]/receive - Execute transactional receive
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, handleApiError } from '@/lib/auth-helpers';
-import { z } from 'zod';
-import { ReceivePurchaseSchema } from '@/lib/compta/schemas/purchase.schemas';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin, handleApiError } from "@/lib/auth-helpers";
+import { z } from "zod";
+import { ReceivePurchaseSchema } from "@/lib/compta/schemas/purchase.schemas";
 import {
   receivePurchase,
   getPurchaseDetail,
-} from '@/lib/compta/services/purchases-service';
-import { calculateCUMP } from '@/lib/compta/accounting';
+} from "@/lib/compta/services/purchases-service";
+import { calculateCUMP } from "@/lib/compta/accounting";
 
 /**
  * GET /api/v3/compta/purchases/[id]/receive
@@ -20,7 +20,7 @@ import { calculateCUMP } from '@/lib/compta/accounting';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requireAdmin(req);
@@ -30,28 +30,29 @@ export async function GET(
 
     if (!purchase) {
       return NextResponse.json(
-        { success: false, error: 'Achat non trouvé' },
-        { status: 404 }
+        { success: false, error: "Achat non trouvé" },
+        { status: 404 },
       );
     }
 
-    if (purchase.status === 'CANCELLED') {
+    if (purchase.status === "CANCELLED") {
       return NextResponse.json(
-        { success: false, error: 'Cet achat est annulé' },
-        { status: 422 }
+        { success: false, error: "Cet achat est annulé" },
+        { status: 422 },
       );
     }
 
-    if (purchase.status === 'RECEIVED') {
+    if (purchase.status === "RECEIVED") {
       return NextResponse.json(
-        { success: false, error: 'Cet achat a déjà été entièrement reçu' },
-        { status: 422 }
+        { success: false, error: "Cet achat a déjà été entièrement reçu" },
+        { status: 422 },
       );
     }
 
     // Generate preview for all remaining items
     const preview = purchase.items.map((item) => {
-      const remaining = Number(item.quantityOrdered) - Number(item.quantityReceived);
+      const remaining =
+        Number(item.quantityOrdered) - Number(item.quantityReceived);
 
       if (remaining <= 0) {
         return {
@@ -76,7 +77,7 @@ export async function GET(
         Number(item.inventoryItem.quantity),
         Number(item.inventoryItem.averageCost),
         remaining,
-        Number(item.unitPrice)
+        Number(item.unitPrice),
       );
       const newQty = Number(item.inventoryItem.quantity) + remaining;
       const newValue = newQty * newCUMP;
@@ -129,7 +130,7 @@ export async function GET(
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requireAdmin(req);
@@ -140,10 +141,16 @@ export async function POST(
     // Transform old format to new format if needed
     const transformedBody = {
       ...body,
-      items: body.items?.map((item: { id?: string; purchaseItemId?: string; quantityReceived: number }) => ({
-        purchaseItemId: item.purchaseItemId ?? item.id,
-        quantityReceived: item.quantityReceived,
-      })),
+      items: body.items?.map(
+        (item: {
+          id?: string;
+          purchaseItemId?: string;
+          quantityReceived: number;
+        }) => ({
+          purchaseItemId: item.purchaseItemId ?? item.id,
+          quantityReceived: item.quantityReceived,
+        }),
+      ),
     };
 
     const data = ReceivePurchaseSchema.parse(transformedBody);
@@ -157,13 +164,17 @@ export async function POST(
       success: true,
       purchase: result.purchase,
       stockUpdates: result.stockUpdates,
-      message: 'Réception enregistrée, stock mis à jour',
+      message: "Réception enregistrée, stock mis à jour",
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Validation échouée', details: err.flatten().fieldErrors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Validation échouée",
+          details: err.flatten().fieldErrors,
+        },
+        { status: 400 },
       );
     }
     return handleApiError(err);

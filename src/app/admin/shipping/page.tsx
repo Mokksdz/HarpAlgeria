@@ -3,574 +3,680 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { 
-    Truck, 
-    Package, 
-    RefreshCw, 
-    CheckCircle, 
-    ExternalLink,
-    Send,
-    MapPin,
-    Phone,
-    Clock,
-    Loader2,
-    ArrowLeft,
-    Wifi,
-    WifiOff,
-    ChevronDown,
-    Box
+import {
+  Truck,
+  Package,
+  RefreshCw,
+  CheckCircle,
+  ExternalLink,
+  Send,
+  MapPin,
+  Phone,
+  Clock,
+  Loader2,
+  ArrowLeft,
+  Wifi,
+  WifiOff,
+  ChevronDown,
+  Box,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type DeliveryProvider = 'zrexpress' | 'yalidine';
+type DeliveryProvider = "zrexpress" | "yalidine";
 
 interface Order {
-    id: string;
-    customerName: string;
-    customerPhone: string;
-    customerAddress: string;
-    customerCity: string;
-    customerWilaya: string;
-    deliveryType: string;
-    deliveryProvider: string | null;
-    trackingNumber: string | null;
-    trackingStatus: string | null;
-    total: number;
-    status: string;
-    createdAt: string;
-    items: any[];
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  customerCity: string;
+  customerWilaya: string;
+  deliveryType: string;
+  deliveryProvider: string | null;
+  trackingNumber: string | null;
+  trackingStatus: string | null;
+  total: number;
+  status: string;
+  createdAt: string;
+  items: any[];
 }
 
 interface ProviderStatus {
-    zrexpress: boolean | null;
-    yalidine: boolean | null;
+  zrexpress: boolean | null;
+  yalidine: boolean | null;
 }
 
 export default function ShippingPage() {
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [providerStatus, setProviderStatus] = useState<ProviderStatus>({
-        zrexpress: null,
-        yalidine: null
-    });
-    const [syncing, setSyncing] = useState<string | null>(null);
-    const [creating, setCreating] = useState<string | null>(null);
-    const [filter, setFilter] = useState<'all' | 'pending' | 'shipped'>('all');
-    const [showProviderMenu, setShowProviderMenu] = useState<string | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [providerStatus, setProviderStatus] = useState<ProviderStatus>({
+    zrexpress: null,
+    yalidine: null,
+  });
+  const [syncing, setSyncing] = useState<string | null>(null);
+  const [creating, setCreating] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "pending" | "shipped">("all");
+  const [showProviderMenu, setShowProviderMenu] = useState<string | null>(null);
 
-    // Vérifier la connexion aux deux services
-    const checkConnections = async () => {
-        // Check ZR Express
-        try {
-            const zrRes = await fetch('/api/shipping');
-            if (zrRes.ok) {
-                const zrData = await zrRes.json();
-                setProviderStatus(prev => ({ ...prev, zrexpress: zrData.connected || false }));
-            } else if (zrRes.status === 401) {
-                console.log('Shipping API: waiting for authentication...');
-            } else {
-                setProviderStatus(prev => ({ ...prev, zrexpress: false }));
-            }
-        } catch {
-            setProviderStatus(prev => ({ ...prev, zrexpress: false }));
-        }
-
-        // Check Yalidine
-        try {
-            const yalRes = await fetch('/api/shipping/yalidine');
-            if (yalRes.ok) {
-                const yalData = await yalRes.json();
-                setProviderStatus(prev => ({ ...prev, yalidine: yalData.connected || false }));
-            } else if (yalRes.status === 401) {
-                console.log('Yalidine API: waiting for authentication...');
-            } else {
-                setProviderStatus(prev => ({ ...prev, yalidine: false }));
-            }
-        } catch {
-            setProviderStatus(prev => ({ ...prev, yalidine: false }));
-        }
-    };
-
-    // Charger les commandes
-    const fetchOrders = async () => {
-        try {
-            const res = await fetch('/api/orders?pageSize=100');
-            const data = await res.json();
-            const ordersList = Array.isArray(data) ? data : (data.items || []);
-            setOrders(ordersList);
-        } catch (error) {
-            console.error('Error fetching orders:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const { status } = useSession();
-
-    useEffect(() => {
-        if (status === "authenticated") {
-            checkConnections();
-        }
-        fetchOrders();
-    }, [status]);
-
-    // Créer une expédition avec le provider sélectionné
-    const createShipment = async (order: Order, provider: DeliveryProvider) => {
-        setCreating(order.id);
-        setShowProviderMenu(null);
-        
-        try {
-            const productsList = order.items
-                .map((item: any) => `${item.quantity}x ${item.productName}`)
-                .join(', ');
-
-            let apiUrl = '/api/shipping';
-            let providerName = 'ZR Express';
-            let requestBody: any = {};
-
-            if (provider === 'yalidine') {
-                apiUrl = '/api/shipping/yalidine';
-                providerName = 'Yalidine';
-                requestBody = {
-                    orderId: order.id,
-                    orderData: {
-                        customerName: order.customerName,
-                        customerPhone: order.customerPhone,
-                        address: order.customerAddress,
-                        commune: order.customerCity,
-                        wilaya: order.customerWilaya,
-                        total: order.total,
-                        deliveryType: order.deliveryType === 'STOP_DESK' ? 'STOP_DESK' : 'DOMICILE',
-                        items: order.items,
-                        fromWilaya: 'Alger',
-                    }
-                };
-            } else {
-                requestBody = {
-                    orderId: order.id,
-                    orderData: {
-                        customerName: order.customerName,
-                        customerPhone: order.customerPhone,
-                        address: order.customerAddress,
-                        commune: order.customerCity,
-                        wilayaId: getWilayaId(order.customerWilaya),
-                        total: order.total,
-                        deliveryType: order.deliveryType || 'DOMICILE',
-                        products: productsList,
-                    }
-                };
-            }
-
-            const res = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
-
-            const data = await res.json();
-            
-            if (data.success) {
-                await fetch(`/api/orders/${order.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        trackingNumber: data.tracking,
-                        status: 'CONFIRMED',
-                        deliveryProvider: providerName
-                    })
-                });
-                fetchOrders();
-                
-                if (data.label) {
-                    const openLabel = confirm(`✅ Expédition créée via ${providerName}!\nTracking: ${data.tracking}\n\nVoulez-vous ouvrir le bordereau ?`);
-                    if (openLabel) {
-                        window.open(data.label, '_blank');
-                    }
-                } else {
-                    alert(`✅ Expédition créée via ${providerName}!\nTracking: ${data.tracking}`);
-                }
-            } else {
-                alert('❌ Erreur: ' + (data.error || 'Échec de création'));
-            }
-        } catch (error) {
-            console.error('Error creating shipment:', error);
-            alert('❌ Erreur de connexion');
-        } finally {
-            setCreating(null);
-        }
-    };
-
-    // Synchroniser le statut (détecte automatiquement le provider)
-    const syncTracking = async (order: Order) => {
-        if (!order.trackingNumber) return;
-        
-        setSyncing(order.id);
-        try {
-            const isYalidine = order.deliveryProvider === 'Yalidine' || order.trackingNumber.startsWith('yal-');
-            
-            let trackingStatus = '';
-            
-            if (isYalidine) {
-                const res = await fetch('/api/shipping/yalidine/track', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        trackingNumbers: [order.trackingNumber]
-                    })
-                });
-                const data = await res.json();
-                if (data.success && data.data?.[0]) {
-                    trackingStatus = data.data[0].last_status;
-                }
-            } else {
-                const res = await fetch('/api/shipping/track', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        trackingNumbers: [order.trackingNumber]
-                    })
-                });
-                const data = await res.json();
-                if (data.success && data.data?.[0]) {
-                    trackingStatus = data.data[0].Situation;
-                }
-            }
-
-            if (trackingStatus) {
-                await fetch(`/api/orders/${order.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ trackingStatus })
-                });
-                fetchOrders();
-            }
-        } catch (error) {
-            console.error('Error syncing:', error);
-        } finally {
-            setSyncing(null);
-        }
-    };
-
-    // Obtenir le lien de suivi selon le provider
-    const getTrackingUrl = (order: Order): string => {
-        if (!order.trackingNumber) return '#';
-        const isYalidine = order.deliveryProvider === 'Yalidine' || order.trackingNumber.startsWith('yal-');
-        if (isYalidine) {
-            return `https://yalidine.app/track/${order.trackingNumber}`;
-        }
-        return `https://procolis.com/suivi/${order.trackingNumber}`;
-    };
-
-    // Helper pour obtenir l'ID de wilaya
-    const getWilayaId = (wilayaName: string): string => {
-        const wilayas: Record<string, string> = {
-            'alger': '16', 'oran': '31', 'constantine': '25', 'blida': '9',
-            'sétif': '19', 'annaba': '23', 'batna': '5', 'tizi ouzou': '15',
-        };
-        return wilayas[wilayaName.toLowerCase()] || '16';
-    };
-
-    const filteredOrders = orders.filter(order => {
-        if (filter === 'pending') return !order.trackingNumber && order.status !== 'CANCELLED';
-        if (filter === 'shipped') return !!order.trackingNumber;
-        return true;
-    });
-
-    const getStatusColor = (status: string) => {
-        const colors: Record<string, string> = {
-            'PENDING': 'bg-yellow-50 text-yellow-700 border-yellow-100',
-            'CONFIRMED': 'bg-blue-50 text-blue-700 border-blue-100',
-            'SHIPPED': 'bg-purple-50 text-purple-700 border-purple-100',
-            'DELIVERED': 'bg-green-50 text-green-700 border-green-100',
-            'CANCELLED': 'bg-red-50 text-red-700 border-red-100',
-        };
-        return colors[status] || 'bg-gray-50 text-gray-700 border-gray-100';
-    };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-[60vh]">
-                <Loader2 size={32} className="animate-spin text-gray-300" />
-            </div>
-        );
+  // Vérifier la connexion aux deux services
+  const checkConnections = async () => {
+    // Check ZR Express
+    try {
+      const zrRes = await fetch("/api/shipping");
+      if (zrRes.ok) {
+        const zrData = await zrRes.json();
+        setProviderStatus((prev) => ({
+          ...prev,
+          zrexpress: zrData.connected || false,
+        }));
+      } else if (zrRes.status === 401) {
+        console.log("Shipping API: waiting for authentication...");
+      } else {
+        setProviderStatus((prev) => ({ ...prev, zrexpress: false }));
+      }
+    } catch {
+      setProviderStatus((prev) => ({ ...prev, zrexpress: false }));
     }
 
+    // Check Yalidine
+    try {
+      const yalRes = await fetch("/api/shipping/yalidine");
+      if (yalRes.ok) {
+        const yalData = await yalRes.json();
+        setProviderStatus((prev) => ({
+          ...prev,
+          yalidine: yalData.connected || false,
+        }));
+      } else if (yalRes.status === 401) {
+        console.log("Yalidine API: waiting for authentication...");
+      } else {
+        setProviderStatus((prev) => ({ ...prev, yalidine: false }));
+      }
+    } catch {
+      setProviderStatus((prev) => ({ ...prev, yalidine: false }));
+    }
+  };
+
+  // Charger les commandes
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch("/api/orders?pageSize=100");
+      const data = await res.json();
+      const ordersList = Array.isArray(data) ? data : data.items || [];
+      setOrders(ordersList);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      checkConnections();
+    }
+    fetchOrders();
+  }, [status]);
+
+  // Créer une expédition avec le provider sélectionné
+  const createShipment = async (order: Order, provider: DeliveryProvider) => {
+    setCreating(order.id);
+    setShowProviderMenu(null);
+
+    try {
+      const productsList = order.items
+        .map((item: any) => `${item.quantity}x ${item.productName}`)
+        .join(", ");
+
+      let apiUrl = "/api/shipping";
+      let providerName = "ZR Express";
+      let requestBody: any = {};
+
+      if (provider === "yalidine") {
+        apiUrl = "/api/shipping/yalidine";
+        providerName = "Yalidine";
+        requestBody = {
+          orderId: order.id,
+          orderData: {
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            address: order.customerAddress,
+            commune: order.customerCity,
+            wilaya: order.customerWilaya,
+            total: order.total,
+            deliveryType:
+              order.deliveryType === "STOP_DESK" ? "STOP_DESK" : "DOMICILE",
+            items: order.items,
+            fromWilaya: "Alger",
+          },
+        };
+      } else {
+        requestBody = {
+          orderId: order.id,
+          orderData: {
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            address: order.customerAddress,
+            commune: order.customerCity,
+            wilayaId: getWilayaId(order.customerWilaya),
+            total: order.total,
+            deliveryType: order.deliveryType || "DOMICILE",
+            products: productsList,
+          },
+        };
+      }
+
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        await fetch(`/api/orders/${order.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            trackingNumber: data.tracking,
+            status: "CONFIRMED",
+            deliveryProvider: providerName,
+          }),
+        });
+        fetchOrders();
+
+        if (data.label) {
+          const openLabel = confirm(
+            `✅ Expédition créée via ${providerName}!\nTracking: ${data.tracking}\n\nVoulez-vous ouvrir le bordereau ?`,
+          );
+          if (openLabel) {
+            window.open(data.label, "_blank");
+          }
+        } else {
+          alert(
+            `✅ Expédition créée via ${providerName}!\nTracking: ${data.tracking}`,
+          );
+        }
+      } else {
+        alert("❌ Erreur: " + (data.error || "Échec de création"));
+      }
+    } catch (error) {
+      console.error("Error creating shipment:", error);
+      alert("❌ Erreur de connexion");
+    } finally {
+      setCreating(null);
+    }
+  };
+
+  // Synchroniser le statut (détecte automatiquement le provider)
+  const syncTracking = async (order: Order) => {
+    if (!order.trackingNumber) return;
+
+    setSyncing(order.id);
+    try {
+      const isYalidine =
+        order.deliveryProvider === "Yalidine" ||
+        order.trackingNumber.startsWith("yal-");
+
+      let trackingStatus = "";
+
+      if (isYalidine) {
+        const res = await fetch("/api/shipping/yalidine/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            trackingNumbers: [order.trackingNumber],
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.data?.[0]) {
+          trackingStatus = data.data[0].last_status;
+        }
+      } else {
+        const res = await fetch("/api/shipping/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            trackingNumbers: [order.trackingNumber],
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.data?.[0]) {
+          trackingStatus = data.data[0].Situation;
+        }
+      }
+
+      if (trackingStatus) {
+        await fetch(`/api/orders/${order.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trackingStatus }),
+        });
+        fetchOrders();
+      }
+    } catch (error) {
+      console.error("Error syncing:", error);
+    } finally {
+      setSyncing(null);
+    }
+  };
+
+  // Obtenir le lien de suivi selon le provider
+  const getTrackingUrl = (order: Order): string => {
+    if (!order.trackingNumber) return "#";
+    const isYalidine =
+      order.deliveryProvider === "Yalidine" ||
+      order.trackingNumber.startsWith("yal-");
+    if (isYalidine) {
+      return `https://yalidine.app/track/${order.trackingNumber}`;
+    }
+    return `https://procolis.com/suivi/${order.trackingNumber}`;
+  };
+
+  // Helper pour obtenir l'ID de wilaya
+  const getWilayaId = (wilayaName: string): string => {
+    const wilayas: Record<string, string> = {
+      alger: "16",
+      oran: "31",
+      constantine: "25",
+      blida: "9",
+      sétif: "19",
+      annaba: "23",
+      batna: "5",
+      "tizi ouzou": "15",
+    };
+    return wilayas[wilayaName.toLowerCase()] || "16";
+  };
+
+  const filteredOrders = orders.filter((order) => {
+    if (filter === "pending")
+      return !order.trackingNumber && order.status !== "CANCELLED";
+    if (filter === "shipped") return !!order.trackingNumber;
+    return true;
+  });
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      PENDING: "bg-yellow-50 text-yellow-700 border-yellow-100",
+      CONFIRMED: "bg-blue-50 text-blue-700 border-blue-100",
+      SHIPPED: "bg-purple-50 text-purple-700 border-purple-100",
+      DELIVERED: "bg-green-50 text-green-700 border-green-100",
+      CANCELLED: "bg-red-50 text-red-700 border-red-100",
+    };
+    return colors[status] || "bg-gray-50 text-gray-700 border-gray-100";
+  };
+
+  if (loading) {
     return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <Link href="/admin" className="text-gray-400 hover:text-gray-900 transition-colors">
-                            <ArrowLeft size={20} />
-                        </Link>
-                        <h1 className="text-3xl font-serif font-medium text-gray-900">Gestion des Livraisons</h1>
-                    </div>
-                    <p className="text-gray-500 text-sm">Gérez vos expéditions via Yalidine et ZR Express</p>
-                </div>
-                
-                {/* Connection Status - Both Providers */}
-                <div className="flex gap-3">
-                    {/* Yalidine Status */}
-                    <div className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border",
-                        providerStatus.yalidine === true ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
-                        providerStatus.yalidine === false ? 'bg-red-50 text-red-700 border-red-100' : 
-                        'bg-gray-50 text-gray-600 border-gray-100'
-                    )}>
-                        {providerStatus.yalidine === true ? <Wifi size={12} /> : 
-                         providerStatus.yalidine === false ? <WifiOff size={12} /> : 
-                         <Loader2 size={12} className="animate-spin" />}
-                        <span>Yalidine</span>
-                    </div>
-                    
-                    {/* ZR Express Status */}
-                    <div className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border",
-                        providerStatus.zrexpress === true ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
-                        providerStatus.zrexpress === false ? 'bg-red-50 text-red-700 border-red-100' : 
-                        'bg-gray-50 text-gray-600 border-gray-100'
-                    )}>
-                        {providerStatus.zrexpress === true ? <Wifi size={12} /> : 
-                         providerStatus.zrexpress === false ? <WifiOff size={12} /> : 
-                         <Loader2 size={12} className="animate-spin" />}
-                        <span>ZR Express</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                        <Clock size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">À expédier</p>
-                        <p className="text-2xl font-serif font-medium text-gray-900">
-                            {orders.filter(o => !o.trackingNumber && o.status !== 'CANCELLED').length}
-                        </p>
-                    </div>
-                </div>
-                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-                        <Truck size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">En transit</p>
-                        <p className="text-2xl font-serif font-medium text-gray-900">
-                            {orders.filter(o => o.trackingNumber && o.status === 'SHIPPED').length}
-                        </p>
-                    </div>
-                </div>
-                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                        <CheckCircle size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">Livrées</p>
-                        <p className="text-2xl font-serif font-medium text-gray-900">
-                            {orders.filter(o => o.status === 'DELIVERED').length}
-                        </p>
-                    </div>
-                </div>
-                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                        <Box size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">Total expédiées</p>
-                        <p className="text-2xl font-serif font-medium text-gray-900">
-                            {orders.filter(o => o.trackingNumber).length}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Filters */}
-            <div className="flex gap-2 border-b border-gray-100 pb-4">
-                {[
-                    { key: 'all', label: 'Toutes' },
-                    { key: 'pending', label: 'À expédier' },
-                    { key: 'shipped', label: 'Expédiées' },
-                ].map((f) => (
-                    <button
-                        key={f.key}
-                        onClick={() => setFilter(f.key as any)}
-                        className={cn(
-                            "px-4 py-2 rounded-full text-sm font-medium transition-all",
-                            filter === f.key
-                                ? 'bg-gray-900 text-white shadow-sm'
-                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                        )}
-                    >
-                        {f.label}
-                    </button>
-                ))}
-            </div>
-
-            {/* Orders Table */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="border-b border-gray-100 bg-gray-50/50 text-xs uppercase tracking-widest text-gray-500">
-                                <th className="py-4 px-6 font-medium">Commande</th>
-                                <th className="py-4 px-6 font-medium">Client</th>
-                                <th className="py-4 px-6 font-medium">Destination</th>
-                                <th className="py-4 px-6 font-medium">Tracking</th>
-                                <th className="py-4 px-6 font-medium">Statut</th>
-                                <th className="py-4 px-6 font-medium text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50 text-sm">
-                            {filteredOrders.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="py-16 text-center text-gray-400">
-                                        Aucune commande trouvée
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredOrders.map((order) => (
-                                    <tr key={order.id} className="hover:bg-gray-50/50 transition-colors group">
-                                        <td className="py-4 px-6">
-                                            <div className="font-mono text-xs text-gray-500 mb-1">
-                                                #{order.id.slice(-8).toUpperCase()}
-                                            </div>
-                                            <div className="text-xs text-gray-400">
-                                                {new Date(order.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <p className="font-medium text-gray-900">{order.customerName}</p>
-                                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                                                <Phone size={10} />
-                                                {order.customerPhone}
-                                            </p>
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <div className="flex items-start gap-1.5">
-                                                <MapPin size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                                                <div>
-                                                    <p className="text-sm text-gray-900 font-medium">
-                                                        {order.customerCity}, {order.customerWilaya}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 truncate max-w-[180px]">
-                                                        {order.customerAddress}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            {order.trackingNumber ? (
-                                                <div className="space-y-1">
-                                                    <span className="inline-flex items-center gap-1.5 font-mono text-xs bg-gray-50 text-gray-700 px-2 py-1 rounded border border-gray-100">
-                                                        <Package size={10} className="text-gray-400" />
-                                                        {order.trackingNumber}
-                                                    </span>
-                                                    {order.trackingStatus && (
-                                                        <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">
-                                                            {order.trackingStatus}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span className="text-gray-300 text-xs italic">Non expédié</span>
-                                            )}
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <span className={cn(
-                                                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border",
-                                                getStatusColor(order.status)
-                                            )}>
-                                                {order.status === 'DELIVERED' && <CheckCircle size={12} />}
-                                                {order.status === 'SHIPPED' && <Truck size={12} />}
-                                                {order.status === 'PENDING' && <Clock size={12} />}
-                                                {order.status === 'CONFIRMED' && <CheckCircle size={12} />}
-                                                {order.status === 'CANCELLED' && <WifiOff size={12} />}
-                                                {order.status}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-6 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                {!order.trackingNumber && order.status !== 'CANCELLED' ? (
-                                                    <div className="relative">
-                                                        <button
-                                                            onClick={() => setShowProviderMenu(showProviderMenu === order.id ? null : order.id)}
-                                                            disabled={creating === order.id}
-                                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all shadow-sm"
-                                                        >
-                                                            {creating === order.id ? (
-                                                                <Loader2 size={14} className="animate-spin" />
-                                                            ) : (
-                                                                <Send size={14} />
-                                                            )}
-                                                            Expédier
-                                                            <ChevronDown size={14} className={showProviderMenu === order.id ? 'rotate-180' : ''} />
-                                                        </button>
-                                                        
-                                                        {/* Provider Selection Dropdown */}
-                                                        {showProviderMenu === order.id && (
-                                                            <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20 min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-right">
-                                                                <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Choisir le transporteur</p>
-                                                                <button
-                                                                    onClick={() => createShipment(order, 'yalidine')}
-                                                                    disabled={!providerStatus.yalidine}
-                                                                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 transition-colors"
-                                                                >
-                                                                    <div className={`w-2 h-2 rounded-full ring-2 ring-offset-1 ${providerStatus.yalidine ? 'bg-emerald-500 ring-emerald-100' : 'bg-red-500 ring-red-100'}`} />
-                                                                    <span className="font-medium text-gray-700">Yalidine</span>
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => createShipment(order, 'zrexpress')}
-                                                                    disabled={!providerStatus.zrexpress}
-                                                                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 transition-colors"
-                                                                >
-                                                                    <div className={`w-2 h-2 rounded-full ring-2 ring-offset-1 ${providerStatus.zrexpress ? 'bg-emerald-500 ring-emerald-100' : 'bg-red-500 ring-red-100'}`} />
-                                                                    <span className="font-medium text-gray-700">ZR Express</span>
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ) : order.trackingNumber ? (
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        {/* Provider Badge */}
-                                                        <span className={cn(
-                                                            "text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border mr-1",
-                                                            order.deliveryProvider === 'Yalidine' 
-                                                                ? 'bg-blue-50 text-blue-700 border-blue-100' 
-                                                                : 'bg-orange-50 text-orange-700 border-orange-100'
-                                                        )}>
-                                                            {order.deliveryProvider || 'ZR'}
-                                                        </span>
-                                                        <button
-                                                            onClick={() => syncTracking(order)}
-                                                            disabled={syncing === order.id}
-                                                            className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                                                            title="Synchroniser le statut"
-                                                        >
-                                                            <RefreshCw size={16} className={syncing === order.id ? 'animate-spin' : ''} />
-                                                        </button>
-                                                        <a
-                                                            href={getTrackingUrl(order)}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                            title="Suivre le colis"
-                                                        >
-                                                            <ExternalLink size={16} />
-                                                        </a>
-                                                    </div>
-                                                ) : null}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+      <div className="flex items-center justify-center h-[60vh]">
+        <Loader2 size={32} className="animate-spin text-gray-300" />
+      </div>
     );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Link
+              href="/admin"
+              className="text-gray-400 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </Link>
+            <h1 className="text-3xl font-serif font-medium text-gray-900">
+              Gestion des Livraisons
+            </h1>
+          </div>
+          <p className="text-gray-500 text-sm">
+            Gérez vos expéditions via Yalidine et ZR Express
+          </p>
+        </div>
+
+        {/* Connection Status - Both Providers */}
+        <div className="flex gap-3">
+          {/* Yalidine Status */}
+          <div
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border",
+              providerStatus.yalidine === true
+                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                : providerStatus.yalidine === false
+                  ? "bg-red-50 text-red-700 border-red-100"
+                  : "bg-gray-50 text-gray-600 border-gray-100",
+            )}
+          >
+            {providerStatus.yalidine === true ? (
+              <Wifi size={12} />
+            ) : providerStatus.yalidine === false ? (
+              <WifiOff size={12} />
+            ) : (
+              <Loader2 size={12} className="animate-spin" />
+            )}
+            <span>Yalidine</span>
+          </div>
+
+          {/* ZR Express Status */}
+          <div
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border",
+              providerStatus.zrexpress === true
+                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                : providerStatus.zrexpress === false
+                  ? "bg-red-50 text-red-700 border-red-100"
+                  : "bg-gray-50 text-gray-600 border-gray-100",
+            )}
+          >
+            {providerStatus.zrexpress === true ? (
+              <Wifi size={12} />
+            ) : providerStatus.zrexpress === false ? (
+              <WifiOff size={12} />
+            ) : (
+              <Loader2 size={12} className="animate-spin" />
+            )}
+            <span>ZR Express</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+            <Clock size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">À expédier</p>
+            <p className="text-2xl font-serif font-medium text-gray-900">
+              {
+                orders.filter(
+                  (o) => !o.trackingNumber && o.status !== "CANCELLED",
+                ).length
+              }
+            </p>
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+            <Truck size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">En transit</p>
+            <p className="text-2xl font-serif font-medium text-gray-900">
+              {
+                orders.filter((o) => o.trackingNumber && o.status === "SHIPPED")
+                  .length
+              }
+            </p>
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+            <CheckCircle size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Livrées</p>
+            <p className="text-2xl font-serif font-medium text-gray-900">
+              {orders.filter((o) => o.status === "DELIVERED").length}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+            <Box size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Total expédiées</p>
+            <p className="text-2xl font-serif font-medium text-gray-900">
+              {orders.filter((o) => o.trackingNumber).length}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-2 border-b border-gray-100 pb-4">
+        {[
+          { key: "all", label: "Toutes" },
+          { key: "pending", label: "À expédier" },
+          { key: "shipped", label: "Expédiées" },
+        ].map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key as any)}
+            className={cn(
+              "px-4 py-2 rounded-full text-sm font-medium transition-all",
+              filter === f.key
+                ? "bg-gray-900 text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Orders Table */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/50 text-xs uppercase tracking-widest text-gray-500">
+                <th className="py-4 px-6 font-medium">Commande</th>
+                <th className="py-4 px-6 font-medium">Client</th>
+                <th className="py-4 px-6 font-medium">Destination</th>
+                <th className="py-4 px-6 font-medium">Tracking</th>
+                <th className="py-4 px-6 font-medium">Statut</th>
+                <th className="py-4 px-6 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50 text-sm">
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-16 text-center text-gray-400">
+                    Aucune commande trouvée
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order) => (
+                  <tr
+                    key={order.id}
+                    className="hover:bg-gray-50/50 transition-colors group"
+                  >
+                    <td className="py-4 px-6">
+                      <div className="font-mono text-xs text-gray-500 mb-1">
+                        #{order.id.slice(-8).toUpperCase()}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(order.createdAt).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <p className="font-medium text-gray-900">
+                        {order.customerName}
+                      </p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                        <Phone size={10} />
+                        {order.customerPhone}
+                      </p>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-start gap-1.5">
+                        <MapPin
+                          size={14}
+                          className="text-gray-400 mt-0.5 flex-shrink-0"
+                        />
+                        <div>
+                          <p className="text-sm text-gray-900 font-medium">
+                            {order.customerCity}, {order.customerWilaya}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate max-w-[180px]">
+                            {order.customerAddress}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      {order.trackingNumber ? (
+                        <div className="space-y-1">
+                          <span className="inline-flex items-center gap-1.5 font-mono text-xs bg-gray-50 text-gray-700 px-2 py-1 rounded border border-gray-100">
+                            <Package size={10} className="text-gray-400" />
+                            {order.trackingNumber}
+                          </span>
+                          {order.trackingStatus && (
+                            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">
+                              {order.trackingStatus}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-gray-300 text-xs italic">
+                          Non expédié
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border",
+                          getStatusColor(order.status),
+                        )}
+                      >
+                        {order.status === "DELIVERED" && (
+                          <CheckCircle size={12} />
+                        )}
+                        {order.status === "SHIPPED" && <Truck size={12} />}
+                        {order.status === "PENDING" && <Clock size={12} />}
+                        {order.status === "CONFIRMED" && (
+                          <CheckCircle size={12} />
+                        )}
+                        {order.status === "CANCELLED" && <WifiOff size={12} />}
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {!order.trackingNumber &&
+                        order.status !== "CANCELLED" ? (
+                          <div className="relative">
+                            <button
+                              onClick={() =>
+                                setShowProviderMenu(
+                                  showProviderMenu === order.id
+                                    ? null
+                                    : order.id,
+                                )
+                              }
+                              disabled={creating === order.id}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all shadow-sm"
+                            >
+                              {creating === order.id ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <Send size={14} />
+                              )}
+                              Expédier
+                              <ChevronDown
+                                size={14}
+                                className={
+                                  showProviderMenu === order.id
+                                    ? "rotate-180"
+                                    : ""
+                                }
+                              />
+                            </button>
+
+                            {/* Provider Selection Dropdown */}
+                            {showProviderMenu === order.id && (
+                              <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20 min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                                <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                  Choisir le transporteur
+                                </p>
+                                <button
+                                  onClick={() =>
+                                    createShipment(order, "yalidine")
+                                  }
+                                  disabled={!providerStatus.yalidine}
+                                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 transition-colors"
+                                >
+                                  <div
+                                    className={`w-2 h-2 rounded-full ring-2 ring-offset-1 ${providerStatus.yalidine ? "bg-emerald-500 ring-emerald-100" : "bg-red-500 ring-red-100"}`}
+                                  />
+                                  <span className="font-medium text-gray-700">
+                                    Yalidine
+                                  </span>
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    createShipment(order, "zrexpress")
+                                  }
+                                  disabled={!providerStatus.zrexpress}
+                                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 transition-colors"
+                                >
+                                  <div
+                                    className={`w-2 h-2 rounded-full ring-2 ring-offset-1 ${providerStatus.zrexpress ? "bg-emerald-500 ring-emerald-100" : "bg-red-500 ring-red-100"}`}
+                                  />
+                                  <span className="font-medium text-gray-700">
+                                    ZR Express
+                                  </span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ) : order.trackingNumber ? (
+                          <div className="flex items-center justify-end gap-1">
+                            {/* Provider Badge */}
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border mr-1",
+                                order.deliveryProvider === "Yalidine"
+                                  ? "bg-blue-50 text-blue-700 border-blue-100"
+                                  : "bg-orange-50 text-orange-700 border-orange-100",
+                              )}
+                            >
+                              {order.deliveryProvider || "ZR"}
+                            </span>
+                            <button
+                              onClick={() => syncTracking(order)}
+                              disabled={syncing === order.id}
+                              className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                              title="Synchroniser le statut"
+                            >
+                              <RefreshCw
+                                size={16}
+                                className={
+                                  syncing === order.id ? "animate-spin" : ""
+                                }
+                              />
+                            </button>
+                            <a
+                              href={getTrackingUrl(order)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Suivre le colis"
+                            >
+                              <ExternalLink size={16} />
+                            </a>
+                          </div>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 }

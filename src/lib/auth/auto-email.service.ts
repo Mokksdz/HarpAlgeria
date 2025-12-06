@@ -5,7 +5,8 @@ import { earnPoints } from "@/lib/loyalty/services/loyalty.service";
 import { sendMagicLinkEmail } from "@/lib/email/magic-link";
 import { User } from "@prisma/client";
 
-const MAGIC_LINK_SECRET = process.env.MAGIC_LINK_JWT_SECRET || "default_secret_dev_only";
+const MAGIC_LINK_SECRET =
+  process.env.MAGIC_LINK_JWT_SECRET || "default_secret_dev_only";
 const MAGIC_LINK_EXP_MINUTES = parseInt(process.env.MAGIC_LINK_EXP_MIN || "15");
 const NEXTAUTH_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
@@ -13,20 +14,20 @@ const NEXTAUTH_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
  * Find or create a user by email (auto-account)
  */
 export async function createOrGetUserByEmail(
-  email: string, 
-  meta?: { name?: string, source?: string, guestKey?: string }
+  email: string,
+  meta?: { name?: string; source?: string; guestKey?: string },
 ): Promise<User> {
   const existingUser = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
 
   if (existingUser) {
     // Update guestKey if provided and not present? Or just return
     if (meta?.guestKey && !existingUser.guestKey) {
-        await prisma.user.update({
-            where: { id: existingUser.id },
-            data: { guestKey: meta.guestKey }
-        });
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { guestKey: meta.guestKey },
+      });
     }
     return existingUser;
   }
@@ -38,37 +39,39 @@ export async function createOrGetUserByEmail(
       createdVia: meta?.source || "AUTO_EMAIL",
       guestKey: meta?.guestKey,
       isEmailVerified: false,
-    }
+    },
   });
 }
 
 /**
  * Issue a magic link for an email
  */
-export async function issueMagicLink(email: string, reference: string = "login", guestKey?: string) {
+export async function issueMagicLink(
+  email: string,
+  reference: string = "login",
+  guestKey?: string,
+) {
   // 1. Clean up old expired tokens for this email (maintenance)
   await prisma.magicLinkToken.deleteMany({
-    where: { 
-        email, 
-        expiresAt: { lt: new Date() } 
-    }
+    where: {
+      email,
+      expiresAt: { lt: new Date() },
+    },
   });
 
   // 2. Generate JWT
-  const token = jwt.sign(
-    { email, reference, guestKey }, 
-    MAGIC_LINK_SECRET, 
-    { expiresIn: `${MAGIC_LINK_EXP_MINUTES}m` }
-  );
+  const token = jwt.sign({ email, reference, guestKey }, MAGIC_LINK_SECRET, {
+    expiresIn: `${MAGIC_LINK_EXP_MINUTES}m`,
+  });
 
   // 3. Hash token for DB storage
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
   const expiresAt = new Date(Date.now() + MAGIC_LINK_EXP_MINUTES * 60 * 1000);
 
-  // 4. Store in DB (idempotent: if valid token exists for same ref, maybe return it? 
+  // 4. Store in DB (idempotent: if valid token exists for same ref, maybe return it?
   // But for security, better to always issue new one or revoke old)
   // Let's issue new one.
-  
+
   // Link to user if exists
   const user = await prisma.user.findUnique({ where: { email } });
 
@@ -78,8 +81,8 @@ export async function issueMagicLink(email: string, reference: string = "login",
       email,
       userId: user?.id,
       reference,
-      expiresAt
-    }
+      expiresAt,
+    },
   });
 
   // 5. Send Email
@@ -99,10 +102,10 @@ export async function verifyMagicLink(token: string) {
     const { email, reference, guestKey } = payload;
 
     // 2. Hash to find in DB
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
     const dbToken = await prisma.magicLinkToken.findUnique({
-      where: { tokenHash }
+      where: { tokenHash },
     });
 
     if (!dbToken) throw new Error("Token invalid");
@@ -113,7 +116,7 @@ export async function verifyMagicLink(token: string) {
     return await prisma.$transaction(async (tx) => {
       await tx.magicLinkToken.update({
         where: { id: dbToken.id },
-        data: { consumedAt: new Date() }
+        data: { consumedAt: new Date() },
       });
 
       // 4. Get or Create User
@@ -126,34 +129,33 @@ export async function verifyMagicLink(token: string) {
             email,
             isEmailVerified: true,
             createdVia: "AUTO_EMAIL",
-            guestKey
-          }
+            guestKey,
+          },
         });
         isNewUser = true;
       } else {
         // Mark verified
         if (!user.isEmailVerified) {
-            user = await tx.user.update({
-                where: { id: user.id },
-                data: { isEmailVerified: true }
-            });
-            isNewUser = true; // Considered "signup" upon first verification
+          user = await tx.user.update({
+            where: { id: user.id },
+            data: { isEmailVerified: true },
+          });
+          isNewUser = true; // Considered "signup" upon first verification
         }
       }
 
       // 5. Award points if new signup
       if (isNewUser) {
-         // We call earnPoints outside or inside? earnPoints handles transaction internally if not passed one.
-         // But here we are in a transaction. Ideally `earnPoints` should accept a tx.
-         // For simplicity, we'll do it after or assume `earnPoints` creates its own tx which is fine (nested tx support in Prisma is good or independent).
-         // But to be atomic, we'd need refactoring. 
-         // Let's just do the update manually here for simplicity or call it after.
-         // We'll skip atomic loyalty for now to avoid refactoring loyalty service.
+        // We call earnPoints outside or inside? earnPoints handles transaction internally if not passed one.
+        // But here we are in a transaction. Ideally `earnPoints` should accept a tx.
+        // For simplicity, we'll do it after or assume `earnPoints` creates its own tx which is fine (nested tx support in Prisma is good or independent).
+        // But to be atomic, we'd need refactoring.
+        // Let's just do the update manually here for simplicity or call it after.
+        // We'll skip atomic loyalty for now to avoid refactoring loyalty service.
       }
 
       return { user, isNewUser, guestKey };
     });
-
   } catch (error: any) {
     throw new Error(`Verification failed: ${error.message}`);
   }
@@ -162,27 +164,31 @@ export async function verifyMagicLink(token: string) {
 /**
  * Sync guest wishlist
  */
-export async function syncGuestWishlistToUser(guestKey: string, userId: string, items: { productId: string }[]) {
+export async function syncGuestWishlistToUser(
+  guestKey: string,
+  userId: string,
+  items: { productId: string }[],
+) {
   if (!items || items.length === 0) return;
 
   // This function assumes we receive the local items array from frontend
   for (const item of items) {
     try {
-        await prisma.wishlistItem.upsert({
-            where: {
-                userId_productId: {
-                    userId,
-                    productId: item.productId
-                }
-            },
-            create: {
-                userId,
-                productId: item.productId
-            },
-            update: {} // Already exists, do nothing
-        });
+      await prisma.wishlistItem.upsert({
+        where: {
+          userId_productId: {
+            userId,
+            productId: item.productId,
+          },
+        },
+        create: {
+          userId,
+          productId: item.productId,
+        },
+        update: {}, // Already exists, do nothing
+      });
     } catch (e) {
-        // Ignore errors (e.g. product not found)
+      // Ignore errors (e.g. product not found)
     }
   }
 }

@@ -16,7 +16,7 @@ const SupplierUpdateSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -33,14 +33,23 @@ export async function GET(
     if (!supplier) {
       return NextResponse.json(
         { success: false, error: "Fournisseur non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Calculer le solde
-    const totalAdvances = supplier.advances.reduce((sum, a) => sum + Number(a.amount), 0);
-    const usedAdvances = supplier.advances.reduce((sum, a) => sum + Number(a.amountUsed), 0);
-    const totalDue = supplier.purchases.reduce((sum, p) => sum + Number(p.amountDue), 0);
+    const totalAdvances = supplier.advances.reduce(
+      (sum, a) => sum + Number(a.amount),
+      0,
+    );
+    const usedAdvances = supplier.advances.reduce(
+      (sum, a) => sum + Number(a.amountUsed),
+      0,
+    );
+    const totalDue = supplier.purchases.reduce(
+      (sum, p) => sum + Number(p.amountDue),
+      0,
+    );
     const balance = totalAdvances - usedAdvances - totalDue;
 
     return NextResponse.json({
@@ -50,13 +59,16 @@ export async function GET(
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -74,17 +86,20 @@ export async function PUT(
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -99,6 +114,9 @@ export async function DELETE(
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }

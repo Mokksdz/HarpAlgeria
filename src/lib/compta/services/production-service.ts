@@ -3,15 +3,15 @@
  * Handles production batch operations: create, preview, consume, complete
  */
 
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import type {
   CreateBatchInput,
   CompleteBatchInput,
   BOMRequirement,
   ConsumptionPreview,
   BatchCostBreakdown,
-} from '../schemas/production.schemas';
+} from "../schemas/production.schemas";
 
 // =============================================================================
 // TYPES
@@ -54,17 +54,17 @@ async function generateBatchNumber(): Promise<string> {
 
   const lastBatch = await prisma.productionBatch.findFirst({
     where: { batchNumber: { startsWith: prefix } },
-    orderBy: { batchNumber: 'desc' },
+    orderBy: { batchNumber: "desc" },
     select: { batchNumber: true },
   });
 
   let nextNumber = 1;
   if (lastBatch) {
-    const parts = lastBatch.batchNumber.split('-');
+    const parts = lastBatch.batchNumber.split("-");
     nextNumber = parseInt(parts[parts.length - 1], 10) + 1;
   }
 
-  return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+  return `${prefix}${nextNumber.toString().padStart(4, "0")}`;
 }
 
 /**
@@ -84,12 +84,18 @@ export function calculateBOMRequirements(
       averageCost: number | { toNumber?(): number };
     };
   }>,
-  plannedQty: number
+  plannedQty: number,
 ): BOMRequirement[] {
   return bom.map((item) => {
-    const required = Math.round(Number(item.quantity) * Number(item.wasteFactor) * plannedQty * 100) / 100;
+    const required =
+      Math.round(
+        Number(item.quantity) * Number(item.wasteFactor) * plannedQty * 100,
+      ) / 100;
     const available = Number(item.inventoryItem.available);
-    const shortage = Math.max(0, Math.round((required - available) * 100) / 100);
+    const shortage = Math.max(
+      0,
+      Math.round((required - available) * 100) / 100,
+    );
     const unitCost = Number(item.inventoryItem.averageCost);
     const totalCost = Math.round(required * unitCost * 100) / 100;
 
@@ -116,14 +122,15 @@ export function calculateBOMRequirements(
 export function calculateBatchCosts(
   batch: { materialsCost: number; laborCost: number; overheadCost: number },
   model: { otherCost: number },
-  producedQty: number
+  producedQty: number,
 ): BatchCostBreakdown {
   const materialsCost = batch.materialsCost;
   const laborCost = batch.laborCost;
   const overheadCost = batch.overheadCost;
   const otherCost = model.otherCost * producedQty;
   const totalCost = materialsCost + laborCost + overheadCost + otherCost;
-  const costPerUnit = producedQty > 0 ? Math.round((totalCost / producedQty) * 100) / 100 : 0;
+  const costPerUnit =
+    producedQty > 0 ? Math.round((totalCost / producedQty) * 100) / 100 : 0;
 
   return {
     materialsCost,
@@ -144,8 +151,11 @@ export function calculateBatchCosts(
  */
 export async function getProductionList(
   { page = 1, pageSize = 20 }: { page?: number; pageSize?: number } = {},
-  filters: BatchFilters = {}
-): Promise<{ items: BatchListItem[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }> {
+  filters: BatchFilters = {},
+): Promise<{
+  items: BatchListItem[];
+  meta: { page: number; pageSize: number; total: number; totalPages: number };
+}> {
   const skip = (page - 1) * pageSize;
 
   const where: Prisma.ProductionBatchWhereInput = {};
@@ -175,7 +185,7 @@ export async function getProductionList(
       },
       take: pageSize,
       skip,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.productionBatch.count({ where }),
   ]);
@@ -194,7 +204,9 @@ export async function getProductionList(
 /**
  * Get batch detail with model, BOM, and consumptions
  */
-export async function getProductionDetail(batchId: string): Promise<BatchWithModel | null> {
+export async function getProductionDetail(
+  batchId: string,
+): Promise<BatchWithModel | null> {
   return prisma.productionBatch.findUnique({
     where: { id: batchId },
     include: {
@@ -216,7 +228,7 @@ export async function getProductionDetail(batchId: string): Promise<BatchWithMod
  * Create a new production batch in PLANNED status
  */
 export async function createProductionBatch(
-  data: CreateBatchInput
+  data: CreateBatchInput,
 ): Promise<BatchWithModel> {
   // Verify model exists
   const model = await prisma.model.findUnique({
@@ -224,7 +236,7 @@ export async function createProductionBatch(
   });
 
   if (!model) {
-    throw new Error('Modèle non trouvé');
+    throw new Error("Modèle non trouvé");
   }
 
   const batchNumber = await generateBatchNumber();
@@ -245,7 +257,7 @@ export async function createProductionBatch(
       materialsCost: 0,
       totalCost: 0,
       costPerUnit: 0,
-      status: 'PLANNED',
+      status: "PLANNED",
       notes: data.notes,
     },
     include: {
@@ -269,7 +281,7 @@ export async function createProductionBatch(
  * Preview material requirements for a batch (non-destructive)
  */
 export async function previewProductionConsumption(
-  batchId: string
+  batchId: string,
 ): Promise<ConsumptionPreview> {
   const batch = await prisma.productionBatch.findUnique({
     where: { id: batchId },
@@ -283,19 +295,26 @@ export async function previewProductionConsumption(
   });
 
   if (!batch) {
-    throw new Error('Lot non trouvé');
+    throw new Error("Lot non trouvé");
   }
 
-  if (batch.status !== 'PLANNED') {
+  if (batch.status !== "PLANNED") {
     throw new Error(`Lot en statut ${batch.status}, preview non disponible`);
   }
 
-  const requirements = calculateBOMRequirements(batch.model.bom, batch.plannedQty);
+  const requirements = calculateBOMRequirements(
+    batch.model.bom,
+    batch.plannedQty,
+  );
   const hasShortage = requirements.some((r) => r.shortage > 0);
-  const totalMaterialsCost = requirements.reduce((sum, r) => sum + r.totalCost, 0);
-  const estimatedCostPerUnit = batch.plannedQty > 0 
-    ? Math.round((totalMaterialsCost / batch.plannedQty) * 100) / 100 
-    : 0;
+  const totalMaterialsCost = requirements.reduce(
+    (sum, r) => sum + r.totalCost,
+    0,
+  );
+  const estimatedCostPerUnit =
+    batch.plannedQty > 0
+      ? Math.round((totalMaterialsCost / batch.plannedQty) * 100) / 100
+      : 0;
 
   return {
     batchId: batch.id,
@@ -340,7 +359,7 @@ interface ConsumeResult {
  */
 export async function consumeProductionMaterials(
   batchId: string,
-  userId?: string
+  userId?: string,
 ): Promise<ConsumeResult> {
   return prisma.$transaction(async (tx) => {
     // Get batch with BOM
@@ -356,20 +375,25 @@ export async function consumeProductionMaterials(
     });
 
     if (!batch) {
-      throw new Error('Lot non trouvé');
+      throw new Error("Lot non trouvé");
     }
 
-    if (batch.status !== 'PLANNED') {
+    if (batch.status !== "PLANNED") {
       throw new Error(`Impossible de démarrer: lot en statut ${batch.status}`);
     }
 
     // Calculate requirements
-    const requirements = calculateBOMRequirements(batch.model.bom, batch.plannedQty);
+    const requirements = calculateBOMRequirements(
+      batch.model.bom,
+      batch.plannedQty,
+    );
 
     // Validate all stock available
     const shortages = requirements.filter((r) => r.shortage > 0);
     if (shortages.length > 0) {
-      const shortageList = shortages.map((s) => `${s.sku}: manque ${s.shortage}`).join(', ');
+      const shortageList = shortages
+        .map((s) => `${s.sku}: manque ${s.shortage}`)
+        .join(", ");
       throw new Error(`Stock insuffisant: ${shortageList}`);
     }
 
@@ -423,8 +447,8 @@ export async function consumeProductionMaterials(
       await tx.inventoryTransaction.create({
         data: {
           inventoryItemId: req.inventoryItemId,
-          direction: 'OUT',
-          type: 'PRODUCTION',
+          direction: "OUT",
+          type: "PRODUCTION",
           quantity: req.required,
           unitCost: req.unitCost,
           balanceBefore: Number(invItem.quantity),
@@ -433,7 +457,7 @@ export async function consumeProductionMaterials(
           valueAfter: newTotalValue,
           avgCostBefore: Number(invItem.averageCost),
           avgCostAfter: Number(invItem.averageCost),
-          referenceType: 'BATCH',
+          referenceType: "BATCH",
           referenceId: batchId,
           createdBy: userId,
         },
@@ -449,11 +473,12 @@ export async function consumeProductionMaterials(
     }
 
     // Update batch
-    const totalCost = totalMaterialsCost + Number(batch.laborCost) + Number(batch.overheadCost);
+    const totalCost =
+      totalMaterialsCost + Number(batch.laborCost) + Number(batch.overheadCost);
     await tx.productionBatch.update({
       where: { id: batchId },
       data: {
-        status: 'IN_PROGRESS',
+        status: "IN_PROGRESS",
         startedAt: new Date(),
         materialsCost: totalMaterialsCost,
         totalCost,
@@ -463,13 +488,13 @@ export async function consumeProductionMaterials(
     // Create audit log
     await tx.auditLog.create({
       data: {
-        action: 'CONSUME',
-        entity: 'ProductionBatch',
+        action: "CONSUME",
+        entity: "ProductionBatch",
         entityId: batchId,
         userId,
-        before: JSON.stringify({ status: 'PLANNED' }),
+        before: JSON.stringify({ status: "PLANNED" }),
         after: JSON.stringify({
-          status: 'IN_PROGRESS',
+          status: "IN_PROGRESS",
           materialsCost: totalMaterialsCost,
           consumptions: consumptionRecords.length,
         }),
@@ -519,7 +544,7 @@ interface CompleteResult {
 export async function completeProductionBatch(
   batchId: string,
   data: CompleteBatchInput,
-  userId?: string
+  userId?: string,
 ): Promise<CompleteResult> {
   return prisma.$transaction(async (tx) => {
     const batch = await tx.productionBatch.findUnique({
@@ -531,19 +556,21 @@ export async function completeProductionBatch(
     });
 
     if (!batch) {
-      throw new Error('Lot non trouvé');
+      throw new Error("Lot non trouvé");
     }
 
-    if (batch.status !== 'IN_PROGRESS') {
+    if (batch.status !== "IN_PROGRESS") {
       throw new Error(`Impossible de terminer: lot en statut ${batch.status}`);
     }
 
     if (data.producedQty <= 0) {
-      throw new Error('La quantité produite doit être supérieure à 0');
+      throw new Error("La quantité produite doit être supérieure à 0");
     }
 
     if (data.producedQty + data.wasteQty > batch.plannedQty * 1.1) {
-      throw new Error('Quantité produite + déchets dépasse la quantité planifiée (+ 10% tolérance)');
+      throw new Error(
+        "Quantité produite + déchets dépasse la quantité planifiée (+ 10% tolérance)",
+      );
     }
 
     // Calculate final costs
@@ -554,20 +581,22 @@ export async function completeProductionBatch(
         overheadCost: Number(batch.overheadCost),
       },
       { otherCost: Number(batch.model.otherCost) },
-      data.producedQty
+      data.producedQty,
     );
 
     // Update batch
     await tx.productionBatch.update({
       where: { id: batchId },
       data: {
-        status: 'COMPLETED',
+        status: "COMPLETED",
         completedAt: new Date(),
         producedQty: data.producedQty,
         wasteQty: data.wasteQty,
         totalCost: costs.totalCost,
         costPerUnit: costs.costPerUnit,
-        notes: data.notes ? `${batch.notes || ''}\n${data.notes}`.trim() : batch.notes,
+        notes: data.notes
+          ? `${batch.notes || ""}\n${data.notes}`.trim()
+          : batch.notes,
       },
     });
 
@@ -610,8 +639,8 @@ export async function completeProductionBatch(
         await tx.inventoryTransaction.create({
           data: {
             inventoryItemId: batch.model.inventoryItemId,
-            direction: 'IN',
-            type: 'PRODUCTION',
+            direction: "IN",
+            type: "PRODUCTION",
             quantity: addedQty,
             unitCost: costs.costPerUnit,
             balanceBefore: oldQty,
@@ -620,7 +649,7 @@ export async function completeProductionBatch(
             valueAfter: newValue,
             avgCostBefore: finishedItem.averageCost,
             avgCostAfter: Math.round(newCUMP * 100) / 100,
-            referenceType: 'BATCH',
+            referenceType: "BATCH",
             referenceId: batchId,
             createdBy: userId,
           },
@@ -631,16 +660,16 @@ export async function completeProductionBatch(
     // Create audit log
     await tx.auditLog.create({
       data: {
-        action: 'COMPLETE',
-        entity: 'ProductionBatch',
+        action: "COMPLETE",
+        entity: "ProductionBatch",
         entityId: batchId,
         userId,
         before: JSON.stringify({
-          status: 'IN_PROGRESS',
+          status: "IN_PROGRESS",
           producedQty: 0,
         }),
         after: JSON.stringify({
-          status: 'COMPLETED',
+          status: "COMPLETED",
           producedQty: data.producedQty,
           wasteQty: data.wasteQty,
           totalCost: costs.totalCost,
@@ -680,7 +709,7 @@ export async function completeProductionBatch(
 export async function cancelProductionBatch(
   batchId: string,
   reason?: string,
-  userId?: string
+  userId?: string,
 ): Promise<{ success: true }> {
   return prisma.$transaction(async (tx) => {
     const batch = await tx.productionBatch.findUnique({
@@ -688,29 +717,31 @@ export async function cancelProductionBatch(
     });
 
     if (!batch) {
-      throw new Error('Lot non trouvé');
+      throw new Error("Lot non trouvé");
     }
 
-    if (batch.status !== 'PLANNED') {
-      throw new Error('Seuls les lots planifiés peuvent être annulés');
+    if (batch.status !== "PLANNED") {
+      throw new Error("Seuls les lots planifiés peuvent être annulés");
     }
 
     await tx.productionBatch.update({
       where: { id: batchId },
       data: {
-        status: 'CANCELLED',
-        notes: reason ? `${batch.notes || ''}\nAnnulé: ${reason}`.trim() : batch.notes,
+        status: "CANCELLED",
+        notes: reason
+          ? `${batch.notes || ""}\nAnnulé: ${reason}`.trim()
+          : batch.notes,
       },
     });
 
     await tx.auditLog.create({
       data: {
-        action: 'CANCEL',
-        entity: 'ProductionBatch',
+        action: "CANCEL",
+        entity: "ProductionBatch",
         entityId: batchId,
         userId,
-        before: JSON.stringify({ status: 'PLANNED' }),
-        after: JSON.stringify({ status: 'CANCELLED', reason }),
+        before: JSON.stringify({ status: "PLANNED" }),
+        after: JSON.stringify({ status: "CANCELLED", reason }),
       },
     });
 

@@ -3,11 +3,11 @@
  * POST /api/v3/compta/purchases/[id]/preview - Preview CUMP impact (non-destructive)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, handleApiError } from '@/lib/auth-helpers';
-import { z } from 'zod';
-import { PreviewReceiveSchema } from '@/lib/compta/schemas/purchase.schemas';
-import { previewReceivePurchase } from '@/lib/compta/services/purchases-service';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin, handleApiError } from "@/lib/auth-helpers";
+import { z } from "zod";
+import { PreviewReceiveSchema } from "@/lib/compta/schemas/purchase.schemas";
+import { previewReceivePurchase } from "@/lib/compta/services/purchases-service";
 
 /**
  * POST /api/v3/compta/purchases/[id]/preview
@@ -16,7 +16,7 @@ import { previewReceivePurchase } from '@/lib/compta/services/purchases-service'
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -34,8 +34,12 @@ export async function POST(
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Validation échouée', details: err.flatten().fieldErrors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Validation échouée",
+          details: err.flatten().fieldErrors,
+        },
+        { status: 400 },
       );
     }
     return handleApiError(err);

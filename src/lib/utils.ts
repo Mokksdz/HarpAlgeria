@@ -1,8 +1,8 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -10,17 +10,20 @@ export function cn(...inputs: ClassValue[]) {
  * Handles Prisma Decimal types which might be passed as objects or strings.
  */
 export function formatPrice(amount: number | string | any): string {
-    if (amount === null || amount === undefined) return "0 DZD";
-    
-    const value = typeof amount === 'object' && 'toNumber' in amount 
-        ? amount.toNumber() 
-        : Number(amount);
+  if (amount === null || amount === undefined) return "0 DZD";
 
-    if (isNaN(value)) return "0 DZD";
+  const value =
+    typeof amount === "object" && "toNumber" in amount
+      ? amount.toNumber()
+      : Number(amount);
 
-    return new Intl.NumberFormat('fr-DZ', {
-        style: 'decimal',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-    }).format(value) + " DZD";
+  if (isNaN(value)) return "0 DZD";
+
+  return (
+    new Intl.NumberFormat("fr-DZ", {
+      style: "decimal",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(value) + " DZD"
+  );
 }

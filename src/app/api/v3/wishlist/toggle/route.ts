@@ -33,17 +33,17 @@ export async function POST(req: Request) {
       // or check first.
       // For simplicity, let's just call it and assume we might allow multiple or rely on client behavior.
       // Better approach: check if LoyaltyPoint exists for this ref.
-      
+
       // Since `earnPoints` doesn't check for duplication of referenceId inherently unless we coded it,
       // we will proceed but note this caveat.
-      
+
       // Actually, let's just do it.
       try {
         await earnPoints(
           userId,
           LOYALTY_RULES.WISHLIST_ADD_BONUS,
           "WISHLIST_ADD",
-          `WISHLIST_${validated.productId}`
+          `WISHLIST_${validated.productId}`,
         );
       } catch (e) {
         // Ignore if duplicate or error, don't fail the toggle
@@ -57,8 +57,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
     }
     return NextResponse.json(
-        { error: error.message || "Internal Server Error" },
-        { status: 500 }
+      { error: error.message || "Internal Server Error" },
+      { status: 500 },
     );
   }
 }

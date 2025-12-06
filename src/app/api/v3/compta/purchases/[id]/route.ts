@@ -14,7 +14,7 @@ const PurchaseUpdateSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -32,20 +32,23 @@ export async function GET(
     if (!purchase) {
       return NextResponse.json(
         { success: false, error: "Achat non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json({ success: true, purchase });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -57,14 +60,14 @@ export async function PUT(
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Achat non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (existing.status !== "DRAFT") {
       return NextResponse.json(
         { success: false, error: "Seuls les brouillons peuvent être modifiés" },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -73,7 +76,9 @@ export async function PUT(
       data: {
         invoiceNumber: data.invoiceNumber,
         invoiceDate: data.invoiceDate ? new Date(data.invoiceDate) : undefined,
-        expectedDate: data.expectedDate ? new Date(data.expectedDate) : undefined,
+        expectedDate: data.expectedDate
+          ? new Date(data.expectedDate)
+          : undefined,
         taxAmount: data.taxAmount,
         shippingCost: data.shippingCost,
         notes: data.notes,
@@ -86,17 +91,20 @@ export async function PUT(
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -106,14 +114,17 @@ export async function DELETE(
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Achat non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (existing.status !== "DRAFT") {
       return NextResponse.json(
-        { success: false, error: "Seuls les brouillons peuvent être supprimés" },
-        { status: 422 }
+        {
+          success: false,
+          error: "Seuls les brouillons peuvent être supprimés",
+        },
+        { status: 422 },
       );
     }
 
@@ -125,6 +136,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }

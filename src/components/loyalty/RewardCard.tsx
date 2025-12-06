@@ -25,22 +25,28 @@ export function RewardCard({ reward, userBalance, onRedeem }: RewardCardProps) {
           {reward.cost} pts
         </span>
       </div>
-      <p className="text-xs text-gray-500 mb-4 min-h-[2.5em]">{reward.descriptionFr}</p>
-      
-      <button 
+      <p className="text-xs text-gray-500 mb-4 min-h-[2.5em]">
+        {reward.descriptionFr}
+      </p>
+
+      <button
         onClick={() => onRedeem(reward.id)}
         disabled={!canAfford}
         className={cn(
           "w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2",
           canAfford
-            ? "bg-harp-brown text-white hover:bg-harp-caramel" 
-            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            ? "bg-harp-brown text-white hover:bg-harp-caramel"
+            : "bg-gray-100 text-gray-400 cursor-not-allowed",
         )}
       >
         {canAfford ? (
-          <>Obtenir <Gift size={14} /></>
+          <>
+            Obtenir <Gift size={14} />
+          </>
         ) : (
-          <>Points insuffisants <Lock size={14} /></>
+          <>
+            Points insuffisants <Lock size={14} />
+          </>
         )}
       </button>
     </div>

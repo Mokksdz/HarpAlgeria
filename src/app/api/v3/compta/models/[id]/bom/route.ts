@@ -13,7 +13,7 @@ const BomItemSchema = z.object({
 // GET: List BOM items for model
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -32,14 +32,17 @@ export async function GET(
     if (!model) {
       return NextResponse.json(
         { success: false, error: "Modèle non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Calculate total BOM cost
     let totalCost = 0;
     const bomWithCosts = model.bom.map((item) => {
-      const cost = Number(item.quantity) * Number(item.wasteFactor) * Number(item.inventoryItem.averageCost);
+      const cost =
+        Number(item.quantity) *
+        Number(item.wasteFactor) *
+        Number(item.inventoryItem.averageCost);
       totalCost += cost;
       return {
         ...item,
@@ -57,14 +60,17 @@ export async function GET(
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
 // POST: Add item to BOM
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -77,7 +83,7 @@ export async function POST(
     if (!model) {
       return NextResponse.json(
         { success: false, error: "Modèle non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -88,7 +94,7 @@ export async function POST(
     if (!invItem) {
       return NextResponse.json(
         { success: false, error: "Article inventaire non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -99,7 +105,7 @@ export async function POST(
     if (existing) {
       return NextResponse.json(
         { success: false, error: "Cet article est déjà dans la nomenclature" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -119,11 +125,14 @@ export async function POST(
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }
 
@@ -137,7 +146,7 @@ export async function DELETE(req: NextRequest) {
     if (!bomItemId) {
       return NextResponse.json(
         { success: false, error: "bomItemId requis" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -146,6 +155,9 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }

@@ -3,10 +3,14 @@
  * Handles purchase operations: create, preview receive, receive (transactional)
  */
 
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
-import { calculateCUMP, calculateTotalValue, determinePurchaseStatus } from '../accounting';
-import { createInventoryTransaction } from './inventory-service';
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import {
+  calculateCUMP,
+  calculateTotalValue,
+  determinePurchaseStatus,
+} from "../accounting";
+import { createInventoryTransaction } from "./inventory-service";
 import type {
   PurchaseCreateInput,
   ReceivePurchaseInput,
@@ -14,7 +18,7 @@ import type {
   PaginatedResponse,
   StockUpdate,
   ReceivePreviewResult,
-} from '../schemas/purchase.schemas';
+} from "../schemas/purchase.schemas";
 
 // =============================================================================
 // TYPES
@@ -53,17 +57,17 @@ async function generatePurchaseNumber(): Promise<string> {
 
   const lastPurchase = await prisma.purchase.findFirst({
     where: { purchaseNumber: { startsWith: prefix } },
-    orderBy: { purchaseNumber: 'desc' },
+    orderBy: { purchaseNumber: "desc" },
     select: { purchaseNumber: true },
   });
 
   let nextNumber = 1;
   if (lastPurchase) {
-    const lastNum = parseInt(lastPurchase.purchaseNumber.split('-')[2], 10);
+    const lastNum = parseInt(lastPurchase.purchaseNumber.split("-")[2], 10);
     nextNumber = lastNum + 1;
   }
 
-  return `${prefix}${nextNumber.toString().padStart(3, '0')}`;
+  return `${prefix}${nextNumber.toString().padStart(3, "0")}`;
 }
 
 // =============================================================================
@@ -75,7 +79,7 @@ async function generatePurchaseNumber(): Promise<string> {
  */
 export async function getPurchaseList(
   { page = 1, pageSize = 20 }: { page?: number; pageSize?: number } = {},
-  filters: PurchaseListFilters = {}
+  filters: PurchaseListFilters = {},
 ): Promise<PaginatedResponse<PurchaseListItem>> {
   const skip = (page - 1) * pageSize;
 
@@ -106,7 +110,7 @@ export async function getPurchaseList(
       },
       take: pageSize,
       skip,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.purchase.count({ where }),
   ]);
@@ -146,13 +150,15 @@ export async function getPurchaseDetail(id: string): Promise<Purchase | null> {
 /**
  * Create a new purchase in DRAFT status
  */
-export async function createPurchase(data: PurchaseCreateInput): Promise<Purchase> {
+export async function createPurchase(
+  data: PurchaseCreateInput,
+): Promise<Purchase> {
   const purchaseNumber = await generatePurchaseNumber();
 
   // Calculate totals
   const subtotal = data.items.reduce(
     (sum, item) => sum + item.quantityOrdered * item.unitPrice,
-    0
+    0,
   );
 
   return prisma.purchase.create({
@@ -166,13 +172,13 @@ export async function createPurchase(data: PurchaseCreateInput): Promise<Purchas
       subtotal,
       totalAmount: subtotal,
       amountDue: subtotal,
-      status: 'DRAFT',
+      status: "DRAFT",
       items: {
         create: data.items.map((item) => ({
           inventoryItemId: item.inventoryItemId,
           quantityOrdered: item.quantityOrdered,
           quantityReceived: 0,
-          unit: 'PIECE', // Will be updated from inventory item
+          unit: "PIECE", // Will be updated from inventory item
           unitPrice: item.unitPrice,
           totalPrice: item.quantityOrdered * item.unitPrice,
         })),
@@ -199,7 +205,7 @@ export async function createPurchase(data: PurchaseCreateInput): Promise<Purchas
  */
 export async function previewReceivePurchase(
   purchaseId: string,
-  data: PreviewReceiveInput
+  data: PreviewReceiveInput,
 ): Promise<ReceivePreviewResult> {
   // Get purchase with items
   const purchase = await prisma.purchase.findUnique({
@@ -214,22 +220,24 @@ export async function previewReceivePurchase(
   });
 
   if (!purchase) {
-    throw new Error('Achat non trouvé');
+    throw new Error("Achat non trouvé");
   }
 
-  if (purchase.status === 'RECEIVED') {
-    throw new Error('Cet achat a déjà été entièrement reçu');
+  if (purchase.status === "RECEIVED") {
+    throw new Error("Cet achat a déjà été entièrement reçu");
   }
 
-  if (purchase.status === 'CANCELLED') {
-    throw new Error('Cet achat est annulé');
+  if (purchase.status === "CANCELLED") {
+    throw new Error("Cet achat est annulé");
   }
 
   const stockUpdates: StockUpdate[] = [];
   let totalValueIncrease = 0;
 
   for (const receiveItem of data.items) {
-    const purchaseItem = purchase.items.find((pi) => pi.id === receiveItem.purchaseItemId);
+    const purchaseItem = purchase.items.find(
+      (pi) => pi.id === receiveItem.purchaseItemId,
+    );
 
     if (!purchaseItem) {
       throw new Error(`Article achat ${receiveItem.purchaseItemId} non trouvé`);
@@ -241,10 +249,12 @@ export async function previewReceivePurchase(
     }
 
     // Check remaining quantity
-    const remaining = Number(purchaseItem.quantityOrdered) - Number(purchaseItem.quantityReceived);
+    const remaining =
+      Number(purchaseItem.quantityOrdered) -
+      Number(purchaseItem.quantityReceived);
     if (receiveItem.quantityReceived > remaining) {
       throw new Error(
-        `Quantité reçue (${receiveItem.quantityReceived}) dépasse le restant (${remaining}) pour ${purchaseItem.inventoryItem.name}`
+        `Quantité reçue (${receiveItem.quantityReceived}) dépasse le restant (${remaining}) pour ${purchaseItem.inventoryItem.name}`,
       );
     }
 
@@ -255,7 +265,7 @@ export async function previewReceivePurchase(
       Number(item.quantity),
       Number(item.averageCost),
       receiveItem.quantityReceived,
-      Number(purchaseItem.unitPrice)
+      Number(purchaseItem.unitPrice),
     );
 
     const newQty = Number(item.quantity) + receiveItem.quantityReceived;
@@ -309,7 +319,7 @@ interface ReceivePurchaseResult {
 export async function receivePurchase(
   purchaseId: string,
   data: ReceivePurchaseInput,
-  userId?: string
+  userId?: string,
 ): Promise<ReceivePurchaseResult> {
   return prisma.$transaction(async (tx) => {
     // Get purchase with items
@@ -326,15 +336,15 @@ export async function receivePurchase(
     });
 
     if (!purchase) {
-      throw new Error('Achat non trouvé');
+      throw new Error("Achat non trouvé");
     }
 
-    if (purchase.status === 'RECEIVED') {
-      throw new Error('Cet achat a déjà été entièrement reçu');
+    if (purchase.status === "RECEIVED") {
+      throw new Error("Cet achat a déjà été entièrement reçu");
     }
 
-    if (purchase.status === 'CANCELLED') {
-      throw new Error('Cet achat est annulé');
+    if (purchase.status === "CANCELLED") {
+      throw new Error("Cet achat est annulé");
     }
 
     const stockUpdates: StockUpdate[] = [];
@@ -348,10 +358,14 @@ export async function receivePurchase(
 
     // Process each item to receive
     for (const receiveItem of data.items) {
-      const purchaseItem = purchase.items.find((pi) => pi.id === receiveItem.purchaseItemId);
+      const purchaseItem = purchase.items.find(
+        (pi) => pi.id === receiveItem.purchaseItemId,
+      );
 
       if (!purchaseItem) {
-        throw new Error(`Article achat ${receiveItem.purchaseItemId} non trouvé`);
+        throw new Error(
+          `Article achat ${receiveItem.purchaseItemId} non trouvé`,
+        );
       }
 
       // Skip if no quantity to receive
@@ -360,10 +374,12 @@ export async function receivePurchase(
       }
 
       // Validate remaining quantity
-      const remaining = Number(purchaseItem.quantityOrdered) - Number(purchaseItem.quantityReceived);
+      const remaining =
+        Number(purchaseItem.quantityOrdered) -
+        Number(purchaseItem.quantityReceived);
       if (receiveItem.quantityReceived > remaining) {
         throw new Error(
-          `Quantité reçue (${receiveItem.quantityReceived}) dépasse le restant (${remaining}) pour ${purchaseItem.inventoryItem.name}`
+          `Quantité reçue (${receiveItem.quantityReceived}) dépasse le restant (${remaining}) pour ${purchaseItem.inventoryItem.name}`,
         );
       }
 
@@ -374,7 +390,7 @@ export async function receivePurchase(
         Number(item.quantity),
         Number(item.averageCost),
         receiveItem.quantityReceived,
-        Number(purchaseItem.unitPrice)
+        Number(purchaseItem.unitPrice),
       );
 
       const newQty = Number(item.quantity) + receiveItem.quantityReceived;
@@ -398,8 +414,8 @@ export async function receivePurchase(
       await tx.inventoryTransaction.create({
         data: {
           inventoryItemId: item.id,
-          direction: 'IN',
-          type: 'PURCHASE',
+          direction: "IN",
+          type: "PURCHASE",
           quantity: receiveItem.quantityReceived,
           unitCost: Number(purchaseItem.unitPrice),
           balanceBefore: Number(item.quantity),
@@ -408,7 +424,7 @@ export async function receivePurchase(
           valueAfter: newValue,
           avgCostBefore: Number(item.averageCost),
           avgCostAfter: newCUMP,
-          referenceType: 'PURCHASE',
+          referenceType: "PURCHASE",
           referenceId: purchase.id,
           createdBy: userId,
         },
@@ -418,7 +434,9 @@ export async function receivePurchase(
       await tx.purchaseItem.update({
         where: { id: purchaseItem.id },
         data: {
-          quantityReceived: Number(purchaseItem.quantityReceived) + receiveItem.quantityReceived,
+          quantityReceived:
+            Number(purchaseItem.quantityReceived) +
+            receiveItem.quantityReceived,
         },
       });
 
@@ -443,7 +461,7 @@ export async function receivePurchase(
     });
 
     const newStatus = determinePurchaseStatus(updatedItems);
-    const receivedDate = newStatus === 'RECEIVED' ? new Date() : null;
+    const receivedDate = newStatus === "RECEIVED" ? new Date() : null;
 
     // Update purchase status
     const updatedPurchase = await tx.purchase.update({
@@ -466,8 +484,8 @@ export async function receivePurchase(
     // Create audit log
     await tx.auditLog.create({
       data: {
-        action: 'RECEIVE',
-        entity: 'Purchase',
+        action: "RECEIVE",
+        entity: "Purchase",
         entityId: purchase.id,
         userId,
         before: JSON.stringify(beforeSnapshot),

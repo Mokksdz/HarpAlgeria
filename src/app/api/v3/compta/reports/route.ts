@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       select: { quantity: true, reserved: true },
     });
     const lowStockItems = allItems.filter(
-      (item) => (Number(item.quantity) - Number(item.reserved)) <= 10
+      (item) => Number(item.quantity) - Number(item.reserved) <= 10,
     ).length;
 
     // Purchase stats

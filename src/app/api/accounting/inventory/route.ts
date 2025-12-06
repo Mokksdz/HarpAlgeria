@@ -5,7 +5,6 @@ import { parsePagination, paginatedResponse } from "@/lib/pagination";
 // GET all inventory items with optional filters
 export async function GET(req: NextRequest) {
   try {
-    
     const { searchParams } = new URL(req.url);
     const { page, pageSize, skip } = parsePagination(searchParams);
     const type = searchParams.get("type");
@@ -16,11 +15,11 @@ export async function GET(req: NextRequest) {
       type?: string;
       OR?: Array<{ name?: { contains: string }; sku?: { contains: string } }>;
     } = {};
-    
+
     if (type) {
       where.type = type;
     }
-    
+
     if (search) {
       where.OR = [
         { name: { contains: search } },
@@ -36,24 +35,26 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
         include: {
           _count: {
-            select: { bomItems: true, purchaseItems: true }
-          }
-        }
+            select: { bomItems: true, purchaseItems: true },
+          },
+        },
       });
 
-      items = items.filter((item) => 
-        item.threshold !== null && item.quantity <= item.threshold
+      items = items.filter(
+        (item) => item.threshold !== null && item.quantity <= item.threshold,
       );
 
       const total = items.length;
       const paginatedItems = items.slice(skip, skip + pageSize);
-      
+
       const itemsWithValue = paginatedItems.map((item) => ({
         ...item,
         totalValue: Number(item.quantity) * Number(item.averageCost),
       }));
 
-      return NextResponse.json(paginatedResponse(itemsWithValue, page, pageSize, total));
+      return NextResponse.json(
+        paginatedResponse(itemsWithValue, page, pageSize, total),
+      );
     }
 
     const [items, total] = await Promise.all([
@@ -64,9 +65,9 @@ export async function GET(req: NextRequest) {
         take: pageSize,
         include: {
           _count: {
-            select: { bomItems: true, purchaseItems: true }
-          }
-        }
+            select: { bomItems: true, purchaseItems: true },
+          },
+        },
       }),
       prisma.inventoryItem.count({ where }),
     ]);
@@ -77,36 +78,40 @@ export async function GET(req: NextRequest) {
       totalValue: Number(item.quantity) * Number(item.averageCost),
     }));
 
-    return NextResponse.json(paginatedResponse(itemsWithValue, page, pageSize, total));
+    return NextResponse.json(
+      paginatedResponse(itemsWithValue, page, pageSize, total),
+    );
   } catch (error) {
     console.error("Error fetching inventory:", error);
-    return NextResponse.json({ error: "Failed to fetch inventory" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch inventory" },
+      { status: 500 },
+    );
   }
 }
 
 // POST create new inventory item
 export async function POST(req: NextRequest) {
   try {
-    
     const data = await req.json();
 
     // Validate required fields
     if (!data.sku || !data.name || !data.type || !data.unit) {
       return NextResponse.json(
         { error: "SKU, name, type and unit are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Check if SKU already exists
     const existing = await prisma.inventoryItem.findUnique({
-      where: { sku: data.sku }
+      where: { sku: data.sku },
     });
 
     if (existing) {
       return NextResponse.json(
         { error: "SKU already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -132,6 +137,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(item, { status: 201 });
   } catch (error) {
     console.error("Error creating inventory item:", error);
-    return NextResponse.json({ error: "Failed to create inventory item" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create inventory item" },
+      { status: 500 },
+    );
   }
 }

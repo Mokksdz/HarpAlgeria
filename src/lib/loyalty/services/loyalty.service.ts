@@ -15,16 +15,28 @@ export const LOYALTY_RULES = {
 
 export const VIP_LEVELS = {
   SILVER: { threshold: 0, multiplier: 1, benefits: ["Accès standard"] },
-  GOLD: { threshold: 50000, multiplier: 1.2, benefits: ["Livraison gratuite > 5000 DA", "Accès ventes privées"] },
-  BLACK: { threshold: 150000, multiplier: 1.5, benefits: ["Livraison gratuite sans minimum", "Service conciergerie", "Cadeau surprise"] },
+  GOLD: {
+    threshold: 50000,
+    multiplier: 1.2,
+    benefits: ["Livraison gratuite > 5000 DA", "Accès ventes privées"],
+  },
+  BLACK: {
+    threshold: 150000,
+    multiplier: 1.5,
+    benefits: [
+      "Livraison gratuite sans minimum",
+      "Service conciergerie",
+      "Cadeau surprise",
+    ],
+  },
 };
 
-export type LoyaltyAction = 
-  | "PURCHASE" 
-  | "SIGNUP" 
-  | "BIRTHDAY" 
-  | "REFERRAL" 
-  | "REVIEW" 
+export type LoyaltyAction =
+  | "PURCHASE"
+  | "SIGNUP"
+  | "BIRTHDAY"
+  | "REFERRAL"
+  | "REVIEW"
   | "ABANDONED_CART_RECOVERY"
   | "NEWSLETTER"
   | "WHATSAPP_SHARE"
@@ -34,7 +46,9 @@ export type LoyaltyAction =
 /**
  * Calculate VIP level based on total lifetime points
  */
-export function calculateVipLevel(totalPoints: number): "SILVER" | "GOLD" | "BLACK" {
+export function calculateVipLevel(
+  totalPoints: number,
+): "SILVER" | "GOLD" | "BLACK" {
   if (totalPoints >= VIP_LEVELS.BLACK.threshold) return "BLACK";
   if (totalPoints >= VIP_LEVELS.GOLD.threshold) return "GOLD";
   return "SILVER";
@@ -44,15 +58,15 @@ export function calculateVipLevel(totalPoints: number): "SILVER" | "GOLD" | "BLA
  * Add loyalty points to a user
  */
 export async function earnPoints(
-  userId: string, 
-  amount: number, 
-  reason: LoyaltyAction, 
-  referenceId?: string
+  userId: string,
+  amount: number,
+  reason: LoyaltyAction,
+  referenceId?: string,
 ) {
   // Check for idempotency first to avoid transaction overhead if already processed
   if (referenceId) {
     const existing = await prisma.loyaltyPoint.findUnique({
-      where: { referenceId }
+      where: { referenceId },
     });
     if (existing) {
       console.log(`[Loyalty] Skipped duplicate event: ${referenceId}`);
@@ -68,8 +82,8 @@ export async function earnPoints(
           userId,
           amount,
           reason,
-          referenceId
-        }
+          referenceId,
+        },
       });
 
       // 2. Update user balance and calculate new VIP level
@@ -78,33 +92,35 @@ export async function earnPoints(
 
       // Calculate lifetime points
       const newBalance = (user.loyaltyPoints || 0) + amount;
-      
+
       // Re-evaluate VIP level based on historical points
       const history = await tx.loyaltyPoint.aggregate({
         where: { userId, amount: { gt: 0 } },
-        _sum: { amount: true }
+        _sum: { amount: true },
       });
-      
+
       // Note: aggregated sum includes the point we just created inside this transaction context
-      const totalLifetimePoints = (history._sum.amount || 0); 
+      const totalLifetimePoints = history._sum.amount || 0;
       const newVipLevel = calculateVipLevel(totalLifetimePoints);
 
       await tx.user.update({
         where: { id: userId },
         data: {
           loyaltyPoints: newBalance,
-          vipLevel: newVipLevel
-        }
+          vipLevel: newVipLevel,
+        },
       });
 
       return pointRecord;
     });
   } catch (error: any) {
     // Handle race condition where simultaneous requests pass the initial check
-    if (error.code === 'P2002') {
-       console.log(`[Loyalty] Race condition duplicate caught: ${referenceId}`);
-       const existing = await prisma.loyaltyPoint.findUnique({ where: { referenceId } });
-       return existing;
+    if (error.code === "P2002") {
+      console.log(`[Loyalty] Race condition duplicate caught: ${referenceId}`);
+      const existing = await prisma.loyaltyPoint.findUnique({
+        where: { referenceId },
+      });
+      return existing;
     }
     throw error;
   }
@@ -116,35 +132,41 @@ export async function earnPoints(
 export async function getLoyaltySummary(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { 
-      loyaltyPoints: true, 
+    select: {
+      loyaltyPoints: true,
       vipLevel: true,
       pointHistory: {
-        orderBy: { createdAt: 'desc' },
-        take: 20
-      }
-    }
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      },
+    },
   });
 
   if (!user) throw new Error("User not found");
-  
+
   // Calculate progress to next level
   let nextLevel = null;
   let progress = 0;
-  
+
   // Need total lifetime points for accurate progress
   const history = await prisma.loyaltyPoint.aggregate({
-      where: { userId, amount: { gt: 0 } },
-      _sum: { amount: true }
+    where: { userId, amount: { gt: 0 } },
+    _sum: { amount: true },
   });
   const totalLifetimePoints = history._sum.amount || 0;
 
   if (user.vipLevel === "SILVER") {
     nextLevel = { name: "GOLD", threshold: VIP_LEVELS.GOLD.threshold };
-    progress = Math.min(100, (totalLifetimePoints / VIP_LEVELS.GOLD.threshold) * 100);
+    progress = Math.min(
+      100,
+      (totalLifetimePoints / VIP_LEVELS.GOLD.threshold) * 100,
+    );
   } else if (user.vipLevel === "GOLD") {
     nextLevel = { name: "BLACK", threshold: VIP_LEVELS.BLACK.threshold };
-    progress = Math.min(100, (totalLifetimePoints / VIP_LEVELS.BLACK.threshold) * 100);
+    progress = Math.min(
+      100,
+      (totalLifetimePoints / VIP_LEVELS.BLACK.threshold) * 100,
+    );
   }
 
   return {
@@ -153,7 +175,7 @@ export async function getLoyaltySummary(userId: string) {
     benefits: VIP_LEVELS[user.vipLevel as keyof typeof VIP_LEVELS].benefits,
     nextLevel,
     progress,
-    history: user.pointHistory
+    history: user.pointHistory,
   };
 }
 
@@ -162,7 +184,9 @@ export async function getLoyaltySummary(userId: string) {
  */
 export async function redeemReward(userId: string, rewardId: string) {
   return prisma.$transaction(async (tx) => {
-    const reward = await tx.loyaltyReward.findUnique({ where: { id: rewardId } });
+    const reward = await tx.loyaltyReward.findUnique({
+      where: { id: rewardId },
+    });
     if (!reward) throw new Error("Reward not found");
     if (!reward.isActive) throw new Error("Reward is inactive");
 
@@ -176,7 +200,7 @@ export async function redeemReward(userId: string, rewardId: string) {
     // Deduct points
     await tx.user.update({
       where: { id: userId },
-      data: { loyaltyPoints: { decrement: reward.cost } }
+      data: { loyaltyPoints: { decrement: reward.cost } },
     });
 
     // Record transaction
@@ -185,8 +209,8 @@ export async function redeemReward(userId: string, rewardId: string) {
         userId,
         amount: -reward.cost,
         reason: "REWARD_REDEMPTION",
-        referenceId: rewardId
-      }
+        referenceId: rewardId,
+      },
     });
 
     return { success: true, reward };
@@ -205,9 +229,12 @@ export async function grantBirthdayPointsToUser(userId: string) {
 
     const dob = new Date(user.birthDate);
     const today = new Date();
-    
+
     // Check if today is user's birthday (compare month & day)
-    if (dob.getUTCDate() !== today.getUTCDate() || dob.getUTCMonth() !== today.getUTCMonth()) {
+    if (
+      dob.getUTCDate() !== today.getUTCDate() ||
+      dob.getUTCMonth() !== today.getUTCMonth()
+    ) {
       throw new Error("Aujourd'hui n'est pas l'anniversaire de l'utilisateur");
     }
 
@@ -222,8 +249,8 @@ export async function grantBirthdayPointsToUser(userId: string) {
         userId: user.id,
         amount: LOYALTY_RULES.BIRTHDAY_BONUS,
         reason: "BIRTHDAY",
-        referenceId: `birthday-${currentYear}`
-      }
+        referenceId: `birthday-${currentYear}`,
+      },
     });
 
     // 2) Update user balance and lastBirthdayGrantYear
@@ -231,11 +258,15 @@ export async function grantBirthdayPointsToUser(userId: string) {
       where: { id: user.id },
       data: {
         loyaltyPoints: { increment: LOYALTY_RULES.BIRTHDAY_BONUS },
-        lastBirthdayGrantYear: currentYear
-      }
+        lastBirthdayGrantYear: currentYear,
+      },
     });
 
-    return { success: true, txId: pointRecord.id, points: LOYALTY_RULES.BIRTHDAY_BONUS };
+    return {
+      success: true,
+      txId: pointRecord.id,
+      points: LOYALTY_RULES.BIRTHDAY_BONUS,
+    };
   });
 }
 
@@ -251,24 +282,26 @@ export async function runDailyBirthdayGrant() {
   // Get all users with birthDate set
   const users = await prisma.user.findMany({
     where: {
-      birthDate: { not: null }
+      birthDate: { not: null },
     },
     select: {
       id: true,
       email: true,
       name: true,
       birthDate: true,
-      lastBirthdayGrantYear: true
-    }
+      lastBirthdayGrantYear: true,
+    },
   });
 
   // Filter users whose birthday is today and haven't received points this year
-  const candidates = users.filter(u => {
+  const candidates = users.filter((u) => {
     if (!u.birthDate) return false;
     const d = new Date(u.birthDate);
-    return d.getUTCMonth() === month && 
-           d.getUTCDate() === day && 
-           (u.lastBirthdayGrantYear ?? 0) < currentYear;
+    return (
+      d.getUTCMonth() === month &&
+      d.getUTCDate() === day &&
+      (u.lastBirthdayGrantYear ?? 0) < currentYear
+    );
   });
 
   const results = [];
@@ -276,7 +309,9 @@ export async function runDailyBirthdayGrant() {
     try {
       await grantBirthdayPointsToUser(u.id);
       results.push({ email: u.email, success: true });
-      console.log(`[Birthday] Granted ${LOYALTY_RULES.BIRTHDAY_BONUS} points to ${u.email}`);
+      console.log(
+        `[Birthday] Granted ${LOYALTY_RULES.BIRTHDAY_BONUS} points to ${u.email}`,
+      );
     } catch (err: any) {
       results.push({ email: u.email, success: false, error: err.message });
       console.error(`[Birthday] Failed for ${u.email}:`, err.message);

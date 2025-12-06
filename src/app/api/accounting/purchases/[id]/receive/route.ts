@@ -9,17 +9,21 @@ import { z } from "zod";
 
 // Schema de validation
 const ReceiveSchema = z.object({
-  items: z.array(z.object({
-    id: z.string().min(1, "ID article requis"),
-    quantityReceived: z.number().min(0, "Quantité >= 0"),
-  })).min(1, "Au moins un article requis"),
+  items: z
+    .array(
+      z.object({
+        id: z.string().min(1, "ID article requis"),
+        quantityReceived: z.number().min(0, "Quantité >= 0"),
+      }),
+    )
+    .min(1, "Au moins un article requis"),
   receivedBy: z.string().optional(),
 });
 
 // POST - Réceptionner l'achat
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -29,11 +33,11 @@ export async function POST(
     const validation = ReceiveSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        { 
+        {
           error: "Données invalides",
           details: validation.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -51,7 +55,7 @@ export async function POST(
     console.error("Error receiving purchase:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de la réception" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

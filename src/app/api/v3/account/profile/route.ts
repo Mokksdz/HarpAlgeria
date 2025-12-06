@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       where: { email: session.user.email },
       create: {
         email: session.user.email,
-        name: session.user.name || null
+        name: session.user.name || null,
       },
       update: {}, // No updates on GET
       select: {
@@ -29,14 +29,17 @@ export async function GET(req: NextRequest) {
         birthDate: true,
         loyaltyPoints: true,
         vipLevel: true,
-        createdAt: true
-      }
+        createdAt: true,
+      },
     });
 
     return NextResponse.json(user);
   } catch (error: any) {
     console.error("Profile GET error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -51,16 +54,16 @@ export async function PATCH(req: NextRequest) {
   try {
     const rawBody = await req.json();
     const parsed = UpdateProfileSchema.safeParse(rawBody);
-    
+
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0]?.message || "Validation échouée" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     const body = parsed.data;
-    
+
     // Build update data
     const data: any = {};
     if (body.name !== undefined) data.name = body.name;
@@ -75,7 +78,7 @@ export async function PATCH(req: NextRequest) {
       create: {
         email: session.user.email,
         name: session.user.name || body.name || null,
-        ...data
+        ...data,
       },
       update: data,
       select: {
@@ -85,14 +88,17 @@ export async function PATCH(req: NextRequest) {
         phone: true,
         birthDate: true,
         loyaltyPoints: true,
-        vipLevel: true
-      }
+        vipLevel: true,
+      },
     });
 
     return NextResponse.json({ success: true, user: updated });
   } catch (error: any) {
     console.error("Profile PATCH error:", error);
-    
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

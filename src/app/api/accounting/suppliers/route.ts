@@ -7,10 +7,10 @@ export async function GET() {
     const suppliers = await prisma.supplier.findMany({
       include: {
         _count: {
-          select: { purchases: true }
-        }
+          select: { purchases: true },
+        },
       },
-      orderBy: { name: "asc" }
+      orderBy: { name: "asc" },
     });
 
     return NextResponse.json(suppliers);
@@ -18,7 +18,7 @@ export async function GET() {
     console.error("Error fetching suppliers:", error);
     return NextResponse.json(
       { error: "Failed to fetch suppliers" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -29,10 +29,7 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
 
     if (!data.name) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
     // Generate supplier code if not provided
@@ -67,7 +64,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating supplier:", error);
     return NextResponse.json(
       { error: "Failed to create supplier" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

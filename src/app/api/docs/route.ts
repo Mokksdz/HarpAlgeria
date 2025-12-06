@@ -8,15 +8,15 @@ export async function GET() {
     const filePath = path.join(process.cwd(), "docs/openapi.yaml");
     const file = fs.readFileSync(filePath, "utf8");
     return new NextResponse(file, {
-      headers: { 
-        "Content-Type": "text/yaml"
+      headers: {
+        "Content-Type": "text/yaml",
         // CORS is handled by middleware
-      }
+      },
     });
   } catch {
     return NextResponse.json(
       { error: "OpenAPI spec not found" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 }

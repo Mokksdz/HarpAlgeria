@@ -3,11 +3,11 @@
  * POST /api/v3/compta/inventory/adjustment - Apply inventory adjustment
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, handleApiError } from '@/lib/auth-helpers';
-import { z } from 'zod';
-import { InventoryAdjustmentSchema } from '@/lib/compta/schemas/purchase.schemas';
-import { applyAdjustment } from '@/lib/compta/services/inventory-service';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin, handleApiError } from "@/lib/auth-helpers";
+import { z } from "zod";
+import { InventoryAdjustmentSchema } from "@/lib/compta/schemas/purchase.schemas";
+import { applyAdjustment } from "@/lib/compta/services/inventory-service";
 
 /**
  * POST /api/v3/compta/inventory/adjustment
@@ -34,18 +34,23 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Validation échouée', details: err.flatten().fieldErrors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Validation échouée",
+          details: err.flatten().fieldErrors,
+        },
+        { status: 400 },
       );
     }
     // Handle business logic errors
-    if (err instanceof Error && (
-      err.message.includes('non trouvé') ||
-      err.message.includes('insuffisant')
-    )) {
+    if (
+      err instanceof Error &&
+      (err.message.includes("non trouvé") ||
+        err.message.includes("insuffisant"))
+    ) {
       return NextResponse.json(
         { success: false, error: err.message },
-        { status: 422 }
+        { status: 422 },
       );
     }
     return handleApiError(err);

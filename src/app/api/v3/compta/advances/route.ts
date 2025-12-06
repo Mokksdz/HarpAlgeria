@@ -66,7 +66,8 @@ export async function GET(req: NextRequest) {
       stats: {
         totalAdvances: stats._sum.amount || 0,
         totalUsed: stats._sum.amountUsed || 0,
-        totalRemaining: Number(stats._sum.amount || 0) - Number(stats._sum.amountUsed || 0),
+        totalRemaining:
+          Number(stats._sum.amount || 0) - Number(stats._sum.amountUsed || 0),
       },
     });
   } catch (err) {
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return handleApiError(err);

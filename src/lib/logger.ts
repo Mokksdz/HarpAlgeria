@@ -13,7 +13,11 @@ interface LoggerOptions {
   forceLog?: boolean;
 }
 
-function formatMessage(level: LogLevel, prefix: string, args: unknown[]): string {
+function formatMessage(
+  level: LogLevel,
+  prefix: string,
+  args: unknown[],
+): string {
   const timestamp = new Date().toISOString();
   const prefixStr = prefix ? `[${prefix}]` : "";
   return `${timestamp} ${level.toUpperCase()} ${prefixStr}`;

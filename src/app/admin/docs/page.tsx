@@ -18,7 +18,8 @@ export default function ApiDocsPage() {
 
       // Add Swagger UI JS
       const script = document.createElement("script");
-      script.src = "https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js";
+      script.src =
+        "https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js";
       script.onload = () => {
         // @ts-expect-error SwaggerUIBundle is loaded from CDN
         if (window.SwaggerUIBundle && containerRef.current) {
@@ -47,7 +48,8 @@ export default function ApiDocsPage() {
 
       // Add standalone preset
       const presetScript = document.createElement("script");
-      presetScript.src = "https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js";
+      presetScript.src =
+        "https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js";
       document.body.appendChild(presetScript);
     };
 
@@ -72,7 +74,9 @@ export default function ApiDocsPage() {
                   <FileCode size={24} className="text-green-600" />
                   API Documentation
                 </h1>
-                <p className="text-sm text-gray-500">HARP Accounting API - OpenAPI 3.1</p>
+                <p className="text-sm text-gray-500">
+                  HARP Accounting API - OpenAPI 3.1
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -104,103 +108,103 @@ export default function ApiDocsPage() {
           margin: 0 auto;
           padding: 20px;
         }
-        
+
         .swagger-ui .topbar {
           display: none;
         }
-        
+
         .swagger-ui .info {
           margin: 20px 0;
         }
-        
+
         .swagger-ui .info .title {
           font-size: 2rem;
           font-weight: 700;
         }
-        
+
         .swagger-ui .scheme-container {
           background: #f8fafc;
           padding: 15px;
           border-radius: 8px;
         }
-        
+
         .swagger-ui .opblock-tag {
           border-bottom: 1px solid #e5e7eb;
           font-size: 1.25rem;
         }
-        
+
         .swagger-ui .opblock {
           border-radius: 8px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           margin-bottom: 10px;
         }
-        
+
         .swagger-ui .opblock .opblock-summary {
           border-radius: 8px;
         }
-        
+
         .swagger-ui .opblock.opblock-get .opblock-summary {
           border-color: #3b82f6;
         }
-        
+
         .swagger-ui .opblock.opblock-get .opblock-summary-method {
           background: #3b82f6;
         }
-        
+
         .swagger-ui .opblock.opblock-post .opblock-summary {
           border-color: #22c55e;
         }
-        
+
         .swagger-ui .opblock.opblock-post .opblock-summary-method {
           background: #22c55e;
         }
-        
+
         .swagger-ui .opblock.opblock-put .opblock-summary {
           border-color: #f59e0b;
         }
-        
+
         .swagger-ui .opblock.opblock-put .opblock-summary-method {
           background: #f59e0b;
         }
-        
+
         .swagger-ui .opblock.opblock-delete .opblock-summary {
           border-color: #ef4444;
         }
-        
+
         .swagger-ui .opblock.opblock-delete .opblock-summary-method {
           background: #ef4444;
         }
-        
+
         .swagger-ui .btn {
           border-radius: 6px;
         }
-        
+
         .swagger-ui .btn.execute {
           background: #d97706;
           border-color: #d97706;
         }
-        
+
         .swagger-ui .btn.execute:hover {
           background: #b45309;
         }
-        
+
         .swagger-ui select {
           border-radius: 6px;
         }
-        
-        .swagger-ui input[type=text], 
+
+        .swagger-ui input[type="text"],
         .swagger-ui textarea {
           border-radius: 6px;
         }
-        
+
         .swagger-ui .model-box {
           border-radius: 8px;
         }
-        
+
         .swagger-ui section.models {
           border-radius: 8px;
         }
-        
+
         .swagger-ui section.models.is-open h4 {
           border-radius: 8px 8px 0 0;
         }

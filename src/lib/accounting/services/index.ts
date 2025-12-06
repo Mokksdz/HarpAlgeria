@@ -88,7 +88,7 @@ export type {
 } from "./production.service";
 
 // Re-export CostBreakdown and CostResult with aliases to avoid conflict
-export type { 
+export type {
   CostBreakdown as ServiceCostBreakdown,
   CostResult as ServiceCostResult,
   SimulationParams,

@@ -5,23 +5,25 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getBatchById, startBatch, completeBatch, cancelBatch } from "@/lib/accounting/services";
+import {
+  getBatchById,
+  startBatch,
+  completeBatch,
+  cancelBatch,
+} from "@/lib/accounting/services";
 
 // GET - Récupérer un lot par ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    
+
     const batch = await getBatchById(id);
-    
+
     if (!batch) {
-      return NextResponse.json(
-        { error: "Lot non trouvé" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Lot non trouvé" }, { status: 404 });
     }
 
     return NextResponse.json(batch);
@@ -29,7 +31,7 @@ export async function GET(
     console.error("Error fetching batch:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération du lot" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -37,7 +39,7 @@ export async function GET(
 // PUT - Mettre à jour un lot (planifié uniquement)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -48,16 +50,13 @@ export async function PUT(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Lot non trouvé" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Lot non trouvé" }, { status: 404 });
     }
 
     if (existing.status !== "PLANNED") {
       return NextResponse.json(
         { error: "Seuls les lots planifiés peuvent être modifiés" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -81,7 +80,7 @@ export async function PUT(
     console.error("Error updating batch:", error);
     return NextResponse.json(
       { error: "Erreur lors de la mise à jour" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -89,7 +88,7 @@ export async function PUT(
 // PATCH - Actions sur le lot (start, complete, cancel)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -105,7 +104,7 @@ export async function PATCH(
         if (producedQty === undefined) {
           return NextResponse.json(
             { error: "producedQty requis pour terminer le lot" },
-            { status: 400 }
+            { status: 400 },
           );
         }
         result = await completeBatch(id, producedQty, wasteQty);
@@ -116,7 +115,7 @@ export async function PATCH(
       default:
         return NextResponse.json(
           { error: `Action inconnue: ${action}` },
-          { status: 400 }
+          { status: 400 },
         );
     }
 
@@ -125,7 +124,7 @@ export async function PATCH(
     console.error("Error patching batch:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de l'action" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -133,7 +132,7 @@ export async function PATCH(
 // DELETE - Supprimer un lot (planifié uniquement)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -143,16 +142,13 @@ export async function DELETE(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Lot non trouvé" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Lot non trouvé" }, { status: 404 });
     }
 
     if (existing.status !== "PLANNED") {
       return NextResponse.json(
         { error: "Seuls les lots planifiés peuvent être supprimés" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -163,7 +159,7 @@ export async function DELETE(
     console.error("Error deleting batch:", error);
     return NextResponse.json(
       { error: "Erreur lors de la suppression" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

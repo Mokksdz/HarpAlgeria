@@ -32,7 +32,8 @@ export default function NewModelPage() {
 
     try {
       const res = await fetch("/api/v3/compta/models", {
-        method: "POST", credentials: "include",
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
@@ -53,37 +54,53 @@ export default function NewModelPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <header className="flex items-center gap-4">
-        <Link href="/admin/compta/models" className="p-2 hover:bg-slate-100 rounded-lg">
+        <Link
+          href="/admin/compta/models"
+          className="p-2 hover:bg-slate-100 rounded-lg"
+        >
           <ArrowLeft size={20} />
         </Link>
         <div>
           <h1 className="text-2xl font-serif">Nouveau Modèle</h1>
-          <p className="text-sm text-slate-600">Créer un modèle pour calcul de coûts</p>
+          <p className="text-sm text-slate-600">
+            Créer un modèle pour calcul de coûts
+          </p>
         </div>
       </header>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">{error}</div>
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
+          {error}
+        </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 rounded-2xl shadow space-y-6"
+      >
         <div className="flex items-center gap-3 pb-4 border-b">
           <div className="p-3 bg-amber-100 rounded-xl">
             <Layers className="text-amber-600" size={24} />
           </div>
           <div>
             <p className="font-medium">Modèle Produit</p>
-            <p className="text-sm text-slate-500">Après création, ajoutez la nomenclature (BOM)</p>
+            <p className="text-sm text-slate-500">
+              Après création, ajoutez la nomenclature (BOM)
+            </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">SKU *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              SKU *
+            </label>
             <input
               type="text"
               value={form.sku}
-              onChange={(e) => setForm({ ...form, sku: e.target.value.toUpperCase() })}
+              onChange={(e) =>
+                setForm({ ...form, sku: e.target.value.toUpperCase() })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20 font-mono"
               placeholder="JEBBA-001"
               required
@@ -91,7 +108,9 @@ export default function NewModelPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nom *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Nom *
+            </label>
             <input
               type="text"
               value={form.name}
@@ -103,55 +122,81 @@ export default function NewModelPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Coût main d&apos;œuvre/unité</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Coût main d&apos;œuvre/unité
+            </label>
             <input
               type="number"
               min="0"
               value={form.laborCost}
-              onChange={(e) => setForm({ ...form, laborCost: parseFloat(e.target.value) || 0 })}
+              onChange={(e) =>
+                setForm({ ...form, laborCost: parseFloat(e.target.value) || 0 })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
               placeholder="500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Autres coûts/unité</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Autres coûts/unité
+            </label>
             <input
               type="number"
               min="0"
               value={form.otherCost}
-              onChange={(e) => setForm({ ...form, otherCost: parseFloat(e.target.value) || 0 })}
+              onChange={(e) =>
+                setForm({ ...form, otherCost: parseFloat(e.target.value) || 0 })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
               placeholder="100"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Prix de vente</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Prix de vente
+            </label>
             <input
               type="number"
               min="0"
               value={form.sellingPrice}
-              onChange={(e) => setForm({ ...form, sellingPrice: parseFloat(e.target.value) || 0 })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  sellingPrice: parseFloat(e.target.value) || 0,
+                })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
               placeholder="4500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Unités estimées</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Unités estimées
+            </label>
             <input
               type="number"
               min="1"
               value={form.estimatedUnits}
-              onChange={(e) => setForm({ ...form, estimatedUnits: parseInt(e.target.value) || 100 })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  estimatedUnits: parseInt(e.target.value) || 100,
+                })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
             />
-            <p className="text-xs text-slate-500 mt-1">Pour répartir les charges fixes</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Pour répartir les charges fixes
+            </p>
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Description
+            </label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -163,7 +208,10 @@ export default function NewModelPage() {
         </div>
 
         <div className="flex justify-end gap-4 pt-4 border-t">
-          <Link href="/admin/compta/models" className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+          <Link
+            href="/admin/compta/models"
+            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+          >
             Annuler
           </Link>
           <button

@@ -10,17 +10,17 @@ import { getAdvanceById, refundAdvance } from "@/lib/accounting/services";
 // GET - Récupérer une avance par ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    
+
     const advance = await getAdvanceById(id);
-    
+
     if (!advance) {
       return NextResponse.json(
         { error: "Avance non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -29,7 +29,7 @@ export async function GET(
     console.error("Error fetching advance:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération de l'avance" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -37,7 +37,7 @@ export async function GET(
 // PUT - Mettre à jour une avance (non utilisée uniquement)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -50,14 +50,14 @@ export async function PUT(
     if (!existing) {
       return NextResponse.json(
         { error: "Avance non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (Number(existing.amountUsed) > 0) {
       return NextResponse.json(
         { error: "Cette avance a déjà été utilisée et ne peut être modifiée" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -65,7 +65,8 @@ export async function PUT(
       where: { id },
       data: {
         amount: data.amount !== undefined ? data.amount : existing.amount,
-        amountRemaining: data.amount !== undefined ? data.amount : existing.amountRemaining,
+        amountRemaining:
+          data.amount !== undefined ? data.amount : existing.amountRemaining,
         paymentDate: data.paymentDate ? new Date(data.paymentDate) : undefined,
         paymentMethod: data.paymentMethod,
         reference: data.reference,
@@ -79,7 +80,7 @@ export async function PUT(
     console.error("Error updating advance:", error);
     return NextResponse.json(
       { error: "Erreur lors de la mise à jour" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -87,7 +88,7 @@ export async function PUT(
 // PATCH - Actions sur l'avance (refund)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -100,14 +101,14 @@ export async function PATCH(
       default:
         return NextResponse.json(
           { error: `Action inconnue: ${action}` },
-          { status: 400 }
+          { status: 400 },
         );
     }
   } catch (error: any) {
     console.error("Error patching advance:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de l'action" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -115,7 +116,7 @@ export async function PATCH(
 // DELETE - Supprimer une avance (non utilisée uniquement)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -127,14 +128,14 @@ export async function DELETE(
     if (!existing) {
       return NextResponse.json(
         { error: "Avance non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (Number(existing.amountUsed) > 0) {
       return NextResponse.json(
         { error: "Cette avance a déjà été utilisée et ne peut être supprimée" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -145,7 +146,7 @@ export async function DELETE(
     console.error("Error deleting advance:", error);
     return NextResponse.json(
       { error: "Erreur lors de la suppression" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

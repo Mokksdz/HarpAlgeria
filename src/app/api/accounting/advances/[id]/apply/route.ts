@@ -17,7 +17,7 @@ const ApplySchema = z.object({
 // POST - Appliquer l'avance à un achat
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -27,11 +27,11 @@ export async function POST(
     const validation = ApplySchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        { 
+        {
           error: "Données invalides",
           details: validation.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,7 +54,7 @@ export async function POST(
     console.error("Error applying advance:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de l'application" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

@@ -15,8 +15,8 @@ export async function GET(req: Request) {
     return NextResponse.json(wishlist);
   } catch (error: any) {
     return NextResponse.json(
-        { error: error.message || "Internal Server Error" },
-        { status: 500 }
+      { error: error.message || "Internal Server Error" },
+      { status: 500 },
     );
   }
 }

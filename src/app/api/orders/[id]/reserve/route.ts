@@ -5,12 +5,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { reserveStock, checkStockAvailability } from "@/lib/accounting/services";
+import {
+  reserveStock,
+  checkStockAvailability,
+} from "@/lib/accounting/services";
 
 // POST - Réserver le stock
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -26,20 +29,21 @@ export async function POST(
     if (!order) {
       return NextResponse.json(
         { error: "Commande non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (order.stockReserved) {
       return NextResponse.json(
         { error: "Le stock est déjà réservé pour cette commande" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Préparer les items à réserver (ceux qui ont un lien vers un modèle/inventaire)
-    const itemsToReserve: Array<{ inventoryItemId: string; quantity: number }> = [];
-    
+    const itemsToReserve: Array<{ inventoryItemId: string; quantity: number }> =
+      [];
+
     for (const item of order.items) {
       if (item.modelId) {
         // Récupérer les BOM du modèle
@@ -49,9 +53,14 @@ export async function POST(
         });
 
         for (const bomItem of bom) {
-          const qty = Number(bomItem.quantity) * Number(bomItem.wasteFactor) * item.quantity;
-          
-          const existing = itemsToReserve.find(i => i.inventoryItemId === bomItem.inventoryItemId);
+          const qty =
+            Number(bomItem.quantity) *
+            Number(bomItem.wasteFactor) *
+            item.quantity;
+
+          const existing = itemsToReserve.find(
+            (i) => i.inventoryItemId === bomItem.inventoryItemId,
+          );
           if (existing) {
             existing.quantity += qty;
           } else {
@@ -66,30 +75,30 @@ export async function POST(
 
     if (itemsToReserve.length === 0) {
       return NextResponse.json(
-        { 
+        {
           warning: "Aucun article à réserver (pas de liens modèle/BOM)",
           stockReserved: false,
         },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
     // Vérifier la disponibilité
     const availability = await checkStockAvailability(itemsToReserve);
-    
+
     if (!availability.available) {
       const shortages = availability.details
-        .filter(d => d.shortage > 0)
-        .map(d => `${d.name}: manque ${d.shortage.toFixed(2)}`)
+        .filter((d) => d.shortage > 0)
+        .map((d) => `${d.name}: manque ${d.shortage.toFixed(2)}`)
         .join(", ");
-      
+
       return NextResponse.json(
-        { 
+        {
           error: "Stock insuffisant",
           details: shortages,
           availability: availability.details,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -115,7 +124,7 @@ export async function POST(
     console.error("Error reserving stock:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de la réservation" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -123,11 +132,12 @@ export async function POST(
 // DELETE - Annuler la réservation
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    const { releaseStock: releaseStockFn } = await import("@/lib/accounting/services");
+    const { releaseStock: releaseStockFn } =
+      await import("@/lib/accounting/services");
 
     const order = await prisma.order.findUnique({
       where: { id },
@@ -137,14 +147,14 @@ export async function DELETE(
     if (!order) {
       return NextResponse.json(
         { error: "Commande non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (!order.stockReserved) {
       return NextResponse.json(
         { error: "Aucun stock n'est réservé pour cette commande" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -163,7 +173,7 @@ export async function DELETE(
           reservation.inventoryItemId,
           Number(reservation.quantity),
           order.id,
-          tx
+          tx,
         );
       }
 
@@ -181,7 +191,7 @@ export async function DELETE(
     console.error("Error releasing stock:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de l'annulation" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

@@ -3,11 +3,11 @@
  * POST /api/v3/compta/production/[id]/complete - Complete a batch
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, handleApiError } from '@/lib/auth-helpers';
-import { z } from 'zod';
-import { CompleteBatchSchema } from '@/lib/compta/schemas/production.schemas';
-import { completeProductionBatch } from '@/lib/compta/services/production-service';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin, handleApiError } from "@/lib/auth-helpers";
+import { z } from "zod";
+import { CompleteBatchSchema } from "@/lib/compta/schemas/production.schemas";
+import { completeProductionBatch } from "@/lib/compta/services/production-service";
 
 /**
  * POST /api/v3/compta/production/[id]/complete
@@ -15,7 +15,7 @@ import { completeProductionBatch } from '@/lib/compta/services/production-servic
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requireAdmin(req);
@@ -35,21 +35,25 @@ export async function POST(
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Validation échouée', details: err.flatten().fieldErrors },
-        { status: 400 }
+        {
+          success: false,
+          error: "Validation échouée",
+          details: err.flatten().fieldErrors,
+        },
+        { status: 400 },
       );
     }
     if (err instanceof Error) {
-      if (err.message.includes('non trouvé')) {
+      if (err.message.includes("non trouvé")) {
         return NextResponse.json(
           { success: false, error: err.message },
-          { status: 404 }
+          { status: 404 },
         );
       }
-      if (err.message.includes('statut') || err.message.includes('dépasse')) {
+      if (err.message.includes("statut") || err.message.includes("dépasse")) {
         return NextResponse.json(
           { success: false, error: err.message },
-          { status: 422 }
+          { status: 422 },
         );
       }
     }

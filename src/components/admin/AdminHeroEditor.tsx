@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { 
-  Upload, 
-  Image as ImageIcon, 
-  Smartphone, 
-  Monitor, 
-  Eye, 
-  Save, 
-  RotateCcw, 
+import {
+  Upload,
+  Image as ImageIcon,
+  Smartphone,
+  Monitor,
+  Eye,
+  Save,
+  RotateCcw,
   Loader2,
   Trash2,
   History,
-  X
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ const PRESETS = [
   { value: "classic", label: "Classique", desc: "Texte en bas à gauche" },
   { value: "minimal", label: "Minimal", desc: "Texte centré, simple" },
   { value: "glass", label: "Glass", desc: "Effet verre dépoli" },
-  { value: "centered", label: "Centré", desc: "Tout centré" }
+  { value: "centered", label: "Centré", desc: "Tout centré" },
 ];
 
 export default function AdminHeroEditor({ initial }: Props) {
@@ -59,15 +59,20 @@ export default function AdminHeroEditor({ initial }: Props) {
     heroOverlayOpacity: initial?.heroOverlayOpacity ?? 0.35,
     heroPreset: initial?.heroPreset || "classic",
     heroActive: initial?.heroActive ?? true,
-    heroVariant: initial?.heroVariant || "image"
+    heroVariant: initial?.heroVariant || "image",
   });
 
-  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
+  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">(
+    "desktop",
+  );
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"desktop" | "mobile" | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
@@ -93,7 +98,7 @@ export default function AdminHeroEditor({ initial }: Props) {
 
       const uploadRes = await fetch(
         `https://api.cloudinary.com/v1_1/${sign.cloudName}/auto/upload`,
-        { method: "POST", body: form }
+        { method: "POST", body: form },
       );
 
       if (!uploadRes.ok) throw new Error("Upload failed");
@@ -101,23 +106,26 @@ export default function AdminHeroEditor({ initial }: Props) {
 
       // Update settings
       if (type === "desktop") {
-        setSettings(prev => ({
+        setSettings((prev) => ({
           ...prev,
           heroImageUrl: result.secure_url,
-          heroImagePublicId: result.public_id
+          heroImagePublicId: result.public_id,
         }));
       } else {
-        setSettings(prev => ({
+        setSettings((prev) => ({
           ...prev,
           heroMobileImageUrl: result.secure_url,
-          heroMobilePublicId: result.public_id
+          heroMobilePublicId: result.public_id,
         }));
       }
 
       setMessage({ type: "success", text: "Image uploadée avec succès" });
     } catch (err: any) {
       console.error("Upload error:", err);
-      setMessage({ type: "error", text: err.message || "Erreur lors de l'upload" });
+      setMessage({
+        type: "error",
+        text: err.message || "Erreur lors de l'upload",
+      });
     } finally {
       setUploading(null);
     }
@@ -132,7 +140,7 @@ export default function AdminHeroEditor({ initial }: Props) {
       const res = await fetch("/api/v3/site/settings/hero", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings)
+        body: JSON.stringify(settings),
       });
 
       const data = await res.json();
@@ -169,7 +177,7 @@ export default function AdminHeroEditor({ initial }: Props) {
       const res = await fetch("/api/v3/site/hero/rollback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ historyId })
+        body: JSON.stringify({ historyId }),
       });
 
       const data = await res.json();
@@ -190,7 +198,7 @@ export default function AdminHeroEditor({ initial }: Props) {
           heroOverlayOpacity: newSettings.heroOverlayOpacity ?? 0.35,
           heroPreset: newSettings.heroPreset || "classic",
           heroActive: newSettings.heroActive ?? true,
-          heroVariant: newSettings.heroVariant || "image"
+          heroVariant: newSettings.heroVariant || "image",
         });
         setShowHistory(false);
         setMessage({ type: "success", text: "Version restaurée !" });
@@ -202,18 +210,23 @@ export default function AdminHeroEditor({ initial }: Props) {
     }
   }
 
-  const previewImage = previewMode === "mobile" && settings.heroMobileImageUrl
-    ? settings.heroMobileImageUrl
-    : settings.heroImageUrl;
+  const previewImage =
+    previewMode === "mobile" && settings.heroMobileImageUrl
+      ? settings.heroMobileImageUrl
+      : settings.heroImageUrl;
 
   return (
     <div className="space-y-6">
       {/* Message */}
       {message && (
-        <div className={cn(
-          "p-4 rounded-lg flex items-center justify-between",
-          message.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
-        )}>
+        <div
+          className={cn(
+            "p-4 rounded-lg flex items-center justify-between",
+            message.type === "success"
+              ? "bg-green-50 text-green-700"
+              : "bg-red-50 text-red-700",
+          )}
+        >
           <span>{message.text}</span>
           <button onClick={() => setMessage(null)}>
             <X size={16} />
@@ -230,7 +243,12 @@ export default function AdminHeroEditor({ initial }: Props) {
               <input
                 type="checkbox"
                 checked={settings.heroActive}
-                onChange={e => setSettings(prev => ({ ...prev, heroActive: e.target.checked }))}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    heroActive: e.target.checked,
+                  }))
+                }
                 className="w-5 h-5 rounded border-gray-300 text-harp-brown focus:ring-harp-brown"
               />
               <span className="font-medium">Hero actif</span>
@@ -255,13 +273,21 @@ export default function AdminHeroEditor({ initial }: Props) {
                 ref={desktopInputRef}
                 accept="image/*"
                 className="hidden"
-                onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], "desktop")}
+                onChange={(e) =>
+                  e.target.files?.[0] &&
+                  handleUpload(e.target.files[0], "desktop")
+                }
               />
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={settings.heroImageUrl || ""}
-                  onChange={e => setSettings(prev => ({ ...prev, heroImageUrl: e.target.value }))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      heroImageUrl: e.target.value,
+                    }))
+                  }
                   placeholder="URL de l'image ou uploader"
                   className="flex-1 px-3 py-2 border rounded-lg text-sm"
                 />
@@ -270,7 +296,11 @@ export default function AdminHeroEditor({ initial }: Props) {
                   disabled={uploading === "desktop"}
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
                 >
-                  {uploading === "desktop" ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                  {uploading === "desktop" ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Upload size={16} />
+                  )}
                 </button>
               </div>
             </div>
@@ -286,13 +316,21 @@ export default function AdminHeroEditor({ initial }: Props) {
                 ref={mobileInputRef}
                 accept="image/*"
                 className="hidden"
-                onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], "mobile")}
+                onChange={(e) =>
+                  e.target.files?.[0] &&
+                  handleUpload(e.target.files[0], "mobile")
+                }
               />
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={settings.heroMobileImageUrl || ""}
-                  onChange={e => setSettings(prev => ({ ...prev, heroMobileImageUrl: e.target.value }))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      heroMobileImageUrl: e.target.value,
+                    }))
+                  }
                   placeholder="URL de l'image mobile"
                   className="flex-1 px-3 py-2 border rounded-lg text-sm"
                 />
@@ -301,7 +339,11 @@ export default function AdminHeroEditor({ initial }: Props) {
                   disabled={uploading === "mobile"}
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
                 >
-                  {uploading === "mobile" ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                  {uploading === "mobile" ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Upload size={16} />
+                  )}
                 </button>
               </div>
             </div>
@@ -309,20 +351,34 @@ export default function AdminHeroEditor({ initial }: Props) {
             {/* Alt Text */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Alt FR</label>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  Alt FR
+                </label>
                 <input
                   type="text"
                   value={settings.heroAltFr || ""}
-                  onChange={e => setSettings(prev => ({ ...prev, heroAltFr: e.target.value }))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      heroAltFr: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Alt AR</label>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  Alt AR
+                </label>
                 <input
                   type="text"
                   value={settings.heroAltAr || ""}
-                  onChange={e => setSettings(prev => ({ ...prev, heroAltAr: e.target.value }))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      heroAltAr: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                   dir="rtl"
                 />
@@ -336,21 +392,35 @@ export default function AdminHeroEditor({ initial }: Props) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Titre FR</label>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  Titre FR
+                </label>
                 <input
                   type="text"
                   value={settings.heroCaptionFr || ""}
-                  onChange={e => setSettings(prev => ({ ...prev, heroCaptionFr: e.target.value }))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      heroCaptionFr: e.target.value,
+                    }))
+                  }
                   placeholder="Nouvelle Collection"
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Titre AR</label>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  Titre AR
+                </label>
                 <input
                   type="text"
                   value={settings.heroCaptionAr || ""}
-                  onChange={e => setSettings(prev => ({ ...prev, heroCaptionAr: e.target.value }))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      heroCaptionAr: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                   dir="rtl"
                 />
@@ -359,21 +429,35 @@ export default function AdminHeroEditor({ initial }: Props) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Bouton FR</label>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  Bouton FR
+                </label>
                 <input
                   type="text"
                   value={settings.heroCtaTextFr || ""}
-                  onChange={e => setSettings(prev => ({ ...prev, heroCtaTextFr: e.target.value }))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      heroCtaTextFr: e.target.value,
+                    }))
+                  }
                   placeholder="Découvrir"
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Bouton AR</label>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  Bouton AR
+                </label>
                 <input
                   type="text"
                   value={settings.heroCtaTextAr || ""}
-                  onChange={e => setSettings(prev => ({ ...prev, heroCtaTextAr: e.target.value }))}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      heroCtaTextAr: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                   dir="rtl"
                 />
@@ -381,11 +465,18 @@ export default function AdminHeroEditor({ initial }: Props) {
             </div>
 
             <div>
-              <label className="text-sm text-gray-600 mb-1 block">Lien du bouton</label>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Lien du bouton
+              </label>
               <input
                 type="text"
                 value={settings.heroCtaUrl || ""}
-                onChange={e => setSettings(prev => ({ ...prev, heroCtaUrl: e.target.value }))}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    heroCtaUrl: e.target.value,
+                  }))
+                }
                 placeholder="/shop"
                 className="w-full px-3 py-2 border rounded-lg text-sm"
               />
@@ -400,15 +491,20 @@ export default function AdminHeroEditor({ initial }: Props) {
             <div>
               <label className="text-sm text-gray-600 mb-2 block">Preset</label>
               <div className="grid grid-cols-2 gap-2">
-                {PRESETS.map(preset => (
+                {PRESETS.map((preset) => (
                   <button
                     key={preset.value}
-                    onClick={() => setSettings(prev => ({ ...prev, heroPreset: preset.value }))}
+                    onClick={() =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        heroPreset: preset.value,
+                      }))
+                    }
                     className={cn(
                       "p-3 border rounded-lg text-left transition-all",
                       settings.heroPreset === preset.value
                         ? "border-harp-brown bg-harp-brown/5"
-                        : "border-gray-200 hover:border-gray-300"
+                        : "border-gray-200 hover:border-gray-300",
                     )}
                   >
                     <div className="font-medium text-sm">{preset.label}</div>
@@ -421,7 +517,8 @@ export default function AdminHeroEditor({ initial }: Props) {
             {/* Overlay */}
             <div>
               <label className="text-sm text-gray-600 mb-2 block">
-                Opacité overlay: {Math.round((settings.heroOverlayOpacity || 0) * 100)}%
+                Opacité overlay:{" "}
+                {Math.round((settings.heroOverlayOpacity || 0) * 100)}%
               </label>
               <input
                 type="range"
@@ -429,7 +526,12 @@ export default function AdminHeroEditor({ initial }: Props) {
                 max="1"
                 step="0.05"
                 value={settings.heroOverlayOpacity || 0}
-                onChange={e => setSettings(prev => ({ ...prev, heroOverlayOpacity: parseFloat(e.target.value) }))}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    heroOverlayOpacity: parseFloat(e.target.value),
+                  }))
+                }
                 className="w-full"
               />
             </div>
@@ -448,7 +550,9 @@ export default function AdminHeroEditor({ initial }: Props) {
                 onClick={() => setPreviewMode("desktop")}
                 className={cn(
                   "p-2 rounded-md transition-colors",
-                  previewMode === "desktop" ? "bg-white shadow-sm" : "hover:bg-gray-200"
+                  previewMode === "desktop"
+                    ? "bg-white shadow-sm"
+                    : "hover:bg-gray-200",
                 )}
               >
                 <Monitor size={16} />
@@ -457,7 +561,9 @@ export default function AdminHeroEditor({ initial }: Props) {
                 onClick={() => setPreviewMode("mobile")}
                 className={cn(
                   "p-2 rounded-md transition-colors",
-                  previewMode === "mobile" ? "bg-white shadow-sm" : "hover:bg-gray-200"
+                  previewMode === "mobile"
+                    ? "bg-white shadow-sm"
+                    : "hover:bg-gray-200",
                 )}
               >
                 <Smartphone size={16} />
@@ -466,10 +572,14 @@ export default function AdminHeroEditor({ initial }: Props) {
           </div>
 
           {/* Preview Container */}
-          <div className={cn(
-            "relative overflow-hidden rounded-xl border bg-gray-100 mx-auto transition-all",
-            previewMode === "desktop" ? "w-full aspect-[16/9]" : "w-[280px] aspect-[9/16]"
-          )}>
+          <div
+            className={cn(
+              "relative overflow-hidden rounded-xl border bg-gray-100 mx-auto transition-all",
+              previewMode === "desktop"
+                ? "w-full aspect-[16/9]"
+                : "w-[280px] aspect-[9/16]",
+            )}
+          >
             {previewImage ? (
               <>
                 <img
@@ -479,19 +589,27 @@ export default function AdminHeroEditor({ initial }: Props) {
                 />
                 <div
                   className="absolute inset-0"
-                  style={{ backgroundColor: `rgba(0,0,0,${settings.heroOverlayOpacity || 0})` }}
+                  style={{
+                    backgroundColor: `rgba(0,0,0,${settings.heroOverlayOpacity || 0})`,
+                  }}
                 />
-                <div className={cn(
-                  "absolute inset-0 flex p-6",
-                  settings.heroPreset === "centered" ? "items-center justify-center text-center" :
-                  settings.heroPreset === "minimal" ? "items-center justify-center text-center" :
-                  "items-end"
-                )}>
+                <div
+                  className={cn(
+                    "absolute inset-0 flex p-6",
+                    settings.heroPreset === "centered"
+                      ? "items-center justify-center text-center"
+                      : settings.heroPreset === "minimal"
+                        ? "items-center justify-center text-center"
+                        : "items-end",
+                  )}
+                >
                   <div className="text-white">
-                    <h2 className={cn(
-                      "font-serif font-bold",
-                      previewMode === "desktop" ? "text-3xl" : "text-xl"
-                    )}>
+                    <h2
+                      className={cn(
+                        "font-serif font-bold",
+                        previewMode === "desktop" ? "text-3xl" : "text-xl",
+                      )}
+                    >
                       {settings.heroCaptionFr || "Titre du Hero"}
                     </h2>
                     {settings.heroCtaTextFr && (
@@ -519,7 +637,11 @@ export default function AdminHeroEditor({ initial }: Props) {
               disabled={saving}
               className="flex-1 px-4 py-3 bg-harp-brown text-white rounded-xl font-medium hover:bg-harp-brown/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+              {saving ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Save size={18} />
+              )}
               Enregistrer
             </button>
             <button
@@ -544,10 +666,15 @@ export default function AdminHeroEditor({ initial }: Props) {
             </div>
             <div className="p-4 overflow-y-auto max-h-[60vh] space-y-2">
               {history.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">Aucun historique</p>
+                <p className="text-gray-500 text-center py-8">
+                  Aucun historique
+                </p>
               ) : (
-                history.map(h => (
-                  <div key={h.id} className="p-3 border rounded-lg flex items-center justify-between">
+                history.map((h) => (
+                  <div
+                    key={h.id}
+                    className="p-3 border rounded-lg flex items-center justify-between"
+                  >
                     <div>
                       <div className="text-sm font-medium">
                         {new Date(h.createdAt).toLocaleString("fr-FR")}

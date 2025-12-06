@@ -13,11 +13,11 @@ interface WishlistButtonProps {
   onToggle?: (isAdded: boolean) => void;
 }
 
-export function WishlistButton({ 
-  productId, 
-  initialIsWishlisted = false, 
+export function WishlistButton({
+  productId,
+  initialIsWishlisted = false,
   className,
-  onToggle 
+  onToggle,
 }: WishlistButtonProps) {
   const { data: session } = useSession();
   const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
@@ -26,7 +26,7 @@ export function WishlistButton({
 
   // Sync with localStorage if not logged in, or just handle UI state
   // Real sync happens on page load/auth
-  
+
   useEffect(() => {
     if (!session) {
       // Check local storage
@@ -48,7 +48,7 @@ export function WishlistButton({
 
       // Ensure guest key exists for future sync
       if (!localStorage.getItem("guest_wishlist_key")) {
-          localStorage.setItem("guest_wishlist_key", crypto.randomUUID());
+        localStorage.setItem("guest_wishlist_key", crypto.randomUUID());
       }
 
       if (local.includes(productId)) {
@@ -58,7 +58,7 @@ export function WishlistButton({
         newLocal = [...local, productId];
         newState = true;
       }
-      
+
       localStorage.setItem("guest_wishlist", JSON.stringify(newLocal));
       setIsWishlisted(newState);
       if (onToggle) onToggle(newState);
@@ -70,9 +70,9 @@ export function WishlistButton({
       const res = await fetch("/api/v3/wishlist/toggle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId })
+        body: JSON.stringify({ productId }),
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         setIsWishlisted(data.added);
@@ -92,7 +92,7 @@ export function WishlistButton({
       className={cn(
         "p-2 rounded-full transition-all duration-300 active:scale-95",
         isWishlisted ? "bg-red-50" : "hover:bg-gray-100",
-        className
+        className,
       )}
       aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
     >
@@ -100,7 +100,7 @@ export function WishlistButton({
         size={20}
         className={cn(
           "transition-all duration-300",
-          isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"
+          isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600",
         )}
       />
     </button>

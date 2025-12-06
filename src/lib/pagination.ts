@@ -26,13 +26,15 @@ export interface PaginationMeta {
 export function parsePagination(
   params: URLSearchParams,
   defaultPageSize: number = 20,
-  maxPageSize: number = 100
+  maxPageSize: number = 100,
 ): PaginationParams {
   const page = Math.max(1, Number(params.get("page") ?? 1));
-  const requestedPageSize = Number(params.get("pageSize") ?? params.get("limit") ?? defaultPageSize);
+  const requestedPageSize = Number(
+    params.get("pageSize") ?? params.get("limit") ?? defaultPageSize,
+  );
   const pageSize = Math.min(maxPageSize, Math.max(1, requestedPageSize));
   const skip = (page - 1) * pageSize;
-  
+
   return { page, pageSize, skip };
 }
 
@@ -42,10 +44,10 @@ export function parsePagination(
 export function createPaginationMeta(
   page: number,
   pageSize: number,
-  total: number
+  total: number,
 ): PaginationMeta {
   const totalPages = Math.ceil(total / pageSize);
-  
+
   return {
     page,
     pageSize,
@@ -63,7 +65,7 @@ export function paginatedResponse<T>(
   items: T[],
   page: number,
   pageSize: number,
-  total: number
+  total: number,
 ) {
   return {
     items,

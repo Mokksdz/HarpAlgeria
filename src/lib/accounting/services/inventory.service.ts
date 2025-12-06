@@ -49,17 +49,18 @@ export function calculateCUMP(
   currentQty: number,
   currentAvgCost: number,
   incomingQty: number,
-  incomingUnitCost: number
+  incomingUnitCost: number,
 ): CUMPResult {
   const currentValue = currentQty * currentAvgCost;
   const incomingValue = incomingQty * incomingUnitCost;
   const newQuantity = currentQty + incomingQty;
-  
+
   // Éviter division par zéro
-  const newAverageCost = newQuantity > 0 
-    ? (currentValue + incomingValue) / newQuantity 
-    : incomingUnitCost;
-  
+  const newAverageCost =
+    newQuantity > 0
+      ? (currentValue + incomingValue) / newQuantity
+      : incomingUnitCost;
+
   const newTotalValue = newQuantity * newAverageCost;
 
   return {
@@ -79,7 +80,7 @@ export function calculateCUMP(
  */
 export async function createInventoryMovement(
   movement: InventoryMovement,
-  tx?: Prisma.TransactionClient
+  tx?: Prisma.TransactionClient,
 ): Promise<{ transaction: any; item: any }> {
   const client = tx || prisma;
 
@@ -89,7 +90,9 @@ export async function createInventoryMovement(
   });
 
   if (!item) {
-    throw new Error(`Article inventaire non trouvé: ${movement.inventoryItemId}`);
+    throw new Error(
+      `Article inventaire non trouvé: ${movement.inventoryItemId}`,
+    );
   }
 
   // Snapshots avant
@@ -108,7 +111,7 @@ export async function createInventoryMovement(
       Number(item.quantity),
       Number(item.averageCost),
       movement.quantity,
-      movement.unitCost
+      movement.unitCost,
     );
     balanceAfter = cump.newQuantity;
     avgCostAfter = cump.newAverageCost;
@@ -119,7 +122,7 @@ export async function createInventoryMovement(
     balanceAfter = Number(item.quantity) - movement.quantity;
     avgCostAfter = Number(item.averageCost);
     valueAfter = balanceAfter * avgCostAfter;
-    
+
     // Pour les sorties de type RESERVE, ne pas réduire available (déjà fait)
     if (movement.type === TxType.RESERVE) {
       availableAfter = Number(item.available); // Déjà réduit par reserveStock
@@ -133,7 +136,7 @@ export async function createInventoryMovement(
   // Validation: pas de stock négatif
   if (balanceAfter < 0) {
     throw new Error(
-      `Stock insuffisant pour ${item.name}. Disponible: ${item.quantity}, Demandé: ${movement.quantity}`
+      `Stock insuffisant pour ${item.name}. Disponible: ${item.quantity}, Demandé: ${movement.quantity}`,
     );
   }
 
@@ -167,8 +170,14 @@ export async function createInventoryMovement(
       available: Math.max(0, availableAfter),
       averageCost: avgCostAfter,
       totalValue: valueAfter,
-      lastCost: movement.direction === TxDirection.IN ? movement.unitCost : item.lastCost,
-      lastReceivedAt: movement.direction === TxDirection.IN ? new Date() : item.lastReceivedAt,
+      lastCost:
+        movement.direction === TxDirection.IN
+          ? movement.unitCost
+          : item.lastCost,
+      lastReceivedAt:
+        movement.direction === TxDirection.IN
+          ? new Date()
+          : item.lastReceivedAt,
     },
   });
 
@@ -187,7 +196,7 @@ export async function reserveStock(
   inventoryItemId: string,
   quantity: number,
   orderId: string,
-  tx?: Prisma.TransactionClient
+  tx?: Prisma.TransactionClient,
 ): Promise<any> {
   const client = tx || prisma;
 
@@ -201,7 +210,7 @@ export async function reserveStock(
 
   if (Number(item.available) < quantity) {
     throw new Error(
-      `Stock disponible insuffisant pour ${item.name}. Disponible: ${item.available}, Demandé: ${quantity}`
+      `Stock disponible insuffisant pour ${item.name}. Disponible: ${item.available}, Demandé: ${quantity}`,
     );
   }
 
@@ -215,16 +224,19 @@ export async function reserveStock(
   });
 
   // Créer transaction de réservation
-  await createInventoryMovement({
-    inventoryItemId,
-    direction: "OUT",
-    type: TxType.RESERVE,
-    quantity,
-    unitCost: Number(item.averageCost),
-    referenceType: "ORDER",
-    referenceId: orderId,
-    notes: `Réservation pour commande ${orderId}`,
-  }, client);
+  await createInventoryMovement(
+    {
+      inventoryItemId,
+      direction: "OUT",
+      type: TxType.RESERVE,
+      quantity,
+      unitCost: Number(item.averageCost),
+      referenceType: "ORDER",
+      referenceId: orderId,
+      notes: `Réservation pour commande ${orderId}`,
+    },
+    client,
+  );
 
   return updatedItem;
 }
@@ -236,7 +248,7 @@ export async function releaseStock(
   inventoryItemId: string,
   quantity: number,
   orderId: string,
-  tx?: Prisma.TransactionClient
+  tx?: Prisma.TransactionClient,
 ): Promise<any> {
   const client = tx || prisma;
 
@@ -250,7 +262,7 @@ export async function releaseStock(
 
   if (Number(item.reserved) < quantity) {
     throw new Error(
-      `Quantité réservée insuffisante pour ${item.name}. Réservé: ${item.reserved}, Demandé: ${quantity}`
+      `Quantité réservée insuffisante pour ${item.name}. Réservé: ${item.reserved}, Demandé: ${quantity}`,
     );
   }
 
@@ -264,16 +276,19 @@ export async function releaseStock(
   });
 
   // Créer transaction de libération
-  await createInventoryMovement({
-    inventoryItemId,
-    direction: "IN",
-    type: TxType.RELEASE,
-    quantity,
-    unitCost: Number(item.averageCost),
-    referenceType: "ORDER",
-    referenceId: orderId,
-    notes: `Libération pour commande ${orderId}`,
-  }, client);
+  await createInventoryMovement(
+    {
+      inventoryItemId,
+      direction: "IN",
+      type: TxType.RELEASE,
+      quantity,
+      unitCost: Number(item.averageCost),
+      referenceType: "ORDER",
+      referenceId: orderId,
+      notes: `Libération pour commande ${orderId}`,
+    },
+    client,
+  );
 
   return updatedItem;
 }
@@ -288,7 +303,7 @@ export async function releaseStock(
 export async function shipOrderStock(
   orderId: string,
   items: Array<{ inventoryItemId: string; quantity: number }>,
-  tx?: Prisma.TransactionClient
+  tx?: Prisma.TransactionClient,
 ): Promise<void> {
   const client = tx || prisma;
 
@@ -307,7 +322,9 @@ export async function shipOrderStock(
       data: {
         quantity: Number(invItem.quantity) - item.quantity,
         reserved: Math.max(0, Number(invItem.reserved) - item.quantity),
-        totalValue: (Number(invItem.quantity) - item.quantity) * Number(invItem.averageCost),
+        totalValue:
+          (Number(invItem.quantity) - item.quantity) *
+          Number(invItem.averageCost),
       },
     });
 
@@ -322,7 +339,9 @@ export async function shipOrderStock(
         balanceBefore: Number(invItem.quantity),
         balanceAfter: Number(invItem.quantity) - item.quantity,
         valueBefore: Number(invItem.totalValue),
-        valueAfter: (Number(invItem.quantity) - item.quantity) * Number(invItem.averageCost),
+        valueAfter:
+          (Number(invItem.quantity) - item.quantity) *
+          Number(invItem.averageCost),
         avgCostBefore: Number(invItem.averageCost),
         avgCostAfter: Number(invItem.averageCost),
         referenceType: "ORDER",
@@ -339,22 +358,25 @@ export async function shipOrderStock(
 export async function cancelShipment(
   orderId: string,
   items: Array<{ inventoryItemId: string; quantity: number }>,
-  tx?: Prisma.TransactionClient
+  tx?: Prisma.TransactionClient,
 ): Promise<void> {
   const client = tx || prisma;
 
   for (const item of items) {
-    await createInventoryMovement({
-      inventoryItemId: item.inventoryItemId,
-      direction: "IN",
-      type: TxType.ADJUSTMENT,
-      quantity: item.quantity,
-      unitCost: 0, // On récupère le CUMP existant
-      referenceType: "ORDER",
-      referenceId: orderId,
-      reason: "Annulation expédition",
-      notes: `Retour stock suite annulation expédition ${orderId}`,
-    }, client);
+    await createInventoryMovement(
+      {
+        inventoryItemId: item.inventoryItemId,
+        direction: "IN",
+        type: TxType.ADJUSTMENT,
+        quantity: item.quantity,
+        unitCost: 0, // On récupère le CUMP existant
+        referenceType: "ORDER",
+        referenceId: orderId,
+        reason: "Annulation expédition",
+        notes: `Retour stock suite annulation expédition ${orderId}`,
+      },
+      client,
+    );
   }
 }
 
@@ -370,7 +392,7 @@ export async function createAdjustment(
   quantity: number, // Positif = entrée, Négatif = sortie
   reason: string,
   notes?: string,
-  createdBy?: string
+  createdBy?: string,
 ): Promise<any> {
   const direction = quantity >= 0 ? TxDirection.IN : TxDirection.OUT;
   const absQuantity = Math.abs(quantity);
@@ -406,9 +428,9 @@ export async function createAdjustment(
  * Compare les quantités attendues (calculées depuis transactions) avec les quantités actuelles
  */
 export async function reconcileInventory(
-  inventoryItemIds?: string[]
+  inventoryItemIds?: string[],
 ): Promise<ReconciliationItem[]> {
-  const where = inventoryItemIds?.length 
+  const where = inventoryItemIds?.length
     ? { id: { in: inventoryItemIds } }
     : {};
 
@@ -435,9 +457,12 @@ export async function reconcileInventory(
     }
 
     const variance = Number(item.quantity) - expectedQty;
-    const variancePercent = expectedQty !== 0 
-      ? (variance / expectedQty) * 100 
-      : (variance !== 0 ? 100 : 0);
+    const variancePercent =
+      expectedQty !== 0
+        ? (variance / expectedQty) * 100
+        : variance !== 0
+          ? 100
+          : 0;
     const varianceValue = variance * Number(item.averageCost);
 
     let status: "OK" | "WARNING" | "CRITICAL" = "OK";
@@ -492,8 +517,8 @@ export async function getLowStockItems(): Promise<any[]> {
     },
   });
 
-  return items.filter(item => 
-    item.threshold !== null && item.quantity <= item.threshold
+  return items.filter(
+    (item) => item.threshold !== null && item.quantity <= item.threshold,
   );
 }
 
@@ -528,7 +553,7 @@ export async function getInventoryValuation(): Promise<{
  * Vérifie la disponibilité du stock pour une liste d'articles
  */
 export async function checkStockAvailability(
-  items: Array<{ inventoryItemId: string; quantity: number }>
+  items: Array<{ inventoryItemId: string; quantity: number }>,
 ): Promise<{
   available: boolean;
   details: Array<{

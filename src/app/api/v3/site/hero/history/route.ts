@@ -6,7 +6,7 @@ import { getSettingsHistory } from "@/lib/site/settings.service";
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req);
-    
+
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get("limit") || "10");
 
@@ -14,11 +14,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      history: history.map(h => ({
+      history: history.map((h) => ({
         id: h.id,
         createdAt: h.createdAt,
-        snapshot: JSON.parse(h.snapshot)
-      }))
+        snapshot: JSON.parse(h.snapshot),
+      })),
     });
   } catch (err: unknown) {
     return handleApiError(err);

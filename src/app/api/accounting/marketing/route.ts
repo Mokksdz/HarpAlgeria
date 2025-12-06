@@ -19,7 +19,8 @@ export async function GET(req: NextRequest) {
     if (modelId) where.modelId = modelId;
     if (startDate || endDate) {
       where.date = {};
-      if (startDate) (where.date as Record<string, Date>).gte = new Date(startDate);
+      if (startDate)
+        (where.date as Record<string, Date>).gte = new Date(startDate);
       if (endDate) (where.date as Record<string, Date>).lte = new Date(endDate);
     }
 
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching marketing expenses:", error);
     return NextResponse.json(
       { error: "Failed to fetch marketing expenses" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
     if (!data.category || data.amount === undefined) {
       return NextResponse.json(
         { error: "Category and amount are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -90,7 +91,8 @@ export async function POST(req: NextRequest) {
       data: {
         chargeNumber,
         category: data.category, // ADS | SHOOTING | INFLUENCER
-        description: data.campaign || data.description || `Marketing ${data.category}`,
+        description:
+          data.campaign || data.description || `Marketing ${data.category}`,
         amount: data.amount,
         currency: data.currency || "DZD",
         date: data.date ? new Date(data.date) : new Date(),
@@ -110,7 +112,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating marketing expense:", error);
     return NextResponse.json(
       { error: "Failed to create marketing expense" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

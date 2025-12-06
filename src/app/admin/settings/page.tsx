@@ -13,7 +13,10 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -27,7 +30,7 @@ export default function SettingsPage() {
 
   const handleToggle = async (enabled: boolean) => {
     if (!settings) return;
-    
+
     setSaving(true);
     setMessage(null);
 
@@ -43,8 +46,8 @@ export default function SettingsPage() {
         setSettings(updated);
         setMessage({
           type: "success",
-          text: enabled 
-            ? "Promo activée ! La bannière est maintenant visible." 
+          text: enabled
+            ? "Promo activée ! La bannière est maintenant visible."
             : "Promo désactivée.",
         });
       } else {
@@ -69,8 +72,12 @@ export default function SettingsPage() {
     <div className="max-w-4xl space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-serif font-medium text-gray-900">Paramètres</h1>
-        <p className="text-gray-500 text-sm mt-2">Configuration générale de votre boutique</p>
+        <h1 className="text-3xl font-serif font-medium text-gray-900">
+          Paramètres
+        </h1>
+        <p className="text-gray-500 text-sm mt-2">
+          Configuration générale de votre boutique
+        </p>
       </div>
 
       {message && (
@@ -79,10 +86,15 @@ export default function SettingsPage() {
             "p-4 rounded-xl text-sm font-medium border flex items-center gap-2 animate-in slide-in-from-top-2",
             message.type === "success"
               ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-              : "bg-red-50 text-red-700 border-red-100"
+              : "bg-red-50 text-red-700 border-red-100",
           )}
         >
-          <div className={cn("w-1.5 h-1.5 rounded-full", message.type === "success" ? "bg-emerald-500" : "bg-red-500")} />
+          <div
+            className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              message.type === "success" ? "bg-emerald-500" : "bg-red-500",
+            )}
+          />
           {message.text}
         </div>
       )}
@@ -92,11 +104,15 @@ export default function SettingsPage() {
         <div className="p-8 border-b border-gray-50">
           <div className="flex items-center gap-4 mb-2">
             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                <Truck size={24} />
+              <Truck size={24} />
             </div>
             <div>
-                <h2 className="text-lg font-medium text-gray-900">Promo Livraison Gratuite</h2>
-                <p className="text-sm text-gray-500">Activez une offre promotionnelle pour la livraison gratuite</p>
+              <h2 className="text-lg font-medium text-gray-900">
+                Promo Livraison Gratuite
+              </h2>
+              <p className="text-sm text-gray-500">
+                Activez une offre promotionnelle pour la livraison gratuite
+              </p>
             </div>
           </div>
         </div>
@@ -104,7 +120,9 @@ export default function SettingsPage() {
         <div className="p-8 space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-gray-900">Activer la promotion</h3>
+              <h3 className="font-medium text-gray-900">
+                Activer la promotion
+              </h3>
               <p className="text-sm text-gray-500 mt-1">
                 Affiche une bannière "Livraison offerte" sur tout le site
               </p>
@@ -124,14 +142,16 @@ export default function SettingsPage() {
           {/* Prévisualisation */}
           {settings?.freeShippingPromoEnabled && (
             <div className="bg-gray-50/50 rounded-xl p-6 border border-gray-100 animate-in fade-in duration-300">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 text-center">Prévisualisation</p>
-              
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 text-center">
+                Prévisualisation
+              </p>
+
               <div className="bg-gray-900 text-white py-3 px-4 rounded-lg text-center shadow-sm max-w-md mx-auto">
                 <div className="flex items-center justify-center gap-2">
-                    <Zap size={14} className="text-emerald-400 fill-current" />
-                    <p className="text-sm font-medium tracking-wide">
+                  <Zap size={14} className="text-emerald-400 fill-current" />
+                  <p className="text-sm font-medium tracking-wide">
                     Livraison offerte · Du jeudi soir au samedi soir
-                    </p>
+                  </p>
                 </div>
               </div>
               <p className="text-xs text-gray-400 mt-4 text-center">
@@ -143,18 +163,23 @@ export default function SettingsPage() {
           {/* Textes de la promo */}
           {settings?.freeShippingPromoEnabled && (
             <div className="animate-in slide-in-from-top-4 duration-300 delay-100">
-              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-4">Fonctionnalités actives</h4>
+              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-4">
+                Fonctionnalités actives
+              </h4>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                    "Bannière promotionnelle (FR + AR)",
-                    "Badge 'Livraison offerte' sur les produits",
-                    "Message incitatif dans le panier",
-                    "Réduction automatique au checkout"
+                  "Bannière promotionnelle (FR + AR)",
+                  "Badge 'Livraison offerte' sur les produits",
+                  "Message incitatif dans le panier",
+                  "Réduction automatique au checkout",
                 ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100/50">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full shadow-sm ring-2 ring-emerald-100" />
-                        {item}
-                    </li>
+                  <li
+                    key={i}
+                    className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100/50"
+                  >
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full shadow-sm ring-2 ring-emerald-100" />
+                    {item}
+                  </li>
                 ))}
               </ul>
             </div>

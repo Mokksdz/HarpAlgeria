@@ -117,7 +117,7 @@ export async function createAdvance(input: AdvanceCreateInput): Promise<any> {
  * Applique une avance à un achat fournisseur
  */
 export async function applyAdvanceToPurchase(
-  input: AdvanceApplicationInput
+  input: AdvanceApplicationInput,
 ): Promise<AdvanceApplicationResult> {
   return prisma.$transaction(async (tx) => {
     // Récupérer l'avance
@@ -155,13 +155,13 @@ export async function applyAdvanceToPurchase(
 
     if (Number(advance.amountRemaining) < input.amount) {
       throw new Error(
-        `Montant demandé (${input.amount}) supérieur au solde disponible (${advance.amountRemaining})`
+        `Montant demandé (${input.amount}) supérieur au solde disponible (${advance.amountRemaining})`,
       );
     }
 
     if (input.amount > Number(purchase.amountDue)) {
       throw new Error(
-        `Montant demandé (${input.amount}) supérieur au montant dû (${purchase.amountDue})`
+        `Montant demandé (${input.amount}) supérieur au montant dû (${purchase.amountDue})`,
       );
     }
 
@@ -178,7 +178,7 @@ export async function applyAdvanceToPurchase(
     // Mettre à jour l'avance
     const newAmountUsed = Number(advance.amountUsed) + input.amount;
     const newAmountRemaining = Number(advance.amount) - newAmountUsed;
-    
+
     let newStatus: string = AdvanceStatus.PARTIAL;
     if (newAmountRemaining <= 0) {
       newStatus = AdvanceStatus.APPLIED;
@@ -239,7 +239,7 @@ export async function applyAdvanceToPurchase(
  */
 export async function cancelAdvanceApplication(
   purchaseAdvanceId: string,
-  cancelledBy?: string
+  cancelledBy?: string,
 ): Promise<AdvanceApplicationResult> {
   return prisma.$transaction(async (tx) => {
     const application = await tx.purchaseAdvance.findUnique({
@@ -264,7 +264,7 @@ export async function cancelAdvanceApplication(
     // Restaurer l'avance
     const newAmountUsed = Number(advance.amountUsed) - Number(amount);
     const newAmountRemaining = Number(advance.amount) - newAmountUsed;
-    
+
     let newStatus: string = AdvanceStatus.PENDING;
     if (newAmountUsed > 0) {
       newStatus = AdvanceStatus.PARTIAL;
@@ -319,7 +319,7 @@ export async function cancelAdvanceApplication(
  */
 export async function refundAdvance(
   advanceId: string,
-  refundedBy?: string
+  refundedBy?: string,
 ): Promise<any> {
   return prisma.$transaction(async (tx) => {
     const advance = await tx.supplierAdvance.findUnique({
@@ -333,7 +333,7 @@ export async function refundAdvance(
 
     if (Number(advance.amountUsed) > 0) {
       throw new Error(
-        "Cette avance a déjà été partiellement utilisée. Annulez d'abord les applications."
+        "Cette avance a déjà été partiellement utilisée. Annulez d'abord les applications.",
       );
     }
 
@@ -435,7 +435,7 @@ export async function getAdvanceById(id: string): Promise<any> {
  * Récupère les avances disponibles pour un fournisseur
  */
 export async function getAvailableAdvancesForSupplier(
-  supplierId: string
+  supplierId: string,
 ): Promise<any[]> {
   return prisma.supplierAdvance.findMany({
     where: {
@@ -454,7 +454,7 @@ export async function getAvailableAdvancesForSupplier(
  * Récupère les avances applicables à un achat
  */
 export async function getApplicableAdvancesForPurchase(
-  purchaseId: string
+  purchaseId: string,
 ): Promise<any[]> {
   const purchase = await prisma.purchase.findUnique({
     where: { id: purchaseId },
@@ -477,8 +477,8 @@ export async function getAdvanceStats(supplierId?: string): Promise<{
   totalAvailable: number;
   byStatus: Record<string, number>;
 }> {
-  const where: Prisma.SupplierAdvanceWhereInput = supplierId 
-    ? { supplierId } 
+  const where: Prisma.SupplierAdvanceWhereInput = supplierId
+    ? { supplierId }
     : {};
 
   const advances = await prisma.supplierAdvance.findMany({ where });

@@ -22,7 +22,11 @@ interface Purchase {
   status: string;
 }
 
-export default function ApplyAdvancePage({ params }: { params: Promise<{ id: string }> }) {
+export default function ApplyAdvancePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
   const [advance, setAdvance] = useState<Advance | null>(null);
@@ -34,8 +38,12 @@ export default function ApplyAdvancePage({ params }: { params: Promise<{ id: str
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/v3/compta/advances/${id}`, { credentials: "include" }).then((r) => r.json()),
-      fetch("/api/v3/compta/purchases?status=ORDERED&limit=50", { credentials: "include" }).then((r) => r.json()),
+      fetch(`/api/v3/compta/advances/${id}`, { credentials: "include" }).then(
+        (r) => r.json(),
+      ),
+      fetch("/api/v3/compta/purchases?status=ORDERED&limit=50", {
+        credentials: "include",
+      }).then((r) => r.json()),
     ]).then(([advData, purchData]) => {
       if (advData.success) {
         setAdvance(advData.advance);
@@ -44,7 +52,7 @@ export default function ApplyAdvancePage({ params }: { params: Promise<{ id: str
       if (purchData.success) {
         // Filter purchases from same supplier with amount due
         const filtered = purchData.items.filter(
-          (p: Purchase) => p.amountDue > 0
+          (p: Purchase) => p.amountDue > 0,
         );
         setPurchases(filtered);
       }
@@ -59,7 +67,8 @@ export default function ApplyAdvancePage({ params }: { params: Promise<{ id: str
     setSubmitting(true);
     try {
       const res = await fetch(`/api/v3/compta/advances/${id}/apply`, {
-        method: "POST", credentials: "include",
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           purchaseId: selectedPurchase,
@@ -78,18 +87,31 @@ export default function ApplyAdvancePage({ params }: { params: Promise<{ id: str
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
 
-  if (loading) return <div className="text-center py-12 text-slate-500">Chargement...</div>;
-  if (!advance) return <div className="text-center py-12 text-red-500">Avance non trouvée</div>;
+  if (loading)
+    return (
+      <div className="text-center py-12 text-slate-500">Chargement...</div>
+    );
+  if (!advance)
+    return (
+      <div className="text-center py-12 text-red-500">Avance non trouvée</div>
+    );
 
   const selectedPurchaseData = purchases.find((p) => p.id === selectedPurchase);
-  const maxAmount = Math.min(advance.amountRemaining, selectedPurchaseData?.amountDue || 0);
+  const maxAmount = Math.min(
+    advance.amountRemaining,
+    selectedPurchaseData?.amountDue || 0,
+  );
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <header className="flex items-center gap-4">
-        <Link href="/admin/compta/advances" className="p-2 hover:bg-slate-100 rounded-lg">
+        <Link
+          href="/admin/compta/advances"
+          className="p-2 hover:bg-slate-100 rounded-lg"
+        >
           <ArrowLeft size={20} />
         </Link>
         <div>
@@ -106,14 +128,22 @@ export default function ApplyAdvancePage({ params }: { params: Promise<{ id: str
         <div className="flex-1">
           <p className="font-medium">{advance.supplier.name}</p>
           <p className="text-sm text-green-700">
-            Disponible: <span className="font-bold">{formatCurrency(advance.amountRemaining)}</span>
+            Disponible:{" "}
+            <span className="font-bold">
+              {formatCurrency(advance.amountRemaining)}
+            </span>
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 rounded-2xl shadow space-y-6"
+      >
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Achat à régler</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Achat à régler
+          </label>
           <select
             value={selectedPurchase}
             onChange={(e) => {
@@ -141,13 +171,17 @@ export default function ApplyAdvancePage({ params }: { params: Promise<{ id: str
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-slate-600">Reste dû</span>
-              <span className="text-orange-600 font-medium">{formatCurrency(selectedPurchaseData.amountDue)}</span>
+              <span className="text-orange-600 font-medium">
+                {formatCurrency(selectedPurchaseData.amountDue)}
+              </span>
             </div>
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Montant à appliquer</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Montant à appliquer
+          </label>
           <input
             type="number"
             min="1"
@@ -167,28 +201,42 @@ export default function ApplyAdvancePage({ params }: { params: Promise<{ id: str
         {/* Preview */}
         {selectedPurchaseData && amount > 0 && (
           <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm font-medium text-blue-800 mb-2">Après application:</p>
+            <p className="text-sm font-medium text-blue-800 mb-2">
+              Après application:
+            </p>
             <div className="flex items-center gap-4 text-sm">
               <div className="flex-1">
                 <p className="text-slate-600">Avance restante</p>
-                <p className="font-bold text-blue-600">{formatCurrency(advance.amountRemaining - amount)}</p>
+                <p className="font-bold text-blue-600">
+                  {formatCurrency(advance.amountRemaining - amount)}
+                </p>
               </div>
               <ArrowRight className="text-slate-400" size={20} />
               <div className="flex-1">
                 <p className="text-slate-600">Achat restant dû</p>
-                <p className="font-bold text-green-600">{formatCurrency(selectedPurchaseData.amountDue - amount)}</p>
+                <p className="font-bold text-green-600">
+                  {formatCurrency(selectedPurchaseData.amountDue - amount)}
+                </p>
               </div>
             </div>
           </div>
         )}
 
         <div className="flex justify-end gap-4 pt-4 border-t">
-          <Link href="/admin/compta/advances" className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+          <Link
+            href="/admin/compta/advances"
+            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+          >
             Annuler
           </Link>
           <button
             type="submit"
-            disabled={submitting || !selectedPurchase || amount <= 0 || amount > maxAmount}
+            disabled={
+              submitting ||
+              !selectedPurchase ||
+              amount <= 0 ||
+              amount > maxAmount
+            }
             className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
           >
             <CheckCircle size={18} />

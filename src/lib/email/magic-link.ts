@@ -1,28 +1,35 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
-export async function sendMagicLinkEmail(email: string, link: string, guestKey?: string) {
+export async function sendMagicLinkEmail(
+  email: string,
+  link: string,
+  guestKey?: string,
+) {
   console.log(`[Email Service] Sending Magic Link to ${email}`);
   console.log(`[Email Service] Link: ${link}`);
-  
-  if (process.env.EMAIL_PROVIDER === 'nodemailer' || process.env.NODE_ENV === 'development') {
+
+  if (
+    process.env.EMAIL_PROVIDER === "nodemailer" ||
+    process.env.NODE_ENV === "development"
+  ) {
     // In dev, we might just log it, or use a real SMTP if configured
     if (process.env.SMTP_HOST) {
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT || "587"),
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-            },
-        });
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || "587"),
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
 
-        const expMin = process.env.MAGIC_LINK_EXP_MIN || "15";
+      const expMin = process.env.MAGIC_LINK_EXP_MIN || "15";
 
-        await transporter.sendMail({
-            from: '"Harp" <contact@harpalgeria.com>',
-            to: email,
-            subject: 'Voici votre lien de connexion HARP',
-            text: `
+      await transporter.sendMail({
+        from: '"Harp" <contact@harpalgeria.com>',
+        to: email,
+        subject: "Voici votre lien de connexion HARP",
+        text: `
 Objet: Voici votre lien de connexion HARP
 
 Bonjour,
@@ -35,7 +42,7 @@ Si vous n'avez pas demandé ce lien, ignorez cet email.
 À bientôt,
 L'équipe Harp
             `,
-            html: `
+        html: `
 <!doctype html>
 <html>
   <body style="font-family:Inter,Arial,sans-serif;color:#333;">
@@ -62,8 +69,8 @@ L'équipe Harp
     </table>
   </body>
 </html>
-            `
-        });
+            `,
+      });
     }
   }
 }

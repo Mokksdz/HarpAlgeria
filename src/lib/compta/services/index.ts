@@ -1,9 +1,9 @@
 /**
  * COMPTA Services Index
- * 
+ *
  * NOTE: Services are being consolidated into /lib/accounting/services/
  * This file re-exports from the canonical location for backward compatibility.
- * 
+ *
  * @deprecated Use imports from '@/lib/accounting/services' directly
  */
 

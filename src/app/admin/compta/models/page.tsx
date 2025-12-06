@@ -28,7 +28,9 @@ export default function ModelsPage() {
     try {
       const params = new URLSearchParams({ limit: "50" });
       if (search) params.set("search", search);
-      const res = await fetch(`/api/v3/compta/models?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/v3/compta/models?${params}`, {
+        credentials: "include",
+      });
       const data = await res.json();
       if (data.success) setModels(data.items);
     } catch (err) {
@@ -38,14 +40,17 @@ export default function ModelsPage() {
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
 
   return (
     <div className="space-y-6">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif">Modèles & Nomenclature</h1>
-          <p className="text-sm text-slate-600">Gestion des modèles, BOM et coûts</p>
+          <p className="text-sm text-slate-600">
+            Gestion des modèles, BOM et coûts
+          </p>
         </div>
         <Link
           href="/admin/compta/models/new"
@@ -71,18 +76,27 @@ export default function ModelsPage() {
       {loading ? (
         <div className="text-center text-slate-500 py-8">Chargement...</div>
       ) : models.length === 0 ? (
-        <div className="text-center text-slate-500 py-8">Aucun modèle trouvé</div>
+        <div className="text-center text-slate-500 py-8">
+          Aucun modèle trouvé
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {models.map((model) => (
-            <div key={model.id} className="bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow">
+            <div
+              key={model.id}
+              className="bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow"
+            >
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="font-medium">{model.name}</h3>
-                  <p className="text-sm text-slate-500 font-mono">{model.sku}</p>
+                  <p className="text-sm text-slate-500 font-mono">
+                    {model.sku}
+                  </p>
                 </div>
                 {model.collection && (
-                  <span className="text-xs bg-slate-100 px-2 py-1 rounded">{model.collection.nameFr}</span>
+                  <span className="text-xs bg-slate-100 px-2 py-1 rounded">
+                    {model.collection.nameFr}
+                  </span>
                 )}
               </div>
 
@@ -104,9 +118,13 @@ export default function ModelsPage() {
               <div className="flex justify-between items-center pt-3 border-t">
                 <div>
                   {model.sellingPrice ? (
-                    <span className="font-bold text-green-600">{formatCurrency(model.sellingPrice)}</span>
+                    <span className="font-bold text-green-600">
+                      {formatCurrency(model.sellingPrice)}
+                    </span>
                   ) : (
-                    <span className="text-slate-400 text-sm">Prix non défini</span>
+                    <span className="text-slate-400 text-sm">
+                      Prix non défini
+                    </span>
                   )}
                 </div>
                 <div className="flex gap-2">

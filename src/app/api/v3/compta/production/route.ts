@@ -72,11 +72,13 @@ export async function POST(req: NextRequest) {
     const data = BatchCreateSchema.parse(body);
 
     // Check model exists
-    const model = await prisma.model.findUnique({ where: { id: data.modelId } });
+    const model = await prisma.model.findUnique({
+      where: { id: data.modelId },
+    });
     if (!model) {
       return NextResponse.json(
         { success: false, error: "Modèle non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -104,7 +106,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return handleApiError(err);

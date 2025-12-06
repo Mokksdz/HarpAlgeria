@@ -79,10 +79,14 @@ export const PurchaseItemSchema = z.object({
   quantityOrdered: z.number().positive("Quantité requise"),
   unit: z.string().min(1, "Unité requise"),
   unitPrice: z.number().min(0, "Prix requis"),
-  allocations: z.array(z.object({
-    modelId: z.string(),
-    quantity: z.number().positive(),
-  })).optional(),
+  allocations: z
+    .array(
+      z.object({
+        modelId: z.string(),
+        quantity: z.number().positive(),
+      }),
+    )
+    .optional(),
 });
 
 export const PurchaseCreateSchema = z.object({
@@ -98,10 +102,12 @@ export const PurchaseCreateSchema = z.object({
 });
 
 export const PurchaseReceiveSchema = z.object({
-  items: z.array(z.object({
-    id: z.string(),
-    quantityReceived: z.number().min(0),
-  })),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      quantityReceived: z.number().min(0),
+    }),
+  ),
   receivedBy: z.string().optional(),
 });
 
@@ -113,12 +119,14 @@ export const AdvanceCreateSchema = z.object({
   supplierId: z.string().min(1, "Fournisseur requis"),
   amount: z.number().positive("Montant requis"),
   paymentDate: z.string().optional(),
-  paymentMethod: z.enum([
-    PaymentMethod.CASH,
-    PaymentMethod.CHECK,
-    PaymentMethod.TRANSFER,
-    PaymentMethod.CCP,
-  ]).optional(),
+  paymentMethod: z
+    .enum([
+      PaymentMethod.CASH,
+      PaymentMethod.CHECK,
+      PaymentMethod.TRANSFER,
+      PaymentMethod.CCP,
+    ])
+    .optional(),
   reference: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -146,33 +154,37 @@ export const ChargeCreateSchema = z.object({
   description: z.string().min(1, "Description requise"),
   amount: z.number().positive("Montant requis"),
   date: z.string().optional(),
-  scope: z.enum([
-    ChargeScope.GLOBAL,
-    ChargeScope.COLLECTION,
-    ChargeScope.MODEL,
-  ]).default(ChargeScope.GLOBAL),
+  scope: z
+    .enum([ChargeScope.GLOBAL, ChargeScope.COLLECTION, ChargeScope.MODEL])
+    .default(ChargeScope.GLOBAL),
   collectionId: z.string().optional(),
   modelId: z.string().optional(),
   vendor: z.string().optional(),
   invoiceRef: z.string().optional(),
   campaign: z.string().optional(),
-  platform: z.enum([
-    Platform.FACEBOOK,
-    Platform.INSTAGRAM,
-    Platform.TIKTOK,
-    Platform.GOOGLE,
-    Platform.OTHER,
-  ]).optional(),
+  platform: z
+    .enum([
+      Platform.FACEBOOK,
+      Platform.INSTAGRAM,
+      Platform.TIKTOK,
+      Platform.GOOGLE,
+      Platform.OTHER,
+    ])
+    .optional(),
   notes: z.string().optional(),
 });
 
 export const ChargeAllocateSchema = z.object({
   chargeId: z.string().min(1),
-  allocations: z.array(z.object({
-    modelId: z.string(),
-    amount: z.number().positive(),
-    percent: z.number().min(0).max(100).optional(),
-  })).min(1, "Au moins une allocation requise"),
+  allocations: z
+    .array(
+      z.object({
+        modelId: z.string(),
+        amount: z.number().positive(),
+        percent: z.number().min(0).max(100).optional(),
+      }),
+    )
+    .min(1, "Au moins une allocation requise"),
 });
 
 // =============================================================================
@@ -239,23 +251,23 @@ export interface CostBreakdown {
   accessoryCost: number;
   packagingCost: number;
   materialsCost: number;
-  
+
   // Production
   laborCost: number;
   atelierCost: number;
   productionCost: number;
-  
+
   // Marketing
   adsCost: number;
   shootingCost: number;
   influencerCost: number;
   marketingCost: number;
-  
+
   // Autres
   transportCost: number;
   otherCost: number;
   returnMargin: number;
-  
+
   // Total
   totalCost: number;
 }
@@ -366,13 +378,15 @@ export interface PaginatedResult<T> {
 // =============================================================================
 
 export const PurchaseFilterSchema = z.object({
-  status: z.enum([
-    PurchaseStatus.DRAFT,
-    PurchaseStatus.ORDERED,
-    PurchaseStatus.PARTIAL,
-    PurchaseStatus.RECEIVED,
-    PurchaseStatus.CANCELLED,
-  ]).optional(),
+  status: z
+    .enum([
+      PurchaseStatus.DRAFT,
+      PurchaseStatus.ORDERED,
+      PurchaseStatus.PARTIAL,
+      PurchaseStatus.RECEIVED,
+      PurchaseStatus.CANCELLED,
+    ])
+    .optional(),
   supplierId: z.string().optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
@@ -380,20 +394,20 @@ export const PurchaseFilterSchema = z.object({
 });
 
 export const ChargeFilterSchema = z.object({
-  category: z.enum([
-    ChargeCategory.ATELIER,
-    ChargeCategory.SHOOTING,
-    ChargeCategory.ADS,
-    ChargeCategory.INFLUENCER,
-    ChargeCategory.TRANSPORT,
-    ChargeCategory.LABOR,
-    ChargeCategory.OTHER,
-  ]).optional(),
-  scope: z.enum([
-    ChargeScope.GLOBAL,
-    ChargeScope.COLLECTION,
-    ChargeScope.MODEL,
-  ]).optional(),
+  category: z
+    .enum([
+      ChargeCategory.ATELIER,
+      ChargeCategory.SHOOTING,
+      ChargeCategory.ADS,
+      ChargeCategory.INFLUENCER,
+      ChargeCategory.TRANSPORT,
+      ChargeCategory.LABOR,
+      ChargeCategory.OTHER,
+    ])
+    .optional(),
+  scope: z
+    .enum([ChargeScope.GLOBAL, ChargeScope.COLLECTION, ChargeScope.MODEL])
+    .optional(),
   modelId: z.string().optional(),
   collectionId: z.string().optional(),
   dateFrom: z.string().optional(),
@@ -403,15 +417,17 @@ export const ChargeFilterSchema = z.object({
 export const TransactionFilterSchema = z.object({
   inventoryItemId: z.string().optional(),
   direction: z.enum([TxDirection.IN, TxDirection.OUT]).optional(),
-  type: z.enum([
-    TxType.PURCHASE,
-    TxType.PRODUCTION,
-    TxType.SALE,
-    TxType.ADJUSTMENT,
-    TxType.RESERVE,
-    TxType.RELEASE,
-    TxType.INITIAL,
-  ]).optional(),
+  type: z
+    .enum([
+      TxType.PURCHASE,
+      TxType.PRODUCTION,
+      TxType.SALE,
+      TxType.ADJUSTMENT,
+      TxType.RESERVE,
+      TxType.RELEASE,
+      TxType.INITIAL,
+    ])
+    .optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
 });

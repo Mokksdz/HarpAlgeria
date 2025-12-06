@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 async function generateChargeNumber(): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `CHG-${year}-`;
-  
+
   const last = await prisma.charge.findFirst({
     where: { chargeNumber: { startsWith: prefix } },
     orderBy: { chargeNumber: "desc" },
@@ -29,7 +29,11 @@ export async function GET(req: NextRequest) {
     const modelId = searchParams.get("modelId");
     const collectionId = searchParams.get("collectionId");
 
-    const where: { category?: string; modelId?: string; collectionId?: string } = {};
+    const where: {
+      category?: string;
+      modelId?: string;
+      collectionId?: string;
+    } = {};
     if (category) where.category = category;
     if (modelId) where.modelId = modelId;
     if (collectionId) where.collectionId = collectionId;
@@ -44,7 +48,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Map to expected format
-    const mappedCharges = charges.map(c => ({
+    const mappedCharges = charges.map((c) => ({
       ...c,
       currency: "DZD",
     }));
@@ -55,8 +59,8 @@ export async function GET(req: NextRequest) {
       return acc;
     }, {});
 
-    return NextResponse.json({ 
-      charges: mappedCharges, 
+    return NextResponse.json({
+      charges: mappedCharges,
       byCategory,
       total: charges.reduce((sum, c) => sum + Number(c.amount), 0),
     });
@@ -64,7 +68,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching charges:", error);
     return NextResponse.json(
       { error: "Failed to fetch charges" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -77,7 +81,7 @@ export async function POST(req: NextRequest) {
     if (!data.category || !data.description || !data.amount) {
       return NextResponse.json(
         { error: "category, description, and amount are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -127,7 +131,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating charge:", error);
     return NextResponse.json(
       { error: "Failed to create charge" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

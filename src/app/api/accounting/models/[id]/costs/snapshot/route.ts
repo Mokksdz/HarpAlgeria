@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 // POST - Créer un snapshot
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -27,7 +27,7 @@ export async function POST(
     console.error("Error creating snapshot:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de la création du snapshot" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -35,7 +35,7 @@ export async function POST(
 // GET - Lister les snapshots d'un modèle
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -51,7 +51,7 @@ export async function GET(
     console.error("Error fetching snapshots:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération des snapshots" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -51,7 +51,9 @@ export default function AdvancesPage() {
     try {
       const params = new URLSearchParams({ limit: "20" });
       if (filter) params.set("status", filter);
-      const res = await fetch(`/api/v3/compta/advances?${params}`, { credentials: "include" });
+      const res = await fetch(`/api/v3/compta/advances?${params}`, {
+        credentials: "include",
+      });
       const data = await res.json();
       if (data.success) {
         setAdvances(data.items);
@@ -64,7 +66,8 @@ export default function AdvancesPage() {
     }
   }
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("fr-DZ").format(n) + " DZD";
   const formatDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
 
   return (
@@ -72,7 +75,9 @@ export default function AdvancesPage() {
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif">Avances Fournisseurs</h1>
-          <p className="text-sm text-slate-600">Gestion des avances et applications</p>
+          <p className="text-sm text-slate-600">
+            Gestion des avances et applications
+          </p>
         </div>
         <Link
           href="/admin/compta/advances/new"
@@ -89,19 +94,25 @@ export default function AdvancesPage() {
             <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
               <Wallet size={16} /> Total Avances
             </div>
-            <p className="text-xl font-bold">{formatCurrency(stats.totalAdvances)}</p>
+            <p className="text-xl font-bold">
+              {formatCurrency(stats.totalAdvances)}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow">
             <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
               <CheckCircle size={16} /> Utilisé
             </div>
-            <p className="text-xl font-bold text-orange-600">{formatCurrency(stats.totalUsed)}</p>
+            <p className="text-xl font-bold text-orange-600">
+              {formatCurrency(stats.totalUsed)}
+            </p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow">
             <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
               <Clock size={16} /> Disponible
             </div>
-            <p className="text-xl font-bold text-green-600">{formatCurrency(stats.totalRemaining)}</p>
+            <p className="text-xl font-bold text-green-600">
+              {formatCurrency(stats.totalRemaining)}
+            </p>
           </div>
         </div>
       )}
@@ -113,7 +124,9 @@ export default function AdvancesPage() {
             key={s}
             onClick={() => setFilter(s)}
             className={`px-3 py-1.5 rounded-lg text-sm ${
-              filter === s ? "bg-harp-brown text-white" : "bg-white text-slate-700 hover:bg-slate-100"
+              filter === s
+                ? "bg-harp-brown text-white"
+                : "bg-white text-slate-700 hover:bg-slate-100"
             }`}
           >
             {s === "" ? "Toutes" : statusConfig[s]?.label || s}
@@ -126,7 +139,9 @@ export default function AdvancesPage() {
         {loading ? (
           <div className="p-8 text-center text-slate-500">Chargement...</div>
         ) : advances.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">Aucune avance trouvée</div>
+          <div className="p-8 text-center text-slate-500">
+            Aucune avance trouvée
+          </div>
         ) : (
           <table className="w-full">
             <thead className="bg-slate-50 text-left text-sm text-slate-600">
@@ -149,21 +164,33 @@ export default function AdvancesPage() {
                     <td className="px-4 py-3 font-medium">{a.advanceNumber}</td>
                     <td className="px-4 py-3">
                       <div>{a.supplier.name}</div>
-                      <div className="text-xs text-slate-500">{a.supplier.code}</div>
+                      <div className="text-xs text-slate-500">
+                        {a.supplier.code}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-right font-medium">{formatCurrency(a.amount)}</td>
-                    <td className="px-4 py-3 text-right text-orange-600">{formatCurrency(a.amountUsed)}</td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {formatCurrency(a.amount)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-orange-600">
+                      {formatCurrency(a.amountUsed)}
+                    </td>
                     <td className="px-4 py-3 text-right text-green-600 font-medium">
                       {formatCurrency(a.amountRemaining)}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${status.color}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${status.color}`}
+                      >
                         {status.label}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <div>{paymentLabels[a.paymentMethod] || a.paymentMethod}</div>
-                      <div className="text-xs text-slate-500">{formatDate(a.paymentDate)}</div>
+                      <div>
+                        {paymentLabels[a.paymentMethod] || a.paymentMethod}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {formatDate(a.paymentDate)}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {a.amountRemaining > 0 && (

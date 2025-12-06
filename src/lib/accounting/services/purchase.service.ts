@@ -96,9 +96,10 @@ export async function createPurchase(input: PurchaseCreateInput): Promise<any> {
     // Calculer les totaux
     const subtotal = input.items.reduce(
       (sum, item) => sum + item.quantityOrdered * item.unitPrice,
-      0
+      0,
     );
-    const totalAmount = subtotal + (input.taxAmount || 0) + (input.shippingCost || 0);
+    const totalAmount =
+      subtotal + (input.taxAmount || 0) + (input.shippingCost || 0);
 
     // Créer l'achat
     const purchase = await tx.purchase.create({
@@ -124,7 +125,9 @@ export async function createPurchase(input: PurchaseCreateInput): Promise<any> {
             unit: item.unit,
             unitPrice: item.unitPrice,
             totalPrice: item.quantityOrdered * item.unitPrice,
-            allocations: item.allocations ? JSON.stringify(item.allocations) : null,
+            allocations: item.allocations
+              ? JSON.stringify(item.allocations)
+              : null,
           })),
         },
       },
@@ -235,7 +238,9 @@ export async function cancelPurchase(purchaseId: string): Promise<any> {
 /**
  * Génère un aperçu de l'impact de la réception sur le stock
  */
-export async function previewReceive(purchaseId: string): Promise<ReceivePreview> {
+export async function previewReceive(
+  purchaseId: string,
+): Promise<ReceivePreview> {
   const purchase = await prisma.purchase.findUnique({
     where: { id: purchaseId },
     include: {
@@ -256,7 +261,8 @@ export async function previewReceive(purchaseId: string): Promise<ReceivePreview
 
   for (const item of purchase.items) {
     const inv = item.inventoryItem;
-    const quantityToReceive = Number(item.quantityOrdered) - Number(item.quantityReceived);
+    const quantityToReceive =
+      Number(item.quantityOrdered) - Number(item.quantityReceived);
 
     if (quantityToReceive <= 0) continue;
 
@@ -265,7 +271,7 @@ export async function previewReceive(purchaseId: string): Promise<ReceivePreview
       Number(inv.quantity),
       Number(inv.averageCost),
       quantityToReceive,
-      Number(item.unitPrice)
+      Number(item.unitPrice),
     );
 
     previewItems.push({
@@ -324,7 +330,7 @@ export async function previewReceive(purchaseId: string): Promise<ReceivePreview
 export async function receivePurchase(
   purchaseId: string,
   items: ReceiveItemInput[],
-  receivedBy?: string
+  receivedBy?: string,
 ): Promise<any> {
   return prisma.$transaction(async (tx) => {
     const purchase = await tx.purchase.findUnique({
@@ -353,13 +359,20 @@ export async function receivePurchase(
     let anyReceived = false;
 
     for (const receiveItem of items) {
-      const purchaseItem = purchase.items.find((pi) => pi.id === receiveItem.id);
+      const purchaseItem = purchase.items.find(
+        (pi) => pi.id === receiveItem.id,
+      );
       if (!purchaseItem) {
         throw new Error(`Article d'achat non trouvé: ${receiveItem.id}`);
       }
 
-      const remainingToReceive = Number(purchaseItem.quantityOrdered) - Number(purchaseItem.quantityReceived);
-      const qtyToReceive = Math.min(receiveItem.quantityReceived, remainingToReceive);
+      const remainingToReceive =
+        Number(purchaseItem.quantityOrdered) -
+        Number(purchaseItem.quantityReceived);
+      const qtyToReceive = Math.min(
+        receiveItem.quantityReceived,
+        remainingToReceive,
+      );
 
       if (qtyToReceive <= 0) continue;
 
@@ -369,7 +382,8 @@ export async function receivePurchase(
       await tx.purchaseItem.update({
         where: { id: purchaseItem.id },
         data: {
-          quantityReceived: Number(purchaseItem.quantityReceived) + qtyToReceive,
+          quantityReceived:
+            Number(purchaseItem.quantityReceived) + qtyToReceive,
         },
       });
 
@@ -386,7 +400,7 @@ export async function receivePurchase(
           notes: `Réception achat ${purchase.purchaseNumber} - ${purchase.supplier.name}`,
           createdBy: receivedBy,
         },
-        tx
+        tx,
       );
 
       // Vérifier si tout est reçu pour cet article
@@ -402,15 +416,15 @@ export async function receivePurchase(
     });
 
     const fullyReceived = updatedItems.every(
-      (item) => item.quantityReceived >= item.quantityOrdered
+      (item) => item.quantityReceived >= item.quantityOrdered,
     );
 
     // Mettre à jour le statut de l'achat
     const newStatus = fullyReceived
       ? PurchaseStatus.RECEIVED
       : anyReceived
-      ? PurchaseStatus.PARTIAL
-      : purchase.status;
+        ? PurchaseStatus.PARTIAL
+        : purchase.status;
 
     const updatedPurchase = await tx.purchase.update({
       where: { id: purchaseId },
@@ -544,7 +558,11 @@ export async function getPurchaseStats(period?: {
   total: number;
   totalAmount: number;
   byStatus: Record<string, number>;
-  bySupplier: Array<{ supplierId: string; supplierName: string; total: number }>;
+  bySupplier: Array<{
+    supplierId: string;
+    supplierName: string;
+    total: number;
+  }>;
 }> {
   const where: Prisma.PurchaseWhereInput = {};
 

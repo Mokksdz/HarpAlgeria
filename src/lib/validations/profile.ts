@@ -17,14 +17,17 @@ export const UpdateProfileSchema = z.object({
     .max(100, "Le nom ne peut pas dépasser 100 caractères")
     .optional()
     .nullable(),
-  
+
   phone: z
     .string()
-    .regex(algerianPhoneRegex, "Le numéro doit contenir 10 chiffres (ex: 0551234567)")
+    .regex(
+      algerianPhoneRegex,
+      "Le numéro doit contenir 10 chiffres (ex: 0551234567)",
+    )
     .optional()
     .nullable()
     .or(z.literal("")),
-  
+
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Format date invalide (AAAA-MM-JJ)")
@@ -44,7 +47,10 @@ export const SignupSchema = z.object({
     .optional(),
   phone: z
     .string()
-    .regex(algerianPhoneRegex, "Le numéro doit contenir 10 chiffres (ex: 0551234567)")
+    .regex(
+      algerianPhoneRegex,
+      "Le numéro doit contenir 10 chiffres (ex: 0551234567)",
+    )
     .optional(),
 });
 

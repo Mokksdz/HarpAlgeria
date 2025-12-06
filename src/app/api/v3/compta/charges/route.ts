@@ -83,13 +83,13 @@ export async function POST(req: NextRequest) {
     if (data.scope === "MODEL" && !data.modelId) {
       return NextResponse.json(
         { success: false, error: "modelId requis pour scope MODEL" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (data.scope === "COLLECTION" && !data.collectionId) {
       return NextResponse.json(
         { success: false, error: "collectionId requis pour scope COLLECTION" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     return handleApiError(err);

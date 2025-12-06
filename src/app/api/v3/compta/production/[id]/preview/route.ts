@@ -3,9 +3,9 @@
  * GET /api/v3/compta/production/[id]/preview - Preview BOM requirements
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, handleApiError } from '@/lib/auth-helpers';
-import { previewProductionConsumption } from '@/lib/compta/services/production-service';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin, handleApiError } from "@/lib/auth-helpers";
+import { previewProductionConsumption } from "@/lib/compta/services/production-service";
 
 /**
  * GET /api/v3/compta/production/[id]/preview
@@ -14,7 +14,7 @@ import { previewProductionConsumption } from '@/lib/compta/services/production-s
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -28,16 +28,16 @@ export async function GET(
     });
   } catch (err) {
     if (err instanceof Error) {
-      if (err.message.includes('non trouvé')) {
+      if (err.message.includes("non trouvé")) {
         return NextResponse.json(
           { success: false, error: err.message },
-          { status: 404 }
+          { status: 404 },
         );
       }
-      if (err.message.includes('statut')) {
+      if (err.message.includes("statut")) {
         return NextResponse.json(
           { success: false, error: err.message },
-          { status: 422 }
+          { status: 422 },
         );
       }
     }

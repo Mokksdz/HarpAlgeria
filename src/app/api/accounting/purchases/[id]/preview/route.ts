@@ -9,7 +9,7 @@ import { previewReceive } from "@/lib/accounting/services";
 // GET - Prévisualiser la réception
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -21,7 +21,7 @@ export async function GET(
     console.error("Error generating receive preview:", error);
     return NextResponse.json(
       { error: error.message || "Erreur lors de la prévisualisation" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

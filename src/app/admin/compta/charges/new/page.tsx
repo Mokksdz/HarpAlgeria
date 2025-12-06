@@ -66,7 +66,8 @@ export default function NewChargePage() {
 
     try {
       const res = await fetch("/api/v3/compta/charges", {
-        method: "POST", credentials: "include",
+        method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
@@ -91,7 +92,10 @@ export default function NewChargePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <header className="flex items-center gap-4">
-        <Link href="/admin/compta/charges" className="p-2 hover:bg-slate-100 rounded-lg">
+        <Link
+          href="/admin/compta/charges"
+          className="p-2 hover:bg-slate-100 rounded-lg"
+        >
           <ArrowLeft size={20} />
         </Link>
         <div>
@@ -101,23 +105,32 @@ export default function NewChargePage() {
       </header>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">{error}</div>
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
+          {error}
+        </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 rounded-2xl shadow space-y-6"
+      >
         <div className="flex items-center gap-3 pb-4 border-b">
           <div className="p-3 bg-blue-100 rounded-xl">
             <Receipt className="text-blue-600" size={24} />
           </div>
           <div>
             <p className="font-medium">Charge / Dépense</p>
-            <p className="text-sm text-slate-500">Sera comptabilisée dans les coûts de revient</p>
+            <p className="text-sm text-slate-500">
+              Sera comptabilisée dans les coûts de revient
+            </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Catégorie *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Catégorie *
+            </label>
             <select
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -133,7 +146,9 @@ export default function NewChargePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Scope *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Scope *
+            </label>
             <select
               value={form.scope}
               onChange={(e) => setForm({ ...form, scope: e.target.value })}
@@ -147,7 +162,9 @@ export default function NewChargePage() {
 
           {form.scope === "MODEL" && (
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Modèle *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Modèle *
+              </label>
               <select
                 value={form.modelId}
                 onChange={(e) => setForm({ ...form, modelId: e.target.value })}
@@ -165,12 +182,16 @@ export default function NewChargePage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Montant (DZD) *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Montant (DZD) *
+            </label>
             <input
               type="number"
               min="1"
               value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
+              onChange={(e) =>
+                setForm({ ...form, amount: parseFloat(e.target.value) || 0 })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
               placeholder="10000"
               required
@@ -178,7 +199,9 @@ export default function NewChargePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Date
+            </label>
             <input
               type="date"
               value={form.date}
@@ -188,11 +211,15 @@ export default function NewChargePage() {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Description *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Description *
+            </label>
             <input
               type="text"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-harp-brown/20"
               placeholder="Campagne Facebook Décembre, Shooting nouvelle collection..."
               required
@@ -201,7 +228,9 @@ export default function NewChargePage() {
 
           {(form.category === "ADS" || form.category === "INFLUENCER") && (
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Plateforme</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Plateforme
+              </label>
               <select
                 value={form.platform}
                 onChange={(e) => setForm({ ...form, platform: e.target.value })}
@@ -218,7 +247,9 @@ export default function NewChargePage() {
           )}
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Notes
+            </label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -230,7 +261,10 @@ export default function NewChargePage() {
         </div>
 
         <div className="flex justify-end gap-4 pt-4 border-t">
-          <Link href="/admin/compta/charges" className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+          <Link
+            href="/admin/compta/charges"
+            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+          >
             Annuler
           </Link>
           <button

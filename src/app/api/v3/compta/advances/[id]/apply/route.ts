@@ -10,7 +10,7 @@ const ApplySchema = z.object({
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin(req);
@@ -22,7 +22,7 @@ export async function POST(
     if (!advance) {
       return NextResponse.json(
         { success: false, error: "Avance non trouvée" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -32,7 +32,7 @@ export async function POST(
           success: false,
           error: `Solde insuffisant: ${advance.amountRemaining} disponible, ${data.amount} demandé`,
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -42,14 +42,17 @@ export async function POST(
     if (!purchase) {
       return NextResponse.json(
         { success: false, error: "Achat non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (purchase.supplierId !== advance.supplierId) {
       return NextResponse.json(
-        { success: false, error: "L'avance et l'achat doivent appartenir au même fournisseur" },
-        { status: 422 }
+        {
+          success: false,
+          error: "L'avance et l'achat doivent appartenir au même fournisseur",
+        },
+        { status: 422 },
       );
     }
 
@@ -59,7 +62,7 @@ export async function POST(
           success: false,
           error: `Montant dû insuffisant: ${purchase.amountDue} restant à payer`,
         },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
@@ -115,10 +118,13 @@ export async function POST(
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: "Validation échouée", details: err.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const message = err instanceof Error ? err.message : "Erreur serveur";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   }
 }

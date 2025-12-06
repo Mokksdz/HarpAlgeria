@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       direction?: string;
       type?: string;
     } = {};
-    
+
     if (inventoryItemId) where.inventoryItemId = inventoryItemId;
     if (direction) where.direction = direction;
     if (type) where.type = type;
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching transactions:", error);
     return NextResponse.json(
       { error: "Failed to fetch transactions" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
