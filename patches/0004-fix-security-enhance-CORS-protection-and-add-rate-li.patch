@@ -1,0 +1,127 @@
+From ed5deea96e1f0f78ed1c9c3a1efe370c6f907a46 Mon Sep 17 00:00:00 2001
+From: Aura Academy <beta@aura-academy.com>
+Date: Sat, 6 Dec 2025 12:51:37 +0100
+Subject: [PATCH 4/7] fix(security): enhance CORS protection and add rate
+ limiting to magic-link verify
+
+---
+ .../api/v3/auth/magic-link/verify/route.ts    |  5 ++
+ src/middleware.ts                             | 57 ++++++++++++++++---
+ 2 files changed, 53 insertions(+), 9 deletions(-)
+
+diff --git a/src/app/api/v3/auth/magic-link/verify/route.ts b/src/app/api/v3/auth/magic-link/verify/route.ts
+index 4eedf6e..7a6f700 100644
+--- a/src/app/api/v3/auth/magic-link/verify/route.ts
++++ b/src/app/api/v3/auth/magic-link/verify/route.ts
+@@ -1,9 +1,14 @@
+ import { NextRequest, NextResponse } from "next/server";
+ import { verifyMagicLink } from "@/lib/auth/auto-email.service";
+ import { handleApiError } from "@/lib/auth-helpers";
++import { withRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+ 
+ export async function POST(req: NextRequest) {
+   try {
++    // Rate limit magic link verification attempts
++    const rateLimited = withRateLimit(req, RATE_LIMITS.MAGIC_LINK, "magic-verify");
++    if (rateLimited) return rateLimited;
++
+     const body = await req.json();
+     const { token } = body;
+ 
+diff --git a/src/middleware.ts b/src/middleware.ts
+index 75ea391..b4541e8 100644
+--- a/src/middleware.ts
++++ b/src/middleware.ts
+@@ -1,20 +1,55 @@
+ import { withAuth } from "next-auth/middleware";
+-import { NextResponse } from "next/server";
++import { NextResponse, NextRequest } from "next/server";
+ 
++// Allowed origins for CORS (restrict in production)
++const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(",") || [
++  "http://localhost:3000",
++  "https://harp-dz.com",
++  "https://www.harp-dz.com",
++];
++
++function addCorsHeaders(response: NextResponse, origin: string | null) {
++  if (origin && ALLOWED_ORIGINS.includes(origin)) {
++    response.headers.set("Access-Control-Allow-Origin", origin);
++  }
++  response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
++  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
++  response.headers.set("Access-Control-Max-Age", "86400");
++  return response;
++}
++
++// Handle preflight requests
++export function middleware(request: NextRequest) {
++  const origin = request.headers.get("origin");
++  const pathname = request.nextUrl.pathname;
++
++  // Handle CORS preflight for API routes
++  if (request.method === "OPTIONS" && pathname.startsWith("/api/")) {
++    const response = new NextResponse(null, { status: 204 });
++    return addCorsHeaders(response, origin);
++  }
++
++  // Add CORS headers to API responses
++  if (pathname.startsWith("/api/")) {
++    const response = NextResponse.next();
++    return addCorsHeaders(response, origin);
++  }
++
++  return NextResponse.next();
++}
++
++// Auth middleware for admin routes
+ export default withAuth(
+-  function middleware(req) {
++  function authMiddleware(req) {
+     const token = req.nextauth.token;
+     const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
+     const isAdminLogin = req.nextUrl.pathname === "/admin/login";
+ 
+-    // Allow access to admin login page without auth
+     if (isAdminLogin) {
+       return NextResponse.next();
+     }
+ 
+-    // For admin routes, check if user has admin role
+     if (isAdminRoute && token?.role !== "admin") {
+-      // Redirect non-admin users to admin login
+       return NextResponse.redirect(new URL("/admin/login", req.url));
+     }
+ 
+@@ -23,20 +58,24 @@ export default withAuth(
+   {
+     callbacks: {
+       authorized: ({ token, req }) => {
+-        // Allow admin login page without auth
+         if (req.nextUrl.pathname === "/admin/login") {
+           return true;
+         }
+-        // For other admin routes, require token
+         return !!token;
+       },
+     },
+     pages: {
+-      signIn: "/admin/login", // Redirect to admin login for admin routes
++      signIn: "/admin/login",
+     },
+   },
+ );
+ 
+ export const config = {
+-  matcher: ["/admin/:path*"],
++  matcher: [
++    "/admin/:path*",
++    "/api/:path*",
++    "/api/v3/:path*",
++    "/api/accounting/:path*",
++    "/api/shipping/:path*",
++  ],
+ };
+-- 
+2.51.0
+
