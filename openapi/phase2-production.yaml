@@ -1,0 +1,557 @@
+openapi: 3.0.3
+info:
+  title: HARP Comptabilité V3 API - Phase 2 Production
+  description: |
+    API de gestion de production pour HARP E-commerce.
+    
+    ## Fonctionnalités Phase 2
+    - Création de lots de production
+    - Prévisualisation des besoins matières (BOM)
+    - Consommation de stock et démarrage production
+    - Complétion avec calcul des coûts de revient
+    
+    ## Cycle de vie d'un lot
+    ```
+    PLANNED → IN_PROGRESS → COMPLETED
+         ↓          ↓
+      CANCELLED   ON_HOLD
+    ```
+    
+    ## Formules de calcul
+    - requiredQty = bom.quantity × wasteFactor × plannedQty
+    - materialsCost = Σ(requiredQty × averageCost)
+    - totalCost = materialsCost + laborCost + overheadCost + (otherCost × producedQty)
+    - costPerUnit = totalCost / producedQty
+  version: 3.0.0-phase2
+  contact:
+    name: HARP Team
+
+servers:
+  - url: http://localhost:3000
+    description: Development
+
+tags:
+  - name: Production
+    description: Gestion des lots de production
+
+paths:
+  /api/v3/compta/production:
+    get:
+      tags: [Production]
+      summary: Liste des lots de production
+      operationId: listBatches
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PLANNED, IN_PROGRESS, COMPLETED, CANCELLED, ON_HOLD]
+        - name: modelId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des lots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchListResponse'
+
+    post:
+      tags: [Production]
+      summary: Créer un lot de production
+      operationId: createBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBatchInput'
+            example:
+              modelId: "clmodel123"
+              plannedQty: 120
+              laborCost: 36000
+              overheadCost: 6000
+      responses:
+        '201':
+          description: Lot créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+  /api/v3/compta/production/{id}:
+    get:
+      tags: [Production]
+      summary: Détail d'un lot
+      operationId: getBatch
+      parameters:
+        - $ref: '#/components/parameters/batchId'
+      responses:
+        '200':
+          description: Détail du lot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchDetailResponse'
+
+    put:
+      tags: [Production]
+      summary: Modifier un lot
+      operationId: updateBatch
+      parameters:
+        - $ref: '#/components/parameters/batchId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBatchInput'
+      responses:
+        '200':
+          description: Lot modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+    delete:
+      tags: [Production]
+      summary: Supprimer un lot planifié
+      operationId: deleteBatch
+      parameters:
+        - $ref: '#/components/parameters/batchId'
+      responses:
+        '200':
+          description: Lot supprimé
+
+  /api/v3/compta/production/{id}/preview:
+    get:
+      tags: [Production]
+      summary: Prévisualiser les besoins matières
+      description: |
+        Retourne les besoins matières basés sur le BOM du modèle.
+        
+        Formule: requiredQty = bom.quantity × wasteFactor × plannedQty
+      operationId: previewConsumption
+      parameters:
+        - $ref: '#/components/parameters/batchId'
+      responses:
+        '200':
+          description: Prévisualisation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumptionPreviewResponse'
+              example:
+                success: true
+                batchId: "clbatch123"
+                batchNumber: "LOT-2025-0001"
+                modelSku: "ROBE-001"
+                modelName: "Robe Été"
+                plannedQty: 100
+                requirements:
+                  - inventoryItemId: "clinv001"
+                    sku: "TISSU-COTON-001"
+                    name: "Tissu Coton Premium"
+                    unit: "METER"
+                    bomQtyPerUnit: 2.5
+                    wasteFactor: 1.05
+                    required: 262.5
+                    available: 500
+                    shortage: 0
+                    unitCost: 600
+                    totalCost: 157500
+                    canConsume: true
+                hasShortage: false
+                totalMaterialsCost: 163500
+                estimatedCostPerUnit: 1635
+                canProceed: true
+
+  /api/v3/compta/production/{id}/consume:
+    get:
+      tags: [Production]
+      summary: Obtenir les informations de consommation
+      operationId: getConsumeInfo
+      parameters:
+        - $ref: '#/components/parameters/batchId'
+      responses:
+        '200':
+          description: Informations de consommation
+
+    post:
+      tags: [Production]
+      summary: Consommer les matières et démarrer la production
+      description: |
+        Opération transactionnelle:
+        1. Valide que tous les stocks sont disponibles
+        2. Déduit les quantités de l'inventaire
+        3. Crée les transactions OUT (PRODUCTION)
+        4. Crée les enregistrements BatchConsumption
+        5. Met à jour le lot: status=IN_PROGRESS, startedAt
+      operationId: consumeMaterials
+      parameters:
+        - $ref: '#/components/parameters/batchId'
+      responses:
+        '200':
+          description: Production démarrée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumeResponse'
+        '422':
+          description: Stock insuffisant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/compta/production/{id}/complete:
+    post:
+      tags: [Production]
+      summary: Terminer le lot et calculer les coûts
+      description: |
+        Termine la production et calcule les coûts finaux:
+        
+        - totalCost = materialsCost + laborCost + overheadCost + (otherCost × producedQty)
+        - costPerUnit = totalCost / producedQty
+      operationId: completeBatch
+      parameters:
+        - $ref: '#/components/parameters/batchId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteBatchInput'
+            example:
+              producedQty: 95
+              wasteQty: 5
+      responses:
+        '200':
+          description: Lot terminé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteResponse'
+              example:
+                success: true
+                batch:
+                  id: "clbatch123"
+                  batchNumber: "LOT-2025-0001"
+                  status: "COMPLETED"
+                  producedQty: 95
+                  wasteQty: 5
+                costs:
+                  materialsCost: 163500
+                  laborCost: 36000
+                  overheadCost: 6000
+                  otherCost: 4750
+                  totalCost: 210250
+                  costPerUnit: 2213.16
+                message: "Lot terminé: 95 unités produites, coût/unité: 2213.16 DZD"
+
+components:
+  parameters:
+    batchId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+
+    CreateBatchInput:
+      type: object
+      required: [modelId, plannedQty]
+      properties:
+        modelId:
+          type: string
+        plannedQty:
+          type: integer
+          minimum: 1
+        plannedDate:
+          type: string
+          format: date-time
+        laborCost:
+          type: number
+          default: 0
+        overheadCost:
+          type: number
+          default: 0
+        notes:
+          type: string
+
+    UpdateBatchInput:
+      type: object
+      properties:
+        plannedQty:
+          type: integer
+        plannedDate:
+          type: string
+          format: date-time
+        laborCost:
+          type: number
+        overheadCost:
+          type: number
+        status:
+          type: string
+          enum: [PLANNED, IN_PROGRESS, COMPLETED, CANCELLED, ON_HOLD]
+        notes:
+          type: string
+
+    CompleteBatchInput:
+      type: object
+      required: [producedQty]
+      properties:
+        producedQty:
+          type: integer
+          minimum: 0
+        wasteQty:
+          type: integer
+          minimum: 0
+          default: 0
+        notes:
+          type: string
+
+    BatchSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        batchNumber:
+          type: string
+        model:
+          type: object
+          properties:
+            id:
+              type: string
+            sku:
+              type: string
+            name:
+              type: string
+        plannedQty:
+          type: integer
+        producedQty:
+          type: integer
+        status:
+          type: string
+        totalCost:
+          type: number
+        costPerUnit:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+
+    BatchDetail:
+      allOf:
+        - $ref: '#/components/schemas/BatchSummary'
+        - type: object
+          properties:
+            wasteQty:
+              type: integer
+            materialsCost:
+              type: number
+            laborCost:
+              type: number
+            overheadCost:
+              type: number
+            plannedDate:
+              type: string
+              format: date-time
+            startedAt:
+              type: string
+              format: date-time
+            completedAt:
+              type: string
+              format: date-time
+            consumptions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Consumption'
+            notes:
+              type: string
+
+    Consumption:
+      type: object
+      properties:
+        id:
+          type: string
+        inventoryItemId:
+          type: string
+        plannedQty:
+          type: number
+        actualQty:
+          type: number
+        unitCost:
+          type: number
+        totalCost:
+          type: number
+
+    BOMRequirement:
+      type: object
+      properties:
+        inventoryItemId:
+          type: string
+        sku:
+          type: string
+        name:
+          type: string
+        unit:
+          type: string
+        bomQtyPerUnit:
+          type: number
+        wasteFactor:
+          type: number
+        required:
+          type: number
+        available:
+          type: number
+        shortage:
+          type: number
+        unitCost:
+          type: number
+        totalCost:
+          type: number
+        canConsume:
+          type: boolean
+
+    CostBreakdown:
+      type: object
+      properties:
+        materialsCost:
+          type: number
+        laborCost:
+          type: number
+        overheadCost:
+          type: number
+        otherCost:
+          type: number
+        totalCost:
+          type: number
+        costPerUnit:
+          type: number
+
+    BatchListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchSummary'
+        meta:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+            totalPages:
+              type: integer
+
+    BatchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        batch:
+          $ref: '#/components/schemas/BatchSummary'
+
+    BatchDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        batch:
+          $ref: '#/components/schemas/BatchDetail'
+
+    ConsumptionPreviewResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        batchId:
+          type: string
+        batchNumber:
+          type: string
+        modelSku:
+          type: string
+        modelName:
+          type: string
+        plannedQty:
+          type: integer
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/BOMRequirement'
+        hasShortage:
+          type: boolean
+        totalMaterialsCost:
+          type: number
+        estimatedCostPerUnit:
+          type: number
+        canProceed:
+          type: boolean
+
+    ConsumeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        batch:
+          $ref: '#/components/schemas/BatchDetail'
+        totalMaterialsCost:
+          type: number
+        consumptions:
+          type: array
+          items:
+            type: object
+            properties:
+              inventoryItemId:
+                type: string
+              sku:
+                type: string
+              quantity:
+                type: number
+              unitCost:
+                type: number
+              totalCost:
+                type: number
+        message:
+          type: string
+
+    CompleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        batch:
+          $ref: '#/components/schemas/BatchDetail'
+        costs:
+          $ref: '#/components/schemas/CostBreakdown'
+        message:
+          type: string

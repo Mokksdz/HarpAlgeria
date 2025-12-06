@@ -1,0 +1,17 @@
+#!/bin/sh
+
+echo "🔍 Running pre-commit checks..."
+
+# Run TypeScript type-checking
+echo "📘 Type checking..."
+npx tsc --noEmit || exit 1
+
+# Run linting (non-blocking for now)
+echo "🔎 Linting..."
+npm run lint || echo "⚠️ Lint warnings found (non-blocking)"
+
+# Run tests
+echo "🧪 Running tests..."
+npm test -- --passWithNoTests || exit 1
+
+echo "✅ Pre-commit checks passed!"

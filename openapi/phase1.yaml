@@ -1,0 +1,1073 @@
+openapi: 3.0.3
+info:
+  title: HARP Comptabilité V3 API - Phase 1
+  description: |
+    API de gestion comptable pour HARP E-commerce.
+    
+    ## Authentification
+    Toutes les routes nécessitent une session admin valide (NextAuth.js).
+    Cookie de session requis pour toutes les requêtes.
+    
+    ## Phase 1 - Fonctionnalités
+    - Gestion des achats (création, réception)
+    - Gestion de l'inventaire (CRUD, ajustements)
+    - Calcul CUMP automatique
+    - Réconciliation des stocks
+  version: 3.0.0-phase1
+  contact:
+    name: HARP Team
+    email: dev@harp.dz
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+tags:
+  - name: Health
+    description: Health check et statistiques
+  - name: Purchases
+    description: Gestion des achats fournisseurs
+  - name: Inventory
+    description: Gestion des articles d'inventaire
+
+paths:
+  /api/v3/compta:
+    get:
+      tags: [Health]
+      summary: Health check et statistiques
+      description: Retourne le statut de l'API et des statistiques de base
+      operationId: getHealth
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: API healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                success: true
+                version: "3.0.0"
+                phase: 1
+                status: "healthy"
+                timestamp: "2025-12-02T18:00:00.000Z"
+                stats:
+                  pendingPurchases: 5
+                  inventoryItems: 150
+                  lowStockAlerts: 3
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v3/compta/purchases:
+    get:
+      tags: [Purchases]
+      summary: Liste des achats
+      description: Retourne une liste paginée des achats avec filtres optionnels
+      operationId: listPurchases
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, ORDERED, PARTIAL, RECEIVED, CANCELLED]
+        - name: supplierId
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des achats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Purchases]
+      summary: Créer un achat
+      description: Crée un nouvel achat en statut DRAFT
+      operationId: createPurchase
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseCreateInput'
+            example:
+              supplierId: "clp123abc"
+              invoiceNumber: "FAC-2025-001"
+              items:
+                - inventoryItemId: "inv001"
+                  quantityOrdered: 100
+                  unitPrice: 600.00
+      responses:
+        '201':
+          description: Achat créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseDetailResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v3/compta/purchases/{id}:
+    get:
+      tags: [Purchases]
+      summary: Détail d'un achat
+      description: Retourne les détails complets d'un achat avec ses lignes
+      operationId: getPurchase
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/purchaseId'
+      responses:
+        '200':
+          description: Détail de l'achat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [Purchases]
+      summary: Modifier un achat
+      description: Modifie un achat en statut DRAFT ou ORDERED
+      operationId: updatePurchase
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/purchaseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseUpdateInput'
+      responses:
+        '200':
+          description: Achat modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseDetailResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Purchases]
+      summary: Supprimer un achat
+      description: Supprime un achat en statut DRAFT uniquement
+      operationId: deletePurchase
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/purchaseId'
+      responses:
+        '200':
+          description: Achat supprimé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '422':
+          description: Achat ne peut pas être supprimé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/compta/purchases/{id}/preview:
+    post:
+      tags: [Purchases]
+      summary: Prévisualiser la réception
+      description: |
+        Calcule l'impact de la réception sur les stocks et CUMP sans modifier la base de données.
+        Utiliser pour afficher une prévisualisation avant validation.
+      operationId: previewReceive
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/purchaseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceiveInput'
+            example:
+              items:
+                - purchaseItemId: "pi123"
+                  quantityReceived: 50
+      responses:
+        '200':
+          description: Prévisualisation calculée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewResponse'
+              example:
+                success: true
+                purchaseId: "clp123"
+                purchaseNumber: "ACH-2025-001"
+                stockUpdates:
+                  - inventoryItemId: "inv001"
+                    sku: "TISSU-001"
+                    name: "Tissu Coton"
+                    previousQty: 100
+                    receivedQty: 50
+                    newQty: 150
+                    previousCUMP: 500.00
+                    unitPrice: 600.00
+                    newCUMP: 533.33
+                    previousValue: 50000.00
+                    newValue: 80000.00
+                summary:
+                  totalItemsToReceive: 1
+                  totalValueIncrease: 30000.00
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Quantité invalide ou achat non recevable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/compta/purchases/{id}/receive:
+    get:
+      tags: [Purchases]
+      summary: Obtenir les détails pour réception
+      description: Retourne les informations nécessaires pour préparer la réception
+      operationId: getReceiveInfo
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/purchaseId'
+      responses:
+        '200':
+          description: Informations de réception
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiveInfoResponse'
+
+    post:
+      tags: [Purchases]
+      summary: Réceptionner un achat
+      description: |
+        Exécute la réception de manière transactionnelle:
+        - Met à jour les quantités d'inventaire
+        - Calcule et applique les nouveaux CUMP
+        - Crée les transactions d'inventaire
+        - Met à jour le statut de l'achat (PARTIAL/RECEIVED)
+        - Enregistre l'audit trail
+        
+        Opération atomique: tout ou rien.
+      operationId: receivePurchase
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/purchaseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceiveInput'
+            example:
+              items:
+                - purchaseItemId: "pi123"
+                  quantityReceived: 50
+              receivedBy: "admin@harp.dz"
+              notes: "Livraison complète"
+      responses:
+        '200':
+          description: Réception enregistrée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiveResponse'
+              example:
+                success: true
+                purchase:
+                  id: "clp123"
+                  purchaseNumber: "ACH-2025-001"
+                  status: "PARTIAL"
+                stockUpdates:
+                  - inventoryItemId: "inv001"
+                    sku: "TISSU-001"
+                    name: "Tissu Coton"
+                    previousQty: 100
+                    receivedQty: 50
+                    newQty: 150
+                    previousCUMP: 500.00
+                    newCUMP: 533.33
+                message: "Réception enregistrée, stock mis à jour"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Achat déjà reçu ou annulé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/compta/inventory:
+    get:
+      tags: [Inventory]
+      summary: Liste de l'inventaire
+      description: Retourne une liste paginée des articles d'inventaire
+      operationId: listInventory
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [FABRIC, ACCESSORY, PACKAGING, FINISHED, TRIM, LABEL]
+        - name: lowStock
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste de l'inventaire
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Inventory]
+      summary: Créer un article d'inventaire
+      description: Crée un nouvel article avec SKU unique
+      operationId: createInventoryItem
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItemCreateInput'
+            example:
+              sku: "TISSU-COTON-001"
+              name: "Tissu Coton Premium"
+              type: "FABRIC"
+              unit: "METER"
+              quantity: 100
+              averageCost: 500
+              threshold: 20
+      responses:
+        '201':
+          description: Article créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItemResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: SKU déjà existant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/compta/inventory/{id}:
+    get:
+      tags: [Inventory]
+      summary: Détail d'un article
+      description: Retourne les détails d'un article avec ses dernières transactions
+      operationId: getInventoryItem
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/inventoryItemId'
+      responses:
+        '200':
+          description: Détail de l'article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItemDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v3/compta/inventory/adjustment:
+    post:
+      tags: [Inventory]
+      summary: Ajustement de stock
+      description: |
+        Applique un ajustement manuel de stock:
+        - ADD: Ajoute une quantité
+        - REMOVE: Retire une quantité (erreur si stock insuffisant)
+        - SET: Définit une quantité exacte
+        
+        Crée une transaction d'inventaire et un log d'audit.
+      operationId: adjustInventory
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjustmentInput'
+            example:
+              inventoryItemId: "inv001"
+              adjustmentType: "ADD"
+              quantity: 10
+              reason: "Correction après inventaire physique"
+      responses:
+        '200':
+          description: Ajustement appliqué
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdjustmentResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '422':
+          description: Stock insuffisant pour REMOVE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v3/compta/inventory/reconcile:
+    get:
+      tags: [Inventory]
+      summary: Réconciliation de l'inventaire
+      description: |
+        Compare les quantités calculées (somme des transactions) avec les quantités actuelles.
+        Retourne la liste des écarts détectés.
+      operationId: reconcileInventory
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Résultat de la réconciliation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconcileResponse'
+              example:
+                success: true
+                mismatches:
+                  - inventoryItemId: "inv001"
+                    sku: "TISSU-001"
+                    name: "Tissu Coton"
+                    expectedQty: 150
+                    actualQty: 148
+                    variance: -2
+                    variancePercent: -1.33
+                stats:
+                  totalItems: 150
+                  matched: 148
+                  mismatched: 2
+                  criticalMismatches: 0
+                message: "2 écart(s) détecté(s)"
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+
+  parameters:
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    pageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    purchaseId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    inventoryItemId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Non authentifié
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Non authentifié"
+            code: "NOT_AUTHENTICATED"
+    ValidationError:
+      description: Erreur de validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+    NotFound:
+      description: Ressource non trouvée
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: "Ressource non trouvée"
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+        code:
+          type: string
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Validation échouée"
+        details:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        version:
+          type: string
+        phase:
+          type: integer
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        stats:
+          type: object
+          properties:
+            pendingPurchases:
+              type: integer
+            inventoryItems:
+              type: integer
+            lowStockAlerts:
+              type: integer
+        routes:
+          type: object
+
+    PurchaseCreateInput:
+      type: object
+      required: [supplierId, items]
+      properties:
+        supplierId:
+          type: string
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+          format: date-time
+        expectedDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PurchaseItemInput'
+
+    PurchaseItemInput:
+      type: object
+      required: [inventoryItemId, quantityOrdered, unitPrice]
+      properties:
+        inventoryItemId:
+          type: string
+        quantityOrdered:
+          type: number
+          minimum: 0
+        unitPrice:
+          type: number
+          minimum: 0
+
+    PurchaseUpdateInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [DRAFT, ORDERED, CANCELLED]
+        invoiceNumber:
+          type: string
+        notes:
+          type: string
+
+    PurchaseListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseSummary'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PurchaseSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        purchaseNumber:
+          type: string
+        status:
+          type: string
+        totalAmount:
+          type: number
+        supplier:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            code:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PurchaseDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        purchase:
+          $ref: '#/components/schemas/PurchaseDetail'
+
+    PurchaseDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        purchaseNumber:
+          type: string
+        status:
+          type: string
+        totalAmount:
+          type: number
+        supplier:
+          type: object
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseItemDetail'
+
+    PurchaseItemDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        inventoryItem:
+          $ref: '#/components/schemas/InventoryItemSummary'
+        quantityOrdered:
+          type: number
+        quantityReceived:
+          type: number
+        unitPrice:
+          type: number
+        totalPrice:
+          type: number
+
+    InventoryItemSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        sku:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: number
+        averageCost:
+          type: number
+
+    ReceiveInput:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [purchaseItemId, quantityReceived]
+            properties:
+              purchaseItemId:
+                type: string
+              quantityReceived:
+                type: number
+                minimum: 0
+        receivedBy:
+          type: string
+        notes:
+          type: string
+
+    ReceiveInfoResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        purchase:
+          type: object
+        preview:
+          type: array
+          items:
+            type: object
+
+    PreviewResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        purchaseId:
+          type: string
+        purchaseNumber:
+          type: string
+        stockUpdates:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockUpdate'
+        summary:
+          type: object
+          properties:
+            totalItemsToReceive:
+              type: integer
+            totalValueIncrease:
+              type: number
+
+    ReceiveResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        purchase:
+          $ref: '#/components/schemas/PurchaseDetail'
+        stockUpdates:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockUpdate'
+        message:
+          type: string
+
+    StockUpdate:
+      type: object
+      properties:
+        inventoryItemId:
+          type: string
+        sku:
+          type: string
+        name:
+          type: string
+        previousQty:
+          type: number
+        receivedQty:
+          type: number
+        newQty:
+          type: number
+        previousCUMP:
+          type: number
+        unitPrice:
+          type: number
+        newCUMP:
+          type: number
+        previousValue:
+          type: number
+        newValue:
+          type: number
+
+    InventoryItemCreateInput:
+      type: object
+      required: [sku, name, type, unit]
+      properties:
+        sku:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 200
+        type:
+          type: string
+          enum: [FABRIC, ACCESSORY, PACKAGING, FINISHED, TRIM, LABEL]
+        unit:
+          type: string
+          enum: [METER, ROLL, PIECE, KG, LITER, SET]
+        quantity:
+          type: number
+          minimum: 0
+          default: 0
+        averageCost:
+          type: number
+          minimum: 0
+          default: 0
+        lastCost:
+          type: number
+          minimum: 0
+        threshold:
+          type: number
+          minimum: 0
+        color:
+          type: string
+        width:
+          type: number
+        composition:
+          type: string
+        location:
+          type: string
+        supplierId:
+          type: string
+        notes:
+          type: string
+
+    InventoryListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryItemSummary'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    InventoryItemResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        item:
+          $ref: '#/components/schemas/InventoryItemDetail'
+
+    InventoryItemDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        sku:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        unit:
+          type: string
+        quantity:
+          type: number
+        reserved:
+          type: number
+        available:
+          type: number
+        averageCost:
+          type: number
+        lastCost:
+          type: number
+        totalValue:
+          type: number
+        threshold:
+          type: number
+        isActive:
+          type: boolean
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryTransaction'
+
+    InventoryItemDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        item:
+          $ref: '#/components/schemas/InventoryItemDetail'
+
+    InventoryTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+        direction:
+          type: string
+          enum: [IN, OUT]
+        type:
+          type: string
+          enum: [PURCHASE, PRODUCTION, SALE, ADJUSTMENT, RESERVE, RELEASE]
+        quantity:
+          type: number
+        unitCost:
+          type: number
+        balanceBefore:
+          type: number
+        balanceAfter:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+
+    AdjustmentInput:
+      type: object
+      required: [inventoryItemId, adjustmentType, quantity, reason]
+      properties:
+        inventoryItemId:
+          type: string
+        adjustmentType:
+          type: string
+          enum: [ADD, REMOVE, SET]
+        quantity:
+          type: number
+          minimum: 0
+        reason:
+          type: string
+          maxLength: 500
+        notes:
+          type: string
+
+    AdjustmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        item:
+          $ref: '#/components/schemas/InventoryItemSummary'
+        transaction:
+          $ref: '#/components/schemas/InventoryTransaction'
+        message:
+          type: string
+
+    ReconcileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        mismatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReconciliationMismatch'
+        stats:
+          type: object
+          properties:
+            totalItems:
+              type: integer
+            matched:
+              type: integer
+            mismatched:
+              type: integer
+            criticalMismatches:
+              type: integer
+        message:
+          type: string
+
+    ReconciliationMismatch:
+      type: object
+      properties:
+        inventoryItemId:
+          type: string
+        sku:
+          type: string
+        name:
+          type: string
+        expectedQty:
+          type: number
+        actualQty:
+          type: number
+        variance:
+          type: number
+        variancePercent:
+          type: number

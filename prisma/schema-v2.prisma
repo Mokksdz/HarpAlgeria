@@ -1,0 +1,645 @@
+// =============================================================================
+// HARP ACCOUNTING SYSTEM v2.0
+// Schéma Prisma optimisé pour comptabilité textile/mode
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS (as constants for SQLite compatibility)
+// =============================================================================
+// InventoryType: FABRIC | ACCESSORY | PACKAGING | FINISHED
+// InventoryUnit: METER | ROLL | PIECE | KG | LITER
+// PurchaseStatus: DRAFT | ORDERED | PARTIAL | RECEIVED | CANCELLED
+// AdvanceStatus: PENDING | PARTIAL | APPLIED | REFUNDED
+// ChargeCategory: ATELIER | SHOOTING | ADS | INFLUENCER | TRANSPORT | LABOR | OTHER
+// ChargeScope: GLOBAL | COLLECTION | MODEL
+// TxDirection: IN | OUT
+// TxType: PURCHASE | PRODUCTION | SALE | ADJUSTMENT | RESERVE | RELEASE | INITIAL
+// BatchStatus: PLANNED | IN_PROGRESS | COMPLETED | CANCELLED
+
+// =============================================================================
+// CORE E-COMMERCE (existant, non modifié)
+// =============================================================================
+
+model Product {
+  id            String      @id @default(cuid())
+  slug          String      @unique
+  nameFr        String
+  nameAr        String
+  descriptionFr String
+  descriptionAr String
+  price         Float
+  images        String
+  sizes         String
+  colors        String
+  stock         Int         @default(0)
+  isActive      Boolean     @default(true)
+  showSizeGuide Boolean     @default(true)
+  freeShipping  Boolean     @default(false)
+  freeShippingThreshold Float? @default(0)
+  collectionId  String?
+  collection    Collection? @relation(fields: [collectionId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
+
+  @@index([collectionId])
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Collection {
+  id            String      @id @default(cuid())
+  slug          String      @unique
+  nameFr        String
+  nameAr        String
+  description   String?
+  image         String?
+  budget        Float       @default(0)    // Budget initial collection
+  budgetUsed    Float       @default(0)    // Consommé
+  products      Product[]
+  models        Model[]
+  charges       Charge[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([slug])
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  orderNumber      String      @unique @default(cuid())
+  customerName     String
+  customerPhone    String
+  customerAddress  String
+  customerCity     String
+  customerWilaya   String
+  deliveryProvider String?
+  deliveryType     String?
+  shippingPrice    Float       @default(0)
+  trackingNumber   String?
+  trackingStatus   String?
+  subtotal         Float
+  total            Float
+  status           String      @default("PENDING")
+  items            OrderItem[]
+  stockReserved    Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([orderNumber])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  modelId     String?  // Lien vers Model pour traçabilité coût
+  productName String
+  size        String
+  color       String
+  quantity    Int
+  unitPrice   Float
+  totalPrice  Float
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([modelId])
+}
+
+// =============================================================================
+// FOURNISSEURS & ACHATS
+// =============================================================================
+
+model Supplier {
+  id          String            @id @default(cuid())
+  code        String            @unique  // Code fournisseur (ex: FRN-001)
+  name        String
+  contact     String?           // Nom contact
+  phone       String?
+  email       String?
+  address     String?
+  city        String?
+  country     String            @default("Algérie")
+  taxId       String?           // NIF/RC
+  paymentTerms String?          // Conditions paiement
+  notes       String?
+  isActive    Boolean           @default(true)
+  purchases   Purchase[]
+  advances    SupplierAdvance[]
+  items       InventoryItem[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([code])
+  @@index([name])
+  @@index([isActive])
+}
+
+model Purchase {
+  id              String         @id @default(cuid())
+  purchaseNumber  String         @unique  // Numéro interne (ACH-2024-001)
+  supplierId      String
+  supplier        Supplier       @relation(fields: [supplierId], references: [id])
+  invoiceNumber   String?        // Numéro facture fournisseur
+  invoiceDate     DateTime?
+  orderDate       DateTime       @default(now())
+  expectedDate    DateTime?      // Date livraison prévue
+  receivedDate    DateTime?      // Date réception effective
+  
+  // Montants
+  subtotal        Float          @default(0)
+  taxAmount       Float          @default(0)
+  shippingCost    Float          @default(0)
+  totalAmount     Float          @default(0)
+  currency        String         @default("DZD")
+  
+  // Avances appliquées
+  advanceApplied  Float          @default(0)
+  amountDue       Float          @default(0)  // totalAmount - advanceApplied
+  
+  // Status
+  status          String         @default("DRAFT")
+  receivedBy      String?
+  
+  // Relations
+  items           PurchaseItem[]
+  advances        PurchaseAdvance[]
+  
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([orderDate])
+  @@index([purchaseNumber])
+}
+
+model PurchaseItem {
+  id              String        @id @default(cuid())
+  purchaseId      String
+  purchase        Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  
+  // Quantités
+  quantityOrdered Float
+  quantityReceived Float        @default(0)
+  unit            String        // METER | PIECE | ROLL...
+  
+  // Prix
+  unitPrice       Float
+  totalPrice      Float
+  
+  // Allocation aux modèles (JSON: [{modelId, quantity}])
+  allocations     String?       // JSON pour SQLite
+  
+  createdAt       DateTime      @default(now())
+
+  @@index([purchaseId])
+  @@index([inventoryItemId])
+}
+
+// =============================================================================
+// AVANCES FOURNISSEURS
+// =============================================================================
+
+model SupplierAdvance {
+  id            String            @id @default(cuid())
+  advanceNumber String            @unique  // AVA-2024-001
+  supplierId    String
+  supplier      Supplier          @relation(fields: [supplierId], references: [id])
+  
+  amount        Float             // Montant total avance
+  amountUsed    Float             @default(0)  // Montant utilisé
+  amountRemaining Float           @default(0)  // Montant restant
+  
+  paymentDate   DateTime          @default(now())
+  paymentMethod String?           // CASH | CHECK | TRANSFER | CCP
+  reference     String?           // Référence paiement
+  
+  status        String            @default("PENDING")  // PENDING | PARTIAL | APPLIED | REFUNDED
+  
+  applications  PurchaseAdvance[]
+  
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([advanceNumber])
+}
+
+// Table pivot : application avances sur achats
+model PurchaseAdvance {
+  id          String          @id @default(cuid())
+  purchaseId  String
+  purchase    Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  advanceId   String
+  advance     SupplierAdvance @relation(fields: [advanceId], references: [id])
+  amount      Float           // Montant appliqué
+  appliedAt   DateTime        @default(now())
+  appliedBy   String?
+
+  @@unique([purchaseId, advanceId])
+  @@index([purchaseId])
+  @@index([advanceId])
+}
+
+// =============================================================================
+// INVENTAIRE & STOCK
+// =============================================================================
+
+model InventoryItem {
+  id              String                 @id @default(cuid())
+  sku             String                 @unique
+  name            String
+  type            String                 // FABRIC | ACCESSORY | PACKAGING | FINISHED
+  unit            String                 // METER | PIECE | ROLL | KG
+  
+  // Quantités
+  quantity        Float                  @default(0)
+  reserved        Float                  @default(0)
+  available       Float                  @default(0)  // quantity - reserved
+  
+  // Coûts
+  averageCost     Float                  @default(0)  // CUMP
+  lastCost        Float                  @default(0)  // Dernier prix achat
+  totalValue      Float                  @default(0)  // quantity * averageCost
+  
+  // Métadonnées
+  color           String?
+  width           Float?                 // Largeur tissu (cm)
+  composition     String?                // 100% coton, etc.
+  location        String?                // MAGASIN | ATELIER | STOCK
+  threshold       Float?                 // Seuil alerte
+  
+  // Fournisseur par défaut
+  supplierId      String?
+  supplier        Supplier?              @relation(fields: [supplierId], references: [id])
+  
+  // Relations
+  purchaseItems   PurchaseItem[]
+  bomItems        BomItem[]
+  transactions    InventoryTransaction[]
+  
+  notes           String?
+  isActive        Boolean                @default(true)
+  lastReceivedAt  DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([sku])
+  @@index([type])
+  @@index([supplierId])
+  @@index([isActive])
+}
+
+model InventoryTransaction {
+  id              String        @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  
+  direction       String        // IN | OUT
+  type            String        // PURCHASE | PRODUCTION | SALE | ADJUSTMENT | RESERVE | RELEASE
+  quantity        Float         // Toujours positif
+  unitCost        Float?
+  
+  // Snapshots pour audit
+  balanceBefore   Float
+  balanceAfter    Float
+  valueBefore     Float?
+  valueAfter      Float?
+  avgCostBefore   Float?
+  avgCostAfter    Float?
+  
+  // Références
+  referenceType   String?       // PURCHASE | ORDER | BATCH | ADJUSTMENT
+  referenceId     String?
+  
+  reason          String?       // Pour ADJUSTMENT
+  notes           String?
+  createdBy       String?
+  createdAt       DateTime      @default(now())
+
+  @@index([inventoryItemId])
+  @@index([direction])
+  @@index([type])
+  @@index([referenceType, referenceId])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// MODÈLES & NOMENCLATURE (BOM)
+// =============================================================================
+
+model Model {
+  id              String              @id @default(cuid())
+  sku             String              @unique
+  name            String
+  description     String?
+  image           String?
+  
+  // Lien produit (optionnel)
+  productId       String?
+  
+  // Collection
+  collectionId    String?
+  collection      Collection?         @relation(fields: [collectionId], references: [id])
+  
+  // Prix
+  targetPrice     Float?              // Prix cible
+  sellingPrice    Float?              // Prix de vente final
+  
+  // Production
+  estimatedUnits  Int                 @default(100)  // Unités prévues
+  producedUnits   Int                 @default(0)    // Unités produites
+  
+  // Coûts directs (par unité)
+  laborCost       Float               @default(0)
+  packagingCost   Float               @default(0)
+  otherCost       Float               @default(0)
+  returnMargin    Float               @default(150)  // Marge retours
+  
+  // Détail packaging
+  packagingBox    Float               @default(0)
+  packagingBag    Float               @default(0)
+  packagingLabel  Float               @default(0)
+  packagingTag    Float               @default(0)
+  packagingCard   Float               @default(0)
+  packagingOther  Float               @default(0)
+  
+  // Relations
+  bom             BomItem[]
+  charges         Charge[]
+  snapshots       CostSnapshot[]
+  batches         ProductionBatch[]
+  
+  isActive        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([sku])
+  @@index([collectionId])
+  @@index([productId])
+  @@index([isActive])
+}
+
+model BomItem {
+  id              String        @id @default(cuid())
+  modelId         String
+  model           Model         @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  
+  quantity        Float         // Quantité par unité (ex: 2.5m tissu)
+  wasteFactor     Float         @default(1.05)  // Facteur perte (5% par défaut)
+  
+  // Coût snapshot (pour calcul)
+  unitCost        Float?        // Copie du averageCost au moment du calcul
+  totalCost       Float?        // quantity * wasteFactor * unitCost
+  
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([modelId, inventoryItemId])
+  @@index([modelId])
+  @@index([inventoryItemId])
+}
+
+// =============================================================================
+// CHARGES & ALLOCATIONS
+// =============================================================================
+
+model Charge {
+  id              String      @id @default(cuid())
+  chargeNumber    String      @unique  // CHG-2024-001
+  
+  category        String      // ATELIER | SHOOTING | ADS | INFLUENCER | TRANSPORT | LABOR | OTHER
+  subcategory     String?     // Sous-catégorie optionnelle
+  description     String
+  
+  amount          Float
+  currency        String      @default("DZD")
+  date            DateTime    @default(now())
+  
+  // Scope d'allocation
+  scope           String      @default("GLOBAL")  // GLOBAL | COLLECTION | MODEL
+  
+  // Allocation spécifique
+  collectionId    String?
+  collection      Collection? @relation(fields: [collectionId], references: [id])
+  modelId         String?
+  model           Model?      @relation(fields: [modelId], references: [id])
+  
+  // Pour les charges globales réparties
+  isAllocated     Boolean     @default(false)
+  allocations     String?     // JSON: [{modelId, amount, percent}]
+  
+  // Métadonnées
+  vendor          String?     // Fournisseur/prestataire
+  invoiceRef      String?
+  campaign        String?     // Nom campagne (pour ADS)
+  platform        String?     // FACEBOOK | INSTAGRAM | TIKTOK
+  
+  notes           String?
+  createdBy       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([category])
+  @@index([scope])
+  @@index([collectionId])
+  @@index([modelId])
+  @@index([date])
+}
+
+// =============================================================================
+// PRODUCTION
+// =============================================================================
+
+model ProductionBatch {
+  id              String             @id @default(cuid())
+  batchNumber     String             @unique  // LOT-2024-001
+  
+  modelId         String
+  model           Model              @relation(fields: [modelId], references: [id])
+  
+  plannedQty      Int                // Quantité prévue
+  producedQty     Int                @default(0)  // Quantité produite
+  wasteQty        Int                @default(0)  // Quantité perdue
+  
+  status          String             @default("PLANNED")
+  
+  // Coûts
+  materialsCost   Float              @default(0)
+  laborCost       Float              @default(0)
+  overheadCost    Float              @default(0)
+  totalCost       Float              @default(0)
+  costPerUnit     Float              @default(0)
+  
+  // Dates
+  plannedDate     DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  
+  consumptions    BatchConsumption[]
+  costSnapshotId  String?            @unique
+  
+  notes           String?
+  createdBy       String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([modelId])
+  @@index([status])
+  @@index([batchNumber])
+}
+
+model BatchConsumption {
+  id              String          @id @default(cuid())
+  batchId         String
+  batch           ProductionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  
+  plannedQty      Float
+  actualQty       Float           @default(0)
+  unitCost        Float
+  totalCost       Float
+  
+  createdAt       DateTime        @default(now())
+
+  @@index([batchId])
+  @@index([inventoryItemId])
+}
+
+// =============================================================================
+// SNAPSHOTS & AUDIT
+// =============================================================================
+
+model CostSnapshot {
+  id              String    @id @default(cuid())
+  snapshotNumber  String    @unique  // SNP-2024-001
+  
+  modelId         String
+  model           Model     @relation(fields: [modelId], references: [id])
+  batchId         String?   // Lié à un batch optionnellement
+  
+  // Coûts matières
+  fabricCost      Float     @default(0)
+  accessoryCost   Float     @default(0)
+  packagingCost   Float     @default(0)
+  materialsCost   Float     @default(0)  // Total matières
+  
+  // Coûts production
+  laborCost       Float     @default(0)
+  atelierCost     Float     @default(0)
+  productionCost  Float     @default(0)  // Total production
+  
+  // Coûts marketing
+  adsCost         Float     @default(0)
+  shootingCost    Float     @default(0)
+  influencerCost  Float     @default(0)
+  marketingCost   Float     @default(0)  // Total marketing
+  
+  // Autres
+  transportCost   Float     @default(0)
+  otherCost       Float     @default(0)
+  returnMargin    Float     @default(150)
+  
+  // Totaux
+  totalCost       Float     @default(0)  // Coût de revient total
+  
+  // Prix & marges
+  suggestedPrice30 Float?   // Prix pour 30% marge
+  suggestedPrice40 Float?   // Prix pour 40% marge
+  suggestedPrice50 Float?   // Prix pour 50% marge
+  sellingPrice    Float?    // Prix de vente réel
+  margin          Float?    // Marge en DZD
+  marginPercent   Float?    // Marge en %
+  
+  // Métadonnées
+  estimatedUnits  Int       @default(1)
+  isLocked        Boolean   @default(true)
+  
+  notes           String?
+  createdBy       String?
+  createdAt       DateTime  @default(now())
+
+  @@index([modelId])
+  @@index([batchId])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   // CREATE | UPDATE | DELETE | RECEIVE | ALLOCATE | SNAPSHOT
+  entity      String   // Purchase | Charge | Model | etc.
+  entityId    String
+  userId      String?
+  userEmail   String?
+  before      String?  // JSON
+  after       String?  // JSON
+  metadata    String?  // JSON (IP, user agent, etc.)
+  createdAt   DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([action])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model StockReconciliation {
+  id              String    @id @default(cuid())
+  reconcileDate   DateTime  @default(now())
+  inventoryItemId String
+  
+  expectedQty     Float     // Calculé depuis transactions
+  actualQty       Float     // Valeur en base
+  variance        Float     // Écart
+  variancePercent Float
+  varianceValue   Float     // Écart en valeur
+  
+  status          String    @default("PENDING")  // PENDING | REVIEWED | ADJUSTED | IGNORED
+  adjustmentId    String?   // ID transaction si ajusté
+  
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+
+  @@index([inventoryItemId])
+  @@index([status])
+  @@index([reconcileDate])
+}
+
+// =============================================================================
+// PARAMÈTRES
+// =============================================================================
+
+model AccountingSettings {
+  id                    String   @id @default("default")
+  defaultMarginTarget   Float    @default(40)   // Marge cible par défaut
+  defaultReturnMargin   Float    @default(150)  // Marge retours
+  defaultWasteFactor    Float    @default(1.05) // Facteur perte
+  lowStockAlertEnabled  Boolean  @default(true)
+  autoReconcileEnabled  Boolean  @default(false)
+  reconcileFrequency    String   @default("DAILY")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

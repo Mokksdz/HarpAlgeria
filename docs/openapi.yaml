@@ -1,0 +1,1057 @@
+openapi: 3.1.0
+info:
+  title: HARP Accounting API
+  version: 1.0.0
+  description: |
+    API comptabilité & inventaire de la plateforme HARP.
+    Gère les achats, l'inventaire, la production, les modèles et le coût de revient.
+  contact:
+    name: HARP Support
+    email: support@harp.dz
+
+servers:
+  - url: https://harp.dz/api
+    description: Production
+  - url: http://localhost:3000/api
+    description: Développement local
+
+tags:
+  - name: Orders
+    description: Gestion des commandes et réservation de stock
+  - name: Inventory
+    description: Gestion du stock et des articles
+  - name: Purchases
+    description: Achats et réception fournisseurs
+  - name: Production
+    description: Batches de production et consommation matières
+  - name: Models
+    description: Modèles, BOM et coûts de revient
+  - name: Reports
+    description: Rapports et tableaux de bord
+
+paths:
+  # ============================================
+  # ORDERS
+  # ============================================
+  /orders/{id}/reserve:
+    post:
+      tags: [Orders]
+      summary: Réserver le stock pour une commande
+      description: |
+        Crée des transactions RESERVE et met à jour les quantités réservées.
+        La commande passe en statut CONFIRMED.
+      operationId: reserveOrderStock
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        "200":
+          description: Stock réservé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResult'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/{id}/ship:
+    post:
+      tags: [Orders]
+      summary: Expédier une commande
+      description: |
+        Consomme le stock réservé (RESERVE → OUT).
+        Met à jour la commande en SHIPPED.
+      operationId: shipOrder
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trackingNumber:
+                  type: string
+                  description: Numéro de suivi
+                deliveryProvider:
+                  type: string
+                  description: Transporteur (YALIDINE, ZREXPRESS)
+      responses:
+        "200":
+          description: Commande expédiée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResult'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+    delete:
+      tags: [Orders]
+      summary: Annuler la réservation de stock
+      description: |
+        Libère le stock réservé (crée transactions RELEASE).
+        Remet la commande en PENDING.
+      operationId: cancelReservation
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        "200":
+          description: Réservation annulée
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  # ============================================
+  # PURCHASES
+  # ============================================
+  /accounting/purchases:
+    get:
+      tags: [Purchases]
+      summary: Liste des achats
+      operationId: listPurchases
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, RECEIVED, CANCELLED]
+        - name: supplierId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Liste des achats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Purchase'
+
+    post:
+      tags: [Purchases]
+      summary: Créer un bon d'achat
+      operationId: createPurchase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseCreate'
+      responses:
+        "201":
+          description: Achat créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchase'
+
+  /accounting/purchases/{id}/receive:
+    post:
+      tags: [Purchases]
+      summary: Réceptionner un achat
+      description: |
+        Met à jour le stock avec les articles reçus.
+        Crée des transactions IN et calcule le coût moyen pondéré.
+      operationId: receivePurchase
+      parameters:
+        - $ref: '#/components/parameters/PurchaseId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                receivedBy:
+                  type: string
+                  description: Identifiant de l'utilisateur qui réceptionne
+      responses:
+        "200":
+          description: Achat réceptionné
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchase'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  # ============================================
+  # INVENTORY
+  # ============================================
+  /accounting/inventory:
+    get:
+      tags: [Inventory]
+      summary: Liste des articles en stock
+      operationId: listInventoryItems
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [FABRIC, ACCESSORY, PACKAGING]
+        - name: lowStock
+          in: query
+          schema:
+            type: boolean
+          description: Filtrer les articles sous le seuil
+      responses:
+        "200":
+          description: Liste des articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryItem'
+
+    post:
+      tags: [Inventory]
+      summary: Créer un article
+      operationId: createInventoryItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItemCreate'
+      responses:
+        "201":
+          description: Article créé
+
+  /accounting/inventory/{id}:
+    get:
+      tags: [Inventory]
+      summary: Détails d'un article
+      operationId: getInventoryItem
+      parameters:
+        - $ref: '#/components/parameters/InventoryItemId'
+      responses:
+        "200":
+          description: Détails de l'article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+
+    put:
+      tags: [Inventory]
+      summary: Modifier un article
+      operationId: updateInventoryItem
+      parameters:
+        - $ref: '#/components/parameters/InventoryItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItemUpdate'
+      responses:
+        "200":
+          description: Article modifié
+
+    delete:
+      tags: [Inventory]
+      summary: Supprimer un article
+      operationId: deleteInventoryItem
+      parameters:
+        - $ref: '#/components/parameters/InventoryItemId'
+      responses:
+        "200":
+          description: Article supprimé
+
+  /accounting/inventory/transactions:
+    get:
+      tags: [Inventory]
+      summary: Historique des mouvements
+      operationId: listTransactions
+      parameters:
+        - name: itemId
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [IN, OUT, RESERVE, RELEASE, ADJUST]
+        - name: referenceType
+          in: query
+          schema:
+            type: string
+            enum: [PURCHASE, PRODUCTION, ORDER, ADJUSTMENT]
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv]
+          description: Format de sortie (défaut json)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 200
+      responses:
+        "200":
+          description: Liste des transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventoryTransaction'
+            text/csv:
+              schema:
+                type: string
+
+    post:
+      tags: [Inventory]
+      summary: Créer un ajustement manuel
+      operationId: createAdjustment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjustmentCreate'
+      responses:
+        "200":
+          description: Ajustement créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryTransaction'
+
+  /accounting/inventory/reconcile:
+    get:
+      tags: [Inventory]
+      summary: Réconciliation automatique
+      description: |
+        Compare les quantités actuelles avec les transactions.
+        Retourne les écarts détectés.
+      operationId: reconcileInventory
+      responses:
+        "200":
+          description: Résultat de la réconciliation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconciliationResult'
+
+  # ============================================
+  # PRODUCTION
+  # ============================================
+  /production:
+    get:
+      tags: [Production]
+      summary: Liste des batches de production
+      operationId: listProductionBatches
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PLANNED, IN_PROGRESS, DONE, CANCELLED]
+        - name: modelId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Liste des batches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductionBatch'
+
+    post:
+      tags: [Production]
+      summary: Créer un batch de production
+      operationId: createProductionBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductionBatchCreate'
+      responses:
+        "201":
+          description: Batch créé
+
+  /production/{id}/consume:
+    post:
+      tags: [Production]
+      summary: Consommer les matières d'un batch
+      description: |
+        Déduit les matières du stock selon le BOM × batchSize.
+        Crée un CostSnapshot pour audit.
+      operationId: consumeProductionBatch
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                consumedBy:
+                  type: string
+      responses:
+        "200":
+          description: Matières consommées
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumptionResult'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  # ============================================
+  # MODELS & COSTS
+  # ============================================
+  /accounting/models:
+    get:
+      tags: [Models]
+      summary: Liste des modèles avec coûts
+      operationId: listModels
+      responses:
+        "200":
+          description: Liste des modèles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModelWithCosts'
+
+  /accounting/models/{id}/cost:
+    get:
+      tags: [Models]
+      summary: Calcul du coût de revient d'un modèle
+      operationId: getModelCost
+      parameters:
+        - $ref: '#/components/parameters/ModelId'
+      responses:
+        "200":
+          description: Détail des coûts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostBreakdown'
+
+  /accounting/models/{id}/snapshot:
+    post:
+      tags: [Models]
+      summary: Créer un snapshot des coûts
+      description: Sauvegarde l'état actuel des coûts pour historique
+      operationId: createCostSnapshot
+      parameters:
+        - $ref: '#/components/parameters/ModelId'
+      responses:
+        "201":
+          description: Snapshot créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostSnapshot'
+
+  # ============================================
+  # REPORTS
+  # ============================================
+  /accounting/reports:
+    get:
+      tags: [Reports]
+      summary: Rapports et tableau de bord
+      operationId: getReports
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [dashboard, cost-per-model]
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, year, all]
+            default: month
+      responses:
+        "200":
+          description: Données du rapport
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/DashboardReport'
+                  - $ref: '#/components/schemas/CostPerModelReport'
+
+# ============================================
+# COMPONENTS
+# ============================================
+components:
+  parameters:
+    OrderId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID de la commande
+
+    PurchaseId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID de l'achat
+
+    InventoryItemId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID de l'article inventaire
+
+    BatchId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID du batch de production
+
+    ModelId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID du modèle
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+
+    Unauthorized:
+      description: Non authentifié ou non autorisé
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Authentication required"
+
+  schemas:
+    # --- Inventory ---
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        sku:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [FABRIC, ACCESSORY, PACKAGING]
+        unit:
+          type: string
+        quantity:
+          type: number
+        reserved:
+          type: number
+        averageCost:
+          type: number
+        lastUnitCost:
+          type: number
+        threshold:
+          type: number
+          nullable: true
+        supplierId:
+          type: string
+          nullable: true
+
+    InventoryItemCreate:
+      type: object
+      required: [sku, name, type]
+      properties:
+        sku:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [FABRIC, ACCESSORY, PACKAGING]
+        unit:
+          type: string
+          default: "m"
+        quantity:
+          type: number
+          default: 0
+        averageCost:
+          type: number
+          default: 0
+        threshold:
+          type: number
+        supplierId:
+          type: string
+
+    InventoryItemUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        unit:
+          type: string
+        threshold:
+          type: number
+        supplierId:
+          type: string
+
+    InventoryTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+        inventoryItemId:
+          type: string
+        type:
+          type: string
+          enum: [IN, OUT, RESERVE, RELEASE, ADJUST]
+        quantity:
+          type: number
+        unitCost:
+          type: number
+          nullable: true
+        referenceType:
+          type: string
+          enum: [PURCHASE, PRODUCTION, ORDER, ADJUSTMENT]
+          nullable: true
+        referenceId:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdBy:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AdjustmentCreate:
+      type: object
+      required: [inventoryItemId, quantity, notes]
+      properties:
+        inventoryItemId:
+          type: string
+        quantity:
+          type: number
+          description: Différence (+ ou -)
+        notes:
+          type: string
+          description: Raison de l'ajustement
+        createdBy:
+          type: string
+
+    # --- Purchases ---
+    Purchase:
+      type: object
+      properties:
+        id:
+          type: string
+        invoiceNo:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date
+        totalAmount:
+          type: number
+        status:
+          type: string
+          enum: [DRAFT, RECEIVED, CANCELLED]
+        supplierId:
+          type: string
+        supplier:
+          $ref: '#/components/schemas/Supplier'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseItem'
+
+    PurchaseCreate:
+      type: object
+      required: [supplierId, items]
+      properties:
+        invoiceNo:
+          type: string
+        date:
+          type: string
+          format: date
+        supplierId:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            required: [inventoryItemId, quantity, unitPrice]
+            properties:
+              inventoryItemId:
+                type: string
+              quantity:
+                type: number
+              unitPrice:
+                type: number
+
+    PurchaseItem:
+      type: object
+      properties:
+        id:
+          type: string
+        inventoryItemId:
+          type: string
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+
+    # --- Production ---
+    ProductionBatch:
+      type: object
+      properties:
+        id:
+          type: string
+        modelId:
+          type: string
+        batchSize:
+          type: integer
+        status:
+          type: string
+          enum: [PLANNED, IN_PROGRESS, DONE, CANCELLED]
+        laborCostTotal:
+          type: number
+          nullable: true
+        consumedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        model:
+          $ref: '#/components/schemas/ModelItem'
+
+    ProductionBatchCreate:
+      type: object
+      required: [modelId, batchSize]
+      properties:
+        modelId:
+          type: string
+        batchSize:
+          type: integer
+          minimum: 1
+        laborCostTotal:
+          type: number
+        notes:
+          type: string
+
+    ConsumptionResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        batchId:
+          type: string
+        itemsConsumed:
+          type: integer
+        totalCost:
+          type: number
+        costPerUnit:
+          type: number
+        message:
+          type: string
+
+    # --- Models ---
+    ModelItem:
+      type: object
+      properties:
+        id:
+          type: string
+        sku:
+          type: string
+        name:
+          type: string
+        defaultPrice:
+          type: number
+          nullable: true
+        estimatedUnits:
+          type: integer
+          nullable: true
+
+    ModelWithCosts:
+      allOf:
+        - $ref: '#/components/schemas/ModelItem'
+        - type: object
+          properties:
+            totalCost:
+              type: number
+            margin:
+              type: number
+              nullable: true
+            marginPercent:
+              type: number
+              nullable: true
+
+    CostBreakdown:
+      type: object
+      properties:
+        model:
+          $ref: '#/components/schemas/ModelItem'
+        breakdown:
+          type: object
+          properties:
+            fabricCost:
+              type: number
+            accessoryCost:
+              type: number
+            packagingCost:
+              type: number
+            productionCost:
+              type: number
+            laborCost:
+              type: number
+            otherCosts:
+              type: number
+            returnMargin:
+              type: number
+            marketingPerUnit:
+              type: number
+        totalCost:
+          type: number
+        margin:
+          type: number
+          nullable: true
+        marginPercent:
+          type: number
+          nullable: true
+        suggestedPrices:
+          type: object
+          properties:
+            margin30:
+              type: number
+            margin40:
+              type: number
+            margin50:
+              type: number
+
+    CostSnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+        modelId:
+          type: string
+        fabricCost:
+          type: number
+        accessoryCost:
+          type: number
+        packagingCost:
+          type: number
+        productionCost:
+          type: number
+        laborCost:
+          type: number
+        totalCost:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+
+    # --- Orders ---
+    ReservationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        orderId:
+          type: string
+        materials:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              required:
+                type: number
+              available:
+                type: number
+              canFulfill:
+                type: boolean
+        insufficientItems:
+          type: array
+          items:
+            type: string
+
+    ShipmentResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        ok:
+          type: boolean
+        itemsShipped:
+          type: integer
+
+    # --- Reports ---
+    ReconciliationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        checked:
+          type: integer
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              sku:
+                type: string
+              name:
+                type: string
+              currentQuantity:
+                type: number
+              calculatedQuantity:
+                type: number
+              difference:
+                type: number
+        checkedAt:
+          type: string
+          format: date-time
+
+    DashboardReport:
+      type: object
+      properties:
+        period:
+          type: string
+        summary:
+          type: object
+          properties:
+            inventoryValuation:
+              type: number
+            purchasesTotal:
+              type: number
+            marketingTotal:
+              type: number
+            revenue:
+              type: number
+            grossProfit:
+              type: number
+            netProfit:
+              type: number
+            ordersCount:
+              type: integer
+            lowStockCount:
+              type: integer
+        breakdowns:
+          type: object
+          properties:
+            marketingByCategory:
+              type: object
+              additionalProperties:
+                type: number
+            inventoryByType:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  value:
+                    type: number
+        alerts:
+          type: object
+          properties:
+            lowStock:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  sku:
+                    type: string
+                  name:
+                    type: string
+                  quantity:
+                    type: number
+                  threshold:
+                    type: number
+                  deficit:
+                    type: number
+
+    CostPerModelReport:
+      type: object
+      properties:
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelWithCosts'

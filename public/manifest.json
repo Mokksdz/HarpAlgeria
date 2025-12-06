@@ -1,0 +1,31 @@
+{
+    "name": "Harp - Une élégance qui résonne",
+    "short_name": "Harp",
+    "description": "Prêt-à-porter féminin élégant et modeste. Découvrez nos collections uniques.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#F5F1EC",
+    "theme_color": "#4A3A2A",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "categories": ["shopping", "fashion", "lifestyle"],
+    "lang": "fr",
+    "dir": "ltr"
+}
