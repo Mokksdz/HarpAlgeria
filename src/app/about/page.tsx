@@ -4,14 +4,11 @@ import { useLanguage } from "@/components/LanguageProvider";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Award,
   Heart,
   Sparkles,
-  ArrowRight,
   Quote,
   Truck,
   MapPin,
-  Shield,
   CheckCircle,
   Star,
   Package,

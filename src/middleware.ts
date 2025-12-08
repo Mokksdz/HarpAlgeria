@@ -1,11 +1,32 @@
 import { withAuth } from "next-auth/middleware";
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequestWithAuth } from "next-auth/middleware";
 
 // Allowed origins for CORS (restrict in production)
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(",") || [
   "http://localhost:3000",
   "https://harp-dz.com",
   "https://www.harp-dz.com",
+];
+
+// Protected API routes that require admin authentication
+const PROTECTED_API_ROUTES = [
+  "/api/accounting",
+  "/api/v3/compta",
+  "/api/v3/site/settings",
+  "/api/v3/site/hero",
+  "/api/v3/site/upload",
+];
+
+// Public API routes (no auth required)
+const PUBLIC_API_ROUTES = [
+  "/api/products",
+  "/api/collections",
+  "/api/health",
+  "/api/v3/auth",
+  "/api/v3/loyalty",
+  "/api/v3/wishlist",
+  "/api/shipping",
 ];
 
 function addCorsHeaders(response: NextResponse, origin: string | null) {
@@ -18,39 +39,51 @@ function addCorsHeaders(response: NextResponse, origin: string | null) {
   return response;
 }
 
-// Handle preflight requests
-export function middleware(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  const pathname = request.nextUrl.pathname;
-
-  // Handle CORS preflight for API routes
-  if (request.method === "OPTIONS" && pathname.startsWith("/api/")) {
-    const response = new NextResponse(null, { status: 204 });
-    return addCorsHeaders(response, origin);
-  }
-
-  // Add CORS headers to API responses
-  if (pathname.startsWith("/api/")) {
-    const response = NextResponse.next();
-    return addCorsHeaders(response, origin);
-  }
-
-  return NextResponse.next();
+function isProtectedApiRoute(pathname: string): boolean {
+  return PROTECTED_API_ROUTES.some((route) => pathname.startsWith(route));
 }
 
-// Auth middleware for admin routes
-export default withAuth(
-  function authMiddleware(req) {
-    const token = req.nextauth.token;
-    const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
-    const isAdminLogin = req.nextUrl.pathname === "/admin/login";
+function isPublicApiRoute(pathname: string): boolean {
+  return PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route));
+}
 
-    if (isAdminLogin) {
+// Combined auth middleware
+export default withAuth(
+  function authMiddleware(req: NextRequestWithAuth) {
+    const token = req.nextauth.token;
+    const pathname = req.nextUrl.pathname;
+    const origin = req.headers.get("origin");
+
+    // Handle CORS preflight
+    if (req.method === "OPTIONS" && pathname.startsWith("/api/")) {
+      const response = new NextResponse(null, { status: 204 });
+      return addCorsHeaders(response, origin);
+    }
+
+    // Allow admin login page
+    if (pathname === "/admin/login") {
       return NextResponse.next();
     }
 
-    if (isAdminRoute && token?.role !== "admin") {
+    // Protect admin routes
+    if (pathname.startsWith("/admin") && token?.role !== "admin") {
       return NextResponse.redirect(new URL("/admin/login", req.url));
+    }
+
+    // Protect sensitive API routes - require admin role
+    if (isProtectedApiRoute(pathname)) {
+      if (!token || token.role !== "admin") {
+        return NextResponse.json(
+          { error: "Unauthorized - Admin access required" },
+          { status: 401 }
+        );
+      }
+    }
+
+    // Add CORS headers to API responses
+    if (pathname.startsWith("/api/")) {
+      const response = NextResponse.next();
+      return addCorsHeaders(response, origin);
     }
 
     return NextResponse.next();
@@ -58,10 +91,25 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        if (req.nextUrl.pathname === "/admin/login") {
+        const pathname = req.nextUrl.pathname;
+
+        // Always allow admin login page
+        if (pathname === "/admin/login") {
           return true;
         }
-        return !!token;
+
+        // Public API routes don't require auth
+        if (isPublicApiRoute(pathname)) {
+          return true;
+        }
+
+        // Protected routes require token
+        if (pathname.startsWith("/admin") || isProtectedApiRoute(pathname)) {
+          return !!token;
+        }
+
+        // Default: allow
+        return true;
       },
     },
     pages: {
@@ -74,8 +122,5 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/api/:path*",
-    "/api/v3/:path*",
-    "/api/accounting/:path*",
-    "/api/shipping/:path*",
   ],
 };

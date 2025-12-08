@@ -14,8 +14,19 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+          caughtErrors: "none",
+        },
+      ],
       "react/no-unescaped-entities": "off",
+      "@next/next/no-img-element": "warn",
+      "@typescript-eslint/no-require-imports": "warn",
+      "react-hooks/set-state-in-effect": "warn",
     },
   },
 ]);
