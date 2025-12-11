@@ -63,19 +63,14 @@ export async function requireAdmin(
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    // Log for debugging
-    if (process.env.NODE_ENV === "development") {
-      console.log("requireAdmin: No session found");
-    }
+    // No session found
     throw new AuthError("Non authentifié", 401, "NOT_AUTHENTICATED");
   }
 
   const role = (session.user as any)?.role ?? (session as any)?.role;
 
   if (role !== "admin") {
-    if (process.env.NODE_ENV === "development") {
-      console.log("requireAdmin: User role is", role, "not admin");
-    }
+    // User role is not admin
     throw new AuthError(
       "Accès refusé : privilèges insuffisants",
       403,

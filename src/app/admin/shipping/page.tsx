@@ -70,7 +70,7 @@ export default function ShippingPage() {
           zrexpress: zrData.connected || false,
         }));
       } else if (zrRes.status === 401) {
-        console.log("Shipping API: waiting for authentication...");
+        // Shipping API: waiting for authentication
       } else {
         setProviderStatus((prev) => ({ ...prev, zrexpress: false }));
       }
@@ -88,7 +88,7 @@ export default function ShippingPage() {
           yalidine: yalData.connected || false,
         }));
       } else if (yalRes.status === 401) {
-        console.log("Yalidine API: waiting for authentication...");
+        // Yalidine API: waiting for authentication
       } else {
         setProviderStatus((prev) => ({ ...prev, yalidine: false }));
       }

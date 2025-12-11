@@ -33,6 +33,17 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
+      // Check rate limit first
+      const rateLimitCheck = await fetch("/api/auth/admin-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (rateLimitCheck.status === 429) {
+        setError("Trop de tentatives. Réessayez dans quelques minutes.");
+        return;
+      }
+
       const result = await signIn("admin-login", {
         email,
         password,

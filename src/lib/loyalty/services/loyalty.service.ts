@@ -69,7 +69,7 @@ export async function earnPoints(
       where: { referenceId },
     });
     if (existing) {
-      console.log(`[Loyalty] Skipped duplicate event: ${referenceId}`);
+      // Duplicate event skipped (idempotency)
       return existing;
     }
   }
@@ -116,7 +116,7 @@ export async function earnPoints(
   } catch (error: any) {
     // Handle race condition where simultaneous requests pass the initial check
     if (error.code === "P2002") {
-      console.log(`[Loyalty] Race condition duplicate caught: ${referenceId}`);
+      // Race condition duplicate caught (idempotency)
       const existing = await prisma.loyaltyPoint.findUnique({
         where: { referenceId },
       });
@@ -309,12 +309,10 @@ export async function runDailyBirthdayGrant() {
     try {
       await grantBirthdayPointsToUser(u.id);
       results.push({ email: u.email, success: true });
-      console.log(
-        `[Birthday] Granted ${LOYALTY_RULES.BIRTHDAY_BONUS} points to ${u.email}`,
-      );
+      // Birthday points granted successfully
     } catch (err: any) {
       results.push({ email: u.email, success: false, error: err.message });
-      console.error(`[Birthday] Failed for ${u.email}:`, err.message);
+      // Birthday grant failed - logged in results
     }
   }
 

@@ -5,8 +5,7 @@ export async function sendMagicLinkEmail(
   link: string,
   guestKey?: string,
 ) {
-  console.log(`[Email Service] Sending Magic Link to ${email}`);
-  console.log(`[Email Service] Link: ${link}`);
+  // Magic link email being sent to user
 
   if (
     process.env.EMAIL_PROVIDER === "nodemailer" ||

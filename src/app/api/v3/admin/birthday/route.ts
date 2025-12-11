@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   try {
     await requireAdmin(req);
 
-    console.log("[Admin] Running birthday grant job...");
+    // Running birthday grant job
     const result = await runDailyBirthdayGrant();
 
     return NextResponse.json({
