@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -210,7 +210,7 @@ model PurchaseItem {
   totalPrice      Decimal       
   
   // Allocation aux modèles (JSON: [{modelId, quantity}])
-  allocations     String?       // JSON pour SQLite
+  allocations     String?
   
   createdAt       DateTime      @default(now())
 
