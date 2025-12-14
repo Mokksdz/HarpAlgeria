@@ -52,9 +52,11 @@ export default function AdminLoginPage() {
 
       if (result?.error) {
         setError("Email ou mot de passe incorrect");
+      } else if (result?.ok) {
+        // Force redirect to /admin dashboard
+        window.location.href = "/admin";
       } else {
-        router.push(callbackUrl);
-        router.refresh();
+        setError("Erreur de connexion");
       }
     } catch {
       setError("Une erreur est survenue");
