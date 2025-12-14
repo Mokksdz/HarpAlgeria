@@ -28,6 +28,9 @@ export default withAuth(
         return response;
     },
     {
+        pages: {
+            signIn: "/admin/login", // Redirect to admin login for protected routes
+        },
         callbacks: {
             authorized: ({ token, req }) => {
                 const path = req.nextUrl.pathname;
