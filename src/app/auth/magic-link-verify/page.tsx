@@ -7,7 +7,7 @@ function VerifyContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
-  const [status, setStatus] = useState(() => token ? "verifying" : "error");
+  const [status, setStatus] = useState(() => (token ? "verifying" : "error"));
 
   useEffect(() => {
     if (!token) {

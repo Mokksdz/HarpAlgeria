@@ -32,8 +32,7 @@ export async function GET() {
 
   // Memory usage
   const memUsage = process.memoryUsage();
-  const formatBytes = (bytes: number) =>
-    `${Math.round(bytes / 1024 / 1024)}MB`;
+  const formatBytes = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
 
   const health: HealthStatus = {
     status: dbStatus === "ok" ? "ok" : "degraded",

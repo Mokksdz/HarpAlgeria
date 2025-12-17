@@ -315,9 +315,7 @@ class YalidineClient {
   /**
    * Récupérer plusieurs colis
    */
-  async getParcels(
-    trackings?: string[],
-  ): Promise<{
+  async getParcels(trackings?: string[]): Promise<{
     data: YalidineTrackingInfo[];
     has_more: boolean;
     total_data: number;

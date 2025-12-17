@@ -366,7 +366,9 @@ export default function AdminDashboard() {
                             {order.customerName}
                           </span>
                           <span className="text-xs text-gray-400">
-                            {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}
+                            {order.createdAt
+                              ? new Date(order.createdAt).toLocaleDateString()
+                              : "-"}
                           </span>
                         </div>
                       </td>
@@ -583,7 +585,13 @@ interface PipelineStepProps {
   isLast?: boolean;
 }
 
-function PipelineStep({ label, count, color, icon: Icon, isLast }: PipelineStepProps) {
+function PipelineStep({
+  label,
+  count,
+  color,
+  icon: Icon,
+  isLast,
+}: PipelineStepProps) {
   const colors: Record<string, string> = {
     amber: "hover:border-amber-200 hover:bg-amber-50/50",
     blue: "hover:border-blue-200 hover:bg-blue-50/50",

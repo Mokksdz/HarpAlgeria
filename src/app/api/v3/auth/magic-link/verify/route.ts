@@ -6,7 +6,11 @@ import { withRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 export async function POST(req: NextRequest) {
   try {
     // Rate limit magic link verification attempts
-    const rateLimited = withRateLimit(req, RATE_LIMITS.MAGIC_LINK, "magic-verify");
+    const rateLimited = withRateLimit(
+      req,
+      RATE_LIMITS.MAGIC_LINK,
+      "magic-verify",
+    );
     if (rateLimited) return rateLimited;
 
     const body = await req.json();

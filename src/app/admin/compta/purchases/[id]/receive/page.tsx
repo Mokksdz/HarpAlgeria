@@ -3,12 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Package,
-  CheckCircle,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowLeft, Package, CheckCircle, TrendingUp } from "lucide-react";
 
 interface PreviewItem {
   purchaseItemId: string;

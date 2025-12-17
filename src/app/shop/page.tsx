@@ -5,12 +5,7 @@ import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductGridSkeleton } from "@/components/Skeleton";
 import { useLanguage } from "@/components/LanguageProvider";
-import {
-  ChevronDown,
-  Package,
-  ChevronRight,
-  Search,
-} from "lucide-react";
+import { ChevronDown, Package, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type SortOption = "newest" | "price-asc" | "price-desc" | "name";

@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  FolderOpen,
-  Layers,
-} from "lucide-react";
+import { Plus, Edit, Trash2, Search, FolderOpen, Layers } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function AdminCollectionsPage() {
-  const [collections, setCollections] = useState<{ id: string; nameFr: string; nameAr: string; image: string | null; products?: { id: string }[] }[]>([]);
+  const [collections, setCollections] = useState<
+    {
+      id: string;
+      nameFr: string;
+      nameAr: string;
+      image: string | null;
+      products?: { id: string }[];
+    }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 

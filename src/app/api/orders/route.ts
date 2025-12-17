@@ -162,7 +162,10 @@ export async function POST(request: NextRequest) {
     console.error("Order creation error:", error);
 
     // Handle specific Prisma errors
-    const prismaError = error as { code?: string; meta?: { field_name?: string } };
+    const prismaError = error as {
+      code?: string;
+      meta?: { field_name?: string };
+    };
     if (prismaError?.code === "P2003") {
       console.error("Foreign key constraint failed:", prismaError?.meta);
       return NextResponse.json(

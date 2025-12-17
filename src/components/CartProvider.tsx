@@ -44,7 +44,7 @@ function useIsMounted() {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const isMounted = useIsMounted();
   const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const savedCart = localStorage.getItem("harp-cart");
       if (savedCart) {
         try {
@@ -57,7 +57,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return [];
   });
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Keep isMounted for other uses
   void isMounted;
 

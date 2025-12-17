@@ -53,15 +53,13 @@ export async function GET(request: NextRequest) {
             const historyResult =
               await yalidineClient.getTrackingHistory(tracking);
             if (historyResult.data) {
-              history = historyResult.data.map(
-                (h, index) => ({
-                  status: h.status,
-                  date: new Date(h.date_status).toLocaleString("fr-FR"),
-                  location: h.center_name || h.wilaya_name,
-                  completed: true,
-                  current: index === 0,
-                }),
-              );
+              history = historyResult.data.map((h, index) => ({
+                status: h.status,
+                date: new Date(h.date_status).toLocaleString("fr-FR"),
+                location: h.center_name || h.wilaya_name,
+                completed: true,
+                current: index === 0,
+              }));
             }
           } catch (e) {
             console.error("Error fetching Yalidine history:", e);

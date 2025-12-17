@@ -1,10 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  CheckCircle2,
-  MessageCircle,
-} from "lucide-react";
+import { CheckCircle2, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { siteConfig } from "@/lib/config";
 

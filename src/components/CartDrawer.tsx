@@ -54,7 +54,14 @@ export function CartDrawer() {
         .then((data) => {
           // Filtrer les produits déjà dans le panier
           const cartProductIds = items.map((i) => i.productId);
-          const filtered = (data as { id: string; nameFr: string; price: number; images: string }[])
+          const filtered = (
+            data as {
+              id: string;
+              nameFr: string;
+              price: number;
+              images: string;
+            }[]
+          )
             .filter((p) => !cartProductIds.includes(p.id))
             .slice(0, 3)
             .map((p) => ({

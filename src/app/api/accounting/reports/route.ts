@@ -240,7 +240,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid report type" }, { status: 400 });
   } catch (error) {
     console.error("Error generating report:", error);
-    const message = error instanceof Error ? error instanceof Error ? error.message : "Erreur inconnue" : "Unknown error";
+    const message =
+      error instanceof Error
+        ? error instanceof Error
+          ? error.message
+          : "Erreur inconnue"
+        : "Unknown error";
     return NextResponse.json(
       { error: "Failed to generate report", details: message },
       { status: 500 },

@@ -92,34 +92,37 @@ export default function AdminClientsPage() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
 
-  const fetchPage = useCallback(async (p = 1) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: String(p),
-        pageSize: String(pageSize),
-        vipLevel: vipFilter,
-      });
-      if (search) params.set("search", search);
+  const fetchPage = useCallback(
+    async (p = 1) => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: String(p),
+          pageSize: String(pageSize),
+          vipLevel: vipFilter,
+        });
+        if (search) params.set("search", search);
 
-      const res = await fetch(`/api/v3/compta/clients?${params.toString()}`, {
-        credentials: "include",
-      });
-      const json = await res.json();
+        const res = await fetch(`/api/v3/compta/clients?${params.toString()}`, {
+          credentials: "include",
+        });
+        const json = await res.json();
 
-      if (json?.success) {
-        setItems(json.items);
-        setPage(json.meta.page);
-        setTotalPages(json.meta.totalPages);
-        setTotal(json.meta.total);
-      } else {
-        console.error(json?.error || "Erreur");
+        if (json?.success) {
+          setItems(json.items);
+          setPage(json.meta.page);
+          setTotalPages(json.meta.totalPages);
+          setTotal(json.meta.total);
+        } else {
+          console.error(json?.error || "Erreur");
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
       }
-    } catch (err) {
-      console.error("Fetch error:", err);
-    }
-    setLoading(false);
-  }, [pageSize, vipFilter, search]);
+      setLoading(false);
+    },
+    [pageSize, vipFilter, search],
+  );
 
   useEffect(() => {
     // Initial fetch
@@ -145,7 +148,7 @@ export default function AdminClientsPage() {
           setTotal(json.meta.total);
         }
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') console.error(err);
+        if ((err as Error).name !== "AbortError") console.error(err);
       }
       setLoading(false);
     })();

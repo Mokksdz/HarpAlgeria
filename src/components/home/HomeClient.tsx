@@ -14,7 +14,7 @@ function useInView(threshold = 0.1): [React.RefCallback<HTMLElement>, boolean] {
 
   useEffect(() => {
     if (!node) return;
-    
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -52,7 +52,10 @@ interface HomeClientProps {
   initialCollections: Collection[];
 }
 
-export function HomeClient({ initialProducts, initialCollections }: HomeClientProps) {
+export function HomeClient({
+  initialProducts,
+  initialCollections,
+}: HomeClientProps) {
   const { t, language } = useLanguage();
 
   // Animation hooks for each section
@@ -116,10 +119,7 @@ export function HomeClient({ initialProducts, initialCollections }: HomeClientPr
       </section>
 
       {/* New Collection Section - Minimalist Grid */}
-      <section
-        ref={collectionRef}
-        className="py-24 md:py-32 bg-harp-cream"
-      >
+      <section ref={collectionRef} className="py-24 md:py-32 bg-harp-cream">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
             <div

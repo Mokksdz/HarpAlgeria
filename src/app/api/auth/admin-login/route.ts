@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
   if (rateLimited) return rateLimited;
 
   // Pass through to NextAuth - actual auth is handled by NextAuth
-  return NextResponse.json({ 
-    success: true, 
-    message: "Rate limit check passed, proceed with NextAuth signIn" 
+  return NextResponse.json({
+    success: true,
+    message: "Rate limit check passed, proceed with NextAuth signIn",
   });
 }
