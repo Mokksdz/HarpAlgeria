@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Package,
   ShoppingCart,
@@ -62,11 +62,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("30");
 
-  useEffect(() => {
-    fetchReport();
-  }, [period]);
-
-  async function fetchReport() {
+  const fetchReport = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`/api/v3/compta/reports?period=${period}`, {
@@ -79,7 +75,11 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [period]);
+
+  useEffect(() => {
+    fetchReport();
+  }, [fetchReport]);
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("fr-DZ").format(n) + " DZD";

@@ -3,16 +3,13 @@
 import Link from "next/link";
 import {
   CheckCircle2,
-  Package,
-  ArrowRight,
-  Clock,
   MessageCircle,
 } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { siteConfig } from "@/lib/config";
 
 export default function OrderConfirmationPage() {
-  const { t } = useLanguage();
+  useLanguage();
 
   return (
     <div className="min-h-screen bg-white pt-32 pb-20">

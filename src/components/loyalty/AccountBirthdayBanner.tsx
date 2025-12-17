@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Gift, Calendar, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

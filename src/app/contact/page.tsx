@@ -2,44 +2,18 @@
 
 import { useState } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
-import Image from "next/image";
 import {
   Mail,
   MapPin,
   Instagram,
-  Facebook,
   MessageCircle,
-  Clock,
   CheckCircle,
-  Send,
   ArrowRight,
 } from "lucide-react";
 import { siteConfig, getWhatsAppLink } from "@/lib/config";
 
-const TikTokIcon = ({
-  size = 24,
-  className = "",
-}: {
-  size?: number | string;
-  className?: string;
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
-  </svg>
-);
-
 export default function ContactPage() {
-  const { t } = useLanguage();
+  useLanguage();
   const [formState, setFormState] = useState({
     name: "",
     email: "",

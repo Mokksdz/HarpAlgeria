@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Clock,
   MapPin,
-  Phone,
   Loader2,
   AlertCircle,
   ArrowRight,
@@ -37,7 +36,7 @@ interface TrackingResult {
 }
 
 export default function TrackingPage() {
-  const { t } = useLanguage();
+  useLanguage();
   const [trackingNumber, setTrackingNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TrackingResult | null>(null);

@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { earnPoints } from "@/lib/loyalty/services/loyalty.service";
 import { sendMagicLinkEmail } from "@/lib/email/magic-link";
 import { User } from "@prisma/client";
 

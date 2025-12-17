@@ -7,8 +7,6 @@ import { ProductGridSkeleton } from "@/components/Skeleton";
 import { useLanguage } from "@/components/LanguageProvider";
 import {
   ChevronDown,
-  X,
-  Filter,
   Package,
   ChevronRight,
   Search,
@@ -25,7 +23,6 @@ export default function ShopPage() {
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {

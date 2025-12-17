@@ -7,11 +7,9 @@ import {
   Factory,
   Wallet,
   AlertTriangle,
-  ChevronRight,
   Boxes,
   Receipt,
   Plus,
-  TrendingUp,
   ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";

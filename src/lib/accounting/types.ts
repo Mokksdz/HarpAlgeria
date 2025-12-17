@@ -7,12 +7,10 @@ import {
   InventoryType,
   InventoryUnit,
   PurchaseStatus,
-  AdvanceStatus,
   ChargeCategory,
   ChargeScope,
   TxDirection,
   TxType,
-  BatchStatus,
   PaymentMethod,
   Platform,
 } from "./constants";

@@ -10,7 +10,6 @@ import {
   Save,
   RotateCcw,
   Loader2,
-  Trash2,
   History,
   X,
 } from "lucide-react";

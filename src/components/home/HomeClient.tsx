@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -9,10 +9,12 @@ import { Star, ArrowRight } from "lucide-react";
 
 // Intersection Observer hook for scroll animations
 function useInView(threshold = 0.1) {
-  const ref = useRef<HTMLDivElement>(null);
+  const [node, setNode] = useState<HTMLElement | null>(null);
   const [isInView, setIsInView] = useState(false);
 
   useEffect(() => {
+    if (!node) return;
+    
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -22,14 +24,12 @@ function useInView(threshold = 0.1) {
       { threshold },
     );
 
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
+    observer.observe(node);
 
     return () => observer.disconnect();
-  }, [threshold]);
+  }, [threshold, node]);
 
-  return { ref, isInView };
+  return { ref: setNode, isInView };
 }
 
 interface Product {

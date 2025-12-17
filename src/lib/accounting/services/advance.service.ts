@@ -5,7 +5,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { AdvanceStatus, PurchaseStatus } from "../constants";
+import { AdvanceStatus } from "../constants";
 
 // Types
 export interface AdvanceCreateInput {

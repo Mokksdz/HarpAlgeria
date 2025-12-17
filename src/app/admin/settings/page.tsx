@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Truck, Save, Loader2, Zap } from "lucide-react";
+import { Truck, Loader2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SiteSettings {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -78,11 +78,7 @@ export default function ChargesPage() {
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState("");
 
-  useEffect(() => {
-    fetchCharges();
-  }, [categoryFilter]);
-
-  async function fetchCharges() {
+  const fetchCharges = useCallback(async () => {
     try {
       const params = new URLSearchParams({ limit: "30" });
       if (categoryFilter) params.set("category", categoryFilter);
@@ -99,7 +95,11 @@ export default function ChargesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [categoryFilter]);
+
+  useEffect(() => {
+    fetchCharges();
+  }, [fetchCharges]);
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("fr-DZ").format(n) + " DZD";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -55,11 +55,7 @@ export default function StockPage() {
   const [adjustReason, setAdjustReason] = useState("");
   const [adjusting, setAdjusting] = useState(false);
 
-  useEffect(() => {
-    fetchInventory();
-  }, [typeFilter]);
-
-  async function fetchInventory() {
+  const fetchInventory = useCallback(async () => {
     try {
       const params = new URLSearchParams({ limit: "50" });
       if (typeFilter) params.set("type", typeFilter);
@@ -77,7 +73,11 @@ export default function StockPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [typeFilter, search]);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();

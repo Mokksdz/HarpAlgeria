@@ -22,7 +22,7 @@ export function WishlistButton({
   const { data: session } = useSession();
   const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  useRouter();
 
   // Sync with localStorage if not logged in, or just handle UI state
   // Real sync happens on page load/auth

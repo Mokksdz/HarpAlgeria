@@ -9,7 +9,7 @@ async function createYalidineShipment(order: any) {
     const client = getYalidineClient();
 
     // Build product list from items
-    const productsList =
+    const _productsList =
       order.items
         ?.map((item: any) => `${item.quantity}x ${item.productName}`)
         .join(", ") || "Commande Harp";

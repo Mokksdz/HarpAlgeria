@@ -16,7 +16,6 @@ import {
   Check,
   CreditCard,
   RotateCcw,
-  Loader2,
   ShoppingBag,
   MessageCircle,
   Sparkles,

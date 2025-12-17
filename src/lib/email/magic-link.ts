@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 export async function sendMagicLinkEmail(
   email: string,
   link: string,
-  guestKey?: string,
+  _guestKey?: string,
 ) {
   // Magic link email being sent to user
 

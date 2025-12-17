@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -58,11 +58,7 @@ export default function PurchasesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
-  useEffect(() => {
-    fetchPurchases();
-  }, [filter]);
-
-  async function fetchPurchases() {
+  const fetchPurchases = useCallback(async () => {
     try {
       const params = new URLSearchParams({ limit: "20" });
       if (filter) params.set("status", filter);
@@ -76,7 +72,11 @@ export default function PurchasesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filter]);
+
+  useEffect(() => {
+    fetchPurchases();
+  }, [fetchPurchases]);
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("fr-DZ", { style: "decimal" }).format(n) + " DZD";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus, Clock, CheckCircle, ArrowRight, Wallet } from "lucide-react";
 
@@ -43,11 +43,7 @@ export default function AdvancesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
-  useEffect(() => {
-    fetchAdvances();
-  }, [filter]);
-
-  async function fetchAdvances() {
+  const fetchAdvances = useCallback(async () => {
     try {
       const params = new URLSearchParams({ limit: "20" });
       if (filter) params.set("status", filter);
@@ -64,7 +60,11 @@ export default function AdvancesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filter]);
+
+  useEffect(() => {
+    fetchAdvances();
+  }, [fetchAdvances]);
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("fr-DZ").format(n) + " DZD";

@@ -6,14 +6,13 @@ import {
   Edit,
   Trash2,
   Search,
-  Filter,
   FolderOpen,
   Layers,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function AdminCollectionsPage() {
-  const [collections, setCollections] = useState<any[]>([]);
+  const [collections, setCollections] = useState<{ id: string; nameFr: string; nameAr: string; image: string | null; products?: { id: string }[] }[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 

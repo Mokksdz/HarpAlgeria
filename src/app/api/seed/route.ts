@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // Generate URL-friendly slug from name
-function generateSlug(name: string): string {
+function _generateSlug(name: string): string {
   return name
     .toLowerCase()
     .normalize("NFD")

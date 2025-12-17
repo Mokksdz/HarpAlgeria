@@ -15,26 +15,20 @@ import {
 import { cn } from "@/lib/utils";
 import {
   ShoppingBag,
-  User,
-  MapPin,
-  Truck,
   CreditCard,
   ChevronRight,
-  Phone,
   Home,
   Building2,
-  Package,
   Shield,
   Clock,
   CheckCircle2,
-  ArrowLeft,
   Loader2,
   Lock,
 } from "lucide-react";
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
-  const { t } = useLanguage();
+  useLanguage();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);

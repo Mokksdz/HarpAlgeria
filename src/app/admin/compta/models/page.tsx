@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus, Calculator, Layers, Factory } from "lucide-react";
 
@@ -20,11 +20,7 @@ export default function ModelsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    fetchModels();
-  }, []);
-
-  async function fetchModels() {
+  const fetchModels = useCallback(async () => {
     try {
       const params = new URLSearchParams({ limit: "50" });
       if (search) params.set("search", search);
@@ -38,7 +34,11 @@ export default function ModelsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [search]);
+
+  useEffect(() => {
+    fetchModels();
+  }, [fetchModels]);
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("fr-DZ").format(n) + " DZD";

@@ -58,7 +58,7 @@ export interface AdminSession {
  * SECURITY: No bypass allowed - all routes must authenticate
  */
 export async function requireAdmin(
-  req?: Request | NextRequest | null,
+  _req?: Request | NextRequest | null,
 ): Promise<AdminSession> {
   const session = await getServerSession(authOptions);
 

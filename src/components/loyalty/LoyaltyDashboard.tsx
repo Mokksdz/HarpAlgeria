@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Crown, Gift, History, TrendingUp, Lock, Check } from "lucide-react";
-import { cn, formatPrice } from "@/lib/utils";
+import { Crown, Gift, History, TrendingUp, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 
 interface LoyaltyState {

@@ -5,7 +5,7 @@ import { Heart, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { cn, formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/components/CartProvider";
 
 interface WishlistItem {

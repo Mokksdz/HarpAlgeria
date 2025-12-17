@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { UpdateProfileSchema } from "@/lib/validations/profile";
 
 // GET - Récupérer le profil (crée l'utilisateur s'il n'existe pas)
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {

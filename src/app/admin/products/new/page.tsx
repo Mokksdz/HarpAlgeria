@@ -78,7 +78,6 @@ export default function NewProductPage() {
       }
 
       // Add placeholder with uploading state
-      const tempId = Date.now() + Math.random();
       const tempUrl = URL.createObjectURL(file);
 
       setMediaItems((prev) => [

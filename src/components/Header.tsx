@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ShoppingBag, Menu, X, User } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "./LanguageProvider";
 import { useCart } from "./CartProvider";
 import { useSession } from "next-auth/react";
@@ -30,10 +30,12 @@ export function Header() {
     }, []);
 
     // Close menu on route change
+    const prevPathname = useRef(pathname);
     useEffect(() => {
-        if (isMenuOpen) {
+        if (prevPathname.current !== pathname && isMenuOpen) {
             setIsMenuOpen(false);
         }
+        prevPathname.current = pathname;
     }, [pathname, isMenuOpen]);
 
     // Prevent body scroll when menu is open

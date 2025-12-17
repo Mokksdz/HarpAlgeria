@@ -8,7 +8,6 @@ import {
   Mail,
   MapPin,
   ArrowRight,
-  Send,
   Facebook,
 } from "lucide-react";
 import { useState } from "react";

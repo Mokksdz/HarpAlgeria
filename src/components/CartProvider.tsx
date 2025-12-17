@@ -5,7 +5,6 @@ import React, {
   useContext,
   useState,
   useEffect,
-  useCallback,
   useSyncExternalStore,
 } from "react";
 

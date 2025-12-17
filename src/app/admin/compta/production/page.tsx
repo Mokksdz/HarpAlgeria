@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus, Play, CheckCircle, Clock, XCircle, Pause } from "lucide-react";
 
@@ -52,11 +52,7 @@ export default function ProductionPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
-  useEffect(() => {
-    fetchBatches();
-  }, [filter]);
-
-  async function fetchBatches() {
+  const fetchBatches = useCallback(async () => {
     try {
       const params = new URLSearchParams({ limit: "20" });
       if (filter) params.set("status", filter);
@@ -70,7 +66,11 @@ export default function ProductionPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filter]);
+
+  useEffect(() => {
+    fetchBatches();
+  }, [fetchBatches]);
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("fr-DZ").format(n) + " DZD";

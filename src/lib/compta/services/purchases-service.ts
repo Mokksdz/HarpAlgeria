@@ -10,7 +10,6 @@ import {
   calculateTotalValue,
   determinePurchaseStatus,
 } from "../accounting";
-import { createInventoryTransaction } from "./inventory-service";
 import type {
   PurchaseCreateInput,
   ReceivePurchaseInput,

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/components/LanguageProvider";
-import { ArrowRight, X, Instagram } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { X, Instagram } from "lucide-react";
 
 interface LookbookItem {
   id: string;
@@ -24,70 +23,61 @@ interface Lookbook {
   items: LookbookItem[];
 }
 
+// Placeholder lookbook data
+const placeholderLookbook: Lookbook = {
+  id: "placeholder",
+  slug: "printemps-2025",
+  title: "Saison 01 — Printemps",
+  description:
+    "Une ode à la fluidité et à la lumière. Découvrez notre nouvelle collection inspirée des jardins andalous.",
+  season: "Printemps 2025",
+  coverImage:
+    "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=1600&q=90",
+  items: [
+    {
+      id: "1",
+      image:
+        "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=1200&q=85",
+      caption: "Silhouette 01",
+    },
+    {
+      id: "2",
+      image:
+        "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=1200&q=85",
+      caption: "Silhouette 02",
+    },
+    {
+      id: "3",
+      image:
+        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=85",
+      caption: "Silhouette 03",
+    },
+    {
+      id: "4",
+      image:
+        "https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=1200&q=85",
+      caption: "Silhouette 04",
+    },
+    {
+      id: "5",
+      image:
+        "https://images.unsplash.com/photo-1558171813-4c088753af8f?w=1200&q=85",
+      caption: "Silhouette 05",
+    },
+    {
+      id: "6",
+      image:
+        "https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=1200&q=85",
+      caption: "Silhouette 06",
+    },
+  ],
+};
+
 export default function LookbookPage() {
-  const { t } = useLanguage();
-  const [lookbooks, setLookbooks] = useState<Lookbook[]>([]);
+  useLanguage();
   const [selectedLook, setSelectedLook] = useState<LookbookItem | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  // Placeholder lookbook data (will be replaced by API data)
-  const placeholderLookbook: Lookbook = {
-    id: "placeholder",
-    slug: "printemps-2025",
-    title: "Saison 01 — Printemps",
-    description:
-      "Une ode à la fluidité et à la lumière. Découvrez notre nouvelle collection inspirée des jardins andalous.",
-    season: "Printemps 2025",
-    coverImage:
-      "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=1600&q=90",
-    items: [
-      {
-        id: "1",
-        image:
-          "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=1200&q=85",
-        caption: "Silhouette 01",
-      },
-      {
-        id: "2",
-        image:
-          "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=1200&q=85",
-        caption: "Silhouette 02",
-      },
-      {
-        id: "3",
-        image:
-          "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=85",
-        caption: "Silhouette 03",
-      },
-      {
-        id: "4",
-        image:
-          "https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=1200&q=85",
-        caption: "Silhouette 04",
-      },
-      {
-        id: "5",
-        image:
-          "https://images.unsplash.com/photo-1558171813-4c088753af8f?w=1200&q=85",
-        caption: "Silhouette 05",
-      },
-      {
-        id: "6",
-        image:
-          "https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=1200&q=85",
-        caption: "Silhouette 06",
-      },
-    ],
-  };
-
-  useEffect(() => {
-    // For now, use placeholder data
-    // In production, fetch from API: /api/lookbooks
-    setLookbooks([placeholderLookbook]);
-    setLoading(false);
-  }, []);
-
-  const currentLookbook = lookbooks[0] || placeholderLookbook;
+  const currentLookbook = placeholderLookbook;
 
   return (
     <div className="min-h-screen bg-white">

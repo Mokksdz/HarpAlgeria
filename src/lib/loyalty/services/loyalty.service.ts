@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 
 export const LOYALTY_RULES = {
   POINTS_PER_DZD: 1,

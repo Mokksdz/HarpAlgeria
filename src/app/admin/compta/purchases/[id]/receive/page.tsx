@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Package,
-  AlertTriangle,
   CheckCircle,
   TrendingUp,
 } from "lucide-react";

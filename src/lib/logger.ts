@@ -8,7 +8,7 @@ const isDebugEnabled = process.env.DEBUG === "true";
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
-interface LoggerOptions {
+interface _LoggerOptions {
   prefix?: string;
   forceLog?: boolean;
 }
@@ -16,7 +16,7 @@ interface LoggerOptions {
 function formatMessage(
   level: LogLevel,
   prefix: string,
-  args: unknown[],
+  _args: unknown[],
 ): string {
   const timestamp = new Date().toISOString();
   const prefixStr = prefix ? `[${prefix}]` : "";

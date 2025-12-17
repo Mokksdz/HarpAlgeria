@@ -5,7 +5,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { calculateCUMP, calculateTotalValue } from "../accounting";
+import { calculateTotalValue } from "../accounting";
 import type {
   InventoryItemCreateInput,
   InventoryAdjustmentInput,

@@ -1,22 +1,21 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/magic-link-request");
-    } else if (status === "authenticated") {
-      setLoading(false);
     }
   }, [status, router]);
+
+  const loading = status === "loading" || status === "unauthenticated";
 
   if (loading) {
     return (

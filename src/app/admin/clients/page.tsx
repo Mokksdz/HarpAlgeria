@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState, Fragment, useCallback } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -23,10 +23,7 @@ import {
   Calendar,
   Heart,
   Coins,
-  Eye,
-  DollarSign,
   Package,
-  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -95,7 +92,7 @@ export default function AdminClientsPage() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
 
-  async function fetchPage(p = 1) {
+  const fetchPage = useCallback(async (p = 1) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -122,11 +119,11 @@ export default function AdminClientsPage() {
       console.error("Fetch error:", err);
     }
     setLoading(false);
-  }
+  }, [pageSize, vipFilter, search]);
 
   useEffect(() => {
     fetchPage(1);
-  }, [vipFilter]);
+  }, [fetchPage]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
