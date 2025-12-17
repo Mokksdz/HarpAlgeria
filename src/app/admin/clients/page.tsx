@@ -122,8 +122,35 @@ export default function AdminClientsPage() {
   }, [pageSize, vipFilter, search]);
 
   useEffect(() => {
-    fetchPage(1);
-  }, [fetchPage]);
+    // Initial fetch
+    const controller = new AbortController();
+    (async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: "1",
+          pageSize: String(pageSize),
+          vipLevel: vipFilter,
+        });
+        if (search) params.set("search", search);
+        const res = await fetch(`/api/v3/compta/clients?${params.toString()}`, {
+          credentials: "include",
+          signal: controller.signal,
+        });
+        const json = await res.json();
+        if (json?.success) {
+          setItems(json.items);
+          setPage(json.meta.page);
+          setTotalPages(json.meta.totalPages);
+          setTotal(json.meta.total);
+        }
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') console.error(err);
+      }
+      setLoading(false);
+    })();
+    return () => controller.abort();
+  }, [pageSize, vipFilter, search]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();

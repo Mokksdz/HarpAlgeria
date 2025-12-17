@@ -8,7 +8,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { Star, ArrowRight } from "lucide-react";
 
 // Intersection Observer hook for scroll animations
-function useInView(threshold = 0.1) {
+function useInView(threshold = 0.1): [React.RefCallback<HTMLElement>, boolean] {
   const [node, setNode] = useState<HTMLElement | null>(null);
   const [isInView, setIsInView] = useState(false);
 
@@ -29,7 +29,7 @@ function useInView(threshold = 0.1) {
     return () => observer.disconnect();
   }, [threshold, node]);
 
-  return { ref: setNode, isInView };
+  return [setNode, isInView];
 }
 
 interface Product {
@@ -56,9 +56,9 @@ export function HomeClient({ initialProducts, initialCollections }: HomeClientPr
   const { t, language } = useLanguage();
 
   // Animation hooks for each section
-  const collectionSection = useInView();
-  const collectionsSection = useInView();
-  const reviewsSection = useInView();
+  const [collectionRef, collectionInView] = useInView();
+  const [collectionsRef, _collectionsInView] = useInView();
+  const [reviewsRef, _reviewsInView] = useInView();
 
   const reviews = [
     {
@@ -117,13 +117,13 @@ export function HomeClient({ initialProducts, initialCollections }: HomeClientPr
 
       {/* New Collection Section - Minimalist Grid */}
       <section
-        ref={collectionSection.ref}
+        ref={collectionRef}
         className="py-24 md:py-32 bg-harp-cream"
       >
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
             <div
-              className={`transition-all duration-700 ${collectionSection.isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+              className={`transition-all duration-700 ${collectionInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             >
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-harp-caramel mb-2 block">
                 {t("home.section.new")}
@@ -147,7 +147,7 @@ export function HomeClient({ initialProducts, initialCollections }: HomeClientPr
                 return (
                   <div
                     key={product.id}
-                    className={`transition-all duration-700 ${collectionSection.isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+                    className={`transition-all duration-700 ${collectionInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
                     style={{ transitionDelay: `${index * 100}ms` }}
                   >
                     <ProductCard
@@ -246,7 +246,7 @@ export function HomeClient({ initialProducts, initialCollections }: HomeClientPr
 
       {/* Collections Showcase - Visual */}
       {initialCollections.length > 0 && (
-        <section ref={collectionsSection.ref} className="py-24 bg-harp-cream">
+        <section ref={collectionsRef} className="py-24 bg-harp-cream">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-serif font-medium text-harp-brown">
@@ -289,7 +289,7 @@ export function HomeClient({ initialProducts, initialCollections }: HomeClientPr
       )}
 
       {/* Reviews Section - Minimal Cards */}
-      <section ref={reviewsSection.ref} className="py-24 bg-harp-beige/10">
+      <section ref={reviewsRef} className="py-24 bg-harp-beige/10">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-harp-caramel mb-3 block">

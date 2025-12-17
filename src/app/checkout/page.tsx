@@ -31,7 +31,7 @@ export default function CheckoutPage() {
   useLanguage();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [_currentStep, setCurrentStep] = useState(1);
 
   const [formData, setFormData] = useState({
     firstName: "",

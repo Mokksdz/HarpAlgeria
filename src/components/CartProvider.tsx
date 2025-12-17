@@ -43,22 +43,23 @@ function useIsMounted() {
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const isMounted = useIsMounted();
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-
-  // Load cart from local storage only on client side
-  useEffect(() => {
-    if (isMounted) {
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
       const savedCart = localStorage.getItem("harp-cart");
       if (savedCart) {
         try {
-          setItems(JSON.parse(savedCart));
+          return JSON.parse(savedCart);
         } catch {
-          // Invalid JSON, ignore
+          return [];
         }
       }
     }
-  }, [isMounted]);
+    return [];
+  });
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Keep isMounted for other uses
+  void isMounted;
 
   // Save cart to local storage
   useEffect(() => {

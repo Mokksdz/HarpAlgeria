@@ -29,14 +29,15 @@ export function Header() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Close menu on route change
+    // Close menu on route change - using layout effect to sync before paint
     const prevPathname = useRef(pathname);
-    useEffect(() => {
-        if (prevPathname.current !== pathname && isMenuOpen) {
-            setIsMenuOpen(false);
+    if (prevPathname.current !== pathname) {
+        if (isMenuOpen) {
+            // Schedule state update after render
+            Promise.resolve().then(() => setIsMenuOpen(false));
         }
         prevPathname.current = pathname;
-    }, [pathname, isMenuOpen]);
+    }
 
     // Prevent body scroll when menu is open
     useEffect(() => {

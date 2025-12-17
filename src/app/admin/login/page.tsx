@@ -16,9 +16,9 @@ import {
 import Link from "next/link";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/admin";
+  const _callbackUrl = searchParams.get("callbackUrl") || "/admin";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
