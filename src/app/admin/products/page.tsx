@@ -14,8 +14,19 @@ import {
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
+interface Product {
+  id: string;
+  nameFr: string;
+  nameAr: string;
+  price: number;
+  stock: number;
+  images: string;
+  isActive: boolean;
+  collection?: { nameFr: string };
+}
+
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 

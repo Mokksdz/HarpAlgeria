@@ -222,7 +222,7 @@ export async function createInventoryTransaction(
 ): Promise<InventoryTransaction> {
   const client = tx ?? prisma;
 
-  const totalCost = params.quantity * (params.unitCost ?? 0);
+  const _totalCost = params.quantity * (params.unitCost ?? 0);
 
   return client.inventoryTransaction.create({
     data: {

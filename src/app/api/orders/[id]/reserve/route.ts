@@ -120,10 +120,10 @@ export async function POST(
       message: "Stock réservé avec succès",
       reservedItems: itemsToReserve,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error reserving stock:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de la réservation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la réservation" },
       { status: 400 },
     );
   }
@@ -187,10 +187,10 @@ export async function DELETE(
       success: true,
       message: "Réservation annulée",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error releasing stock:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de l'annulation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'annulation" },
       { status: 400 },
     );
   }

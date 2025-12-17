@@ -65,10 +65,10 @@ export async function GET(_req: Request) {
       progress,
       history: user.pointHistory,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Loyalty balance error:", error);
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Internal Server Error" },
       { status: 500 },
     );
   }

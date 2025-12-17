@@ -104,10 +104,10 @@ export async function PATCH(
           { status: 400 },
         );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error patching advance:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de l'action" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'action" },
       { status: 400 },
     );
   }

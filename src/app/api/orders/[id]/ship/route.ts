@@ -85,10 +85,10 @@ export async function POST(
       message: "Commande expédiée, stock déduit",
       shippedItems: itemsToShip,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error shipping order:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de l'expédition" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'expédition" },
       { status: 400 },
     );
   }
@@ -152,10 +152,10 @@ export async function DELETE(
       message: "Expédition annulée, stock remis",
       returnedItems: itemsToReturn,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error cancelling shipment:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de l'annulation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'annulation" },
       { status: 400 },
     );
   }

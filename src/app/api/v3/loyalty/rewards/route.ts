@@ -8,9 +8,9 @@ export async function GET() {
       orderBy: { cost: "asc" },
     });
     return NextResponse.json(rewards);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Internal Server Error" },
       { status: 500 },
     );
   }

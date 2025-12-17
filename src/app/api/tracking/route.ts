@@ -54,9 +54,9 @@ export async function GET(request: NextRequest) {
               await yalidineClient.getTrackingHistory(tracking);
             if (historyResult.data) {
               history = historyResult.data.map(
-                (h: any, index: number, arr: any[]) => ({
+                (h, index) => ({
                   status: h.status,
-                  date: new Date(h.date).toLocaleString("fr-FR"),
+                  date: new Date(h.date_status).toLocaleString("fr-FR"),
                   location: h.center_name || h.wilaya_name,
                   completed: true,
                   current: index === 0,

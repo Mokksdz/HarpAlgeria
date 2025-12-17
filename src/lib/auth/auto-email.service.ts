@@ -98,7 +98,7 @@ export async function verifyMagicLink(token: string) {
   try {
     // 1. Verify JWT signature
     const payload = jwt.verify(token, MAGIC_LINK_SECRET) as any;
-    const { email, reference, guestKey } = payload;
+    const { email, guestKey } = payload;
 
     // 2. Hash to find in DB
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");

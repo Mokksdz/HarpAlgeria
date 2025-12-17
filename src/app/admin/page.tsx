@@ -17,6 +17,7 @@ import {
   RefreshCw,
   MoreHorizontal,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Order {
@@ -136,7 +137,7 @@ export default function AdminDashboard() {
   const getStatusBadge = (status: string) => {
     const badges: Record<
       string,
-      { bg: string; text: string; icon: any; label: string }
+      { bg: string; text: string; icon: LucideIcon; label: string }
     > = {
       PENDING: {
         bg: "bg-amber-50",
@@ -462,7 +463,7 @@ export default function AdminDashboard() {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {stats.topProducts.map((product: any) => {
+                  {stats.topProducts.map((product: Product) => {
                     const images = JSON.parse(product.images || "[]");
                     return (
                       <Link
@@ -510,6 +511,17 @@ export default function AdminDashboard() {
   );
 }
 
+interface KpiCardProps {
+  label: string;
+  value: string | number;
+  icon: LucideIcon;
+  color: string;
+  trend?: string;
+  badge?: string;
+  alert?: string;
+  sub?: string;
+}
+
 function KpiCard({
   label,
   value,
@@ -519,8 +531,8 @@ function KpiCard({
   badge,
   alert,
   sub,
-}: any) {
-  const colors: any = {
+}: KpiCardProps) {
+  const colors: Record<string, string> = {
     emerald: "bg-emerald-50 text-emerald-600",
     blue: "bg-blue-50 text-blue-600",
     purple: "bg-purple-50 text-purple-600",
@@ -563,15 +575,23 @@ function KpiCard({
   );
 }
 
-function PipelineStep({ label, count, color, icon: Icon, isLast }: any) {
-  const colors: any = {
+interface PipelineStepProps {
+  label: string;
+  count: number;
+  color: string;
+  icon: LucideIcon;
+  isLast?: boolean;
+}
+
+function PipelineStep({ label, count, color, icon: Icon, isLast }: PipelineStepProps) {
+  const colors: Record<string, string> = {
     amber: "hover:border-amber-200 hover:bg-amber-50/50",
     blue: "hover:border-blue-200 hover:bg-blue-50/50",
     purple: "hover:border-purple-200 hover:bg-purple-50/50",
     emerald: "hover:border-emerald-200 hover:bg-emerald-50/50",
   };
 
-  const iconColors: any = {
+  const iconColors: Record<string, string> = {
     amber: "text-amber-600 bg-amber-50",
     blue: "text-blue-600 bg-blue-50",
     purple: "text-purple-600 bg-purple-50",

@@ -36,7 +36,7 @@ export function CartDrawer() {
     removeItem,
     updateQuantity,
     total,
-    addItem,
+    addItem: _addItem,
   } = useCart();
   const { t, dir } = useLanguage();
   const [suggestions, setSuggestions] = useState<SuggestedProduct[]>([]);
@@ -54,10 +54,10 @@ export function CartDrawer() {
         .then((data) => {
           // Filtrer les produits déjà dans le panier
           const cartProductIds = items.map((i) => i.productId);
-          const filtered = data
-            .filter((p: any) => !cartProductIds.includes(p.id))
+          const filtered = (data as { id: string; nameFr: string; price: number; images: string }[])
+            .filter((p) => !cartProductIds.includes(p.id))
             .slice(0, 3)
-            .map((p: any) => ({
+            .map((p) => ({
               id: p.id,
               name: p.nameFr,
               price: p.price,

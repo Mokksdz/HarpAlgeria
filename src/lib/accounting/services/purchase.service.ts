@@ -355,7 +355,6 @@ export async function receivePurchase(
       throw new Error("Cet achat a déjà été entièrement réceptionné");
     }
 
-    let allReceived = true;
     let anyReceived = false;
 
     for (const receiveItem of items) {
@@ -406,7 +405,7 @@ export async function receivePurchase(
       // Vérifier si tout est reçu pour cet article
       const newReceived = Number(purchaseItem.quantityReceived) + qtyToReceive;
       if (newReceived < Number(purchaseItem.quantityOrdered)) {
-        allReceived = false;
+        // Partial receive - continue processing
       }
     }
 

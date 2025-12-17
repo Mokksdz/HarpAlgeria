@@ -581,6 +581,7 @@ export default function AdminHeroEditor({ initial }: Props) {
           >
             {previewImage ? (
               <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewImage}
                   alt="Preview"

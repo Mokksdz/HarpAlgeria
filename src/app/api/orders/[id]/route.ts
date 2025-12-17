@@ -190,12 +190,12 @@ export async function PATCH(
       shipmentError: shipmentResult?.error || null,
       label: shipmentResult?.label || null,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating order:", error);
     return NextResponse.json(
       {
         error: "Error updating order",
-        details: error?.message || String(error),
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },
     );

@@ -34,10 +34,10 @@ export async function GET(
     const preview = await previewConsumption(id);
 
     return NextResponse.json(preview);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error generating consumption preview:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de la prévisualisation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la prévisualisation" },
       { status: 400 },
     );
   }
@@ -74,10 +74,10 @@ export async function POST(
       batch: result,
       message: "Matières consommées avec succès",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error consuming materials:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de la consommation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la consommation" },
       { status: 400 },
     );
   }

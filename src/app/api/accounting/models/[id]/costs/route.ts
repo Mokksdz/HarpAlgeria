@@ -17,10 +17,10 @@ export async function GET(
     const costResult = await computeCostPerUnit(id);
 
     return NextResponse.json(costResult);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error computing costs:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors du calcul des coûts" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors du calcul des coûts" },
       { status: 400 },
     );
   }
@@ -52,10 +52,10 @@ export async function POST(
     });
 
     return NextResponse.json(simulation);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error simulating costs:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de la simulation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la simulation" },
       { status: 400 },
     );
   }

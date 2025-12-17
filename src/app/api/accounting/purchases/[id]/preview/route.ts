@@ -17,10 +17,10 @@ export async function GET(
     const preview = await previewReceive(id);
 
     return NextResponse.json(preview);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error generating receive preview:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de la prévisualisation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la prévisualisation" },
       { status: 400 },
     );
   }

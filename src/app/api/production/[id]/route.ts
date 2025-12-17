@@ -120,10 +120,10 @@ export async function PATCH(
     }
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error patching batch:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de l'action" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'action" },
       { status: 400 },
     );
   }

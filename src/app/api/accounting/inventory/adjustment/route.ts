@@ -51,10 +51,10 @@ export async function POST(req: NextRequest) {
       item: result.item,
       message: `Ajustement de ${quantity >= 0 ? "+" : ""}${quantity} effectué`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating adjustment:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de l'ajustement" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'ajustement" },
       { status: 400 },
     );
   }

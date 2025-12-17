@@ -453,7 +453,7 @@ export function getWilayaName(wilayaIdOrName: string): string {
 
   // Chercher par nom (insensible à la casse)
   const lowerInput = normalizedInput.toLowerCase();
-  for (const [id, name] of Object.entries(WILAYA_ID_TO_NAME)) {
+  for (const [_id, name] of Object.entries(WILAYA_ID_TO_NAME)) {
     if (name.toLowerCase() === lowerInput) {
       return name;
     }

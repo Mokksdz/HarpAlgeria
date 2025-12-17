@@ -51,10 +51,10 @@ export async function POST(
       purchase: result,
       message: `Réception effectuée. Statut: ${result.status}`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error receiving purchase:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de la réception" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la réception" },
       { status: 400 },
     );
   }

@@ -50,10 +50,10 @@ export async function POST(
       ...result,
       message: `${amount} DZD appliqués de l'avance à l'achat`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error applying advance:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de l'application" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'application" },
       { status: 400 },
     );
   }

@@ -34,7 +34,7 @@ export async function GET(_req: NextRequest) {
     });
 
     return NextResponse.json(user);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Profile GET error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
@@ -93,7 +93,7 @@ export async function PATCH(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, user: updated });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Profile PATCH error:", error);
 
     return NextResponse.json(

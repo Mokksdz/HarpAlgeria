@@ -91,10 +91,10 @@ export async function POST(req: NextRequest) {
       stats,
       message: `Réconciliation effectuée pour ${results.length} articles`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error during reconciliation:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de la réconciliation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la réconciliation" },
       { status: 400 },
     );
   }

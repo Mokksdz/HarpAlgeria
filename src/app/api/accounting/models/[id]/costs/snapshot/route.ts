@@ -23,10 +23,10 @@ export async function POST(
       snapshot,
       message: `Snapshot ${snapshot.snapshotNumber} créé avec succès`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating snapshot:", error);
     return NextResponse.json(
-      { error: error.message || "Erreur lors de la création du snapshot" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la création du snapshot" },
       { status: 400 },
     );
   }

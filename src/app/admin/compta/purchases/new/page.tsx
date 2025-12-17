@@ -77,8 +77,7 @@ export default function NewPurchasePage() {
     value: string | number | InventoryItem | undefined,
   ) {
     const updated = [...items];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (updated[index] as any)[field] = value;
+    (updated[index] as unknown as Record<string, unknown>)[field] = value;
 
     // Auto-fill price from inventory item
     if (field === "inventoryItemId") {

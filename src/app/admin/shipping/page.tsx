@@ -38,7 +38,7 @@ interface Order {
   total: number;
   status: string;
   createdAt: string;
-  items: any[];
+  items: { id: string; productName: string; quantity: number }[];
 }
 
 interface ProviderStatus {
@@ -127,12 +127,12 @@ export default function ShippingPage() {
 
     try {
       const productsList = order.items
-        .map((item: any) => `${item.quantity}x ${item.productName}`)
+        .map((item) => `${item.quantity}x ${item.productName}`)
         .join(", ");
 
       let apiUrl = "/api/shipping";
       let providerName = "ZR Express";
-      let requestBody: any = {};
+      let requestBody: Record<string, unknown> = {};
 
       if (provider === "yalidine") {
         apiUrl = "/api/shipping/yalidine";
@@ -448,7 +448,7 @@ export default function ShippingPage() {
         ].map((f) => (
           <button
             key={f.key}
-            onClick={() => setFilter(f.key as any)}
+            onClick={() => setFilter(f.key as "all" | "pending" | "shipped")}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-medium transition-all",
               filter === f.key

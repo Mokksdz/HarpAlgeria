@@ -169,7 +169,8 @@ export function generateCloudinarySignature(folder: string = "harp/hero") {
   // Create signature string
   const signatureString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
 
-  // Create SHA1 hash
+  // Create SHA1 hash using dynamic import workaround
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const crypto = require("crypto");
   const signature = crypto
     .createHash("sha1")

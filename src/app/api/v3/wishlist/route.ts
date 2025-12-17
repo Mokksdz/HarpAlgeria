@@ -13,9 +13,9 @@ export async function GET(_req: Request) {
     const userId = (session.user as any).id || "1";
     const wishlist = await getUserWishlist(userId);
     return NextResponse.json(wishlist);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Internal Server Error" },
       { status: 500 },
     );
   }

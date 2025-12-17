@@ -23,7 +23,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await requireAdmin(req);
+    await requireAdmin(req);
     const { id } = await params;
 
     const purchase = await getPurchaseDetail(id);

@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(order, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Order creation error:", error);
 
     // Handle specific Prisma errors

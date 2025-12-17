@@ -58,12 +58,12 @@ export async function POST(req: Request) {
     );
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
     }
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Internal Server Error" },
       { status: 500 },
     );
   }
