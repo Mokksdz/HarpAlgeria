@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error("Error during reconciliation:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la réconciliation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

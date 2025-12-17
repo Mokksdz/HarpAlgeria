@@ -20,7 +20,7 @@ export async function GET(
   } catch (error: unknown) {
     console.error("Error generating receive preview:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la prévisualisation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

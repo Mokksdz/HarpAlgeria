@@ -123,7 +123,7 @@ export async function POST(
   } catch (error: unknown) {
     console.error("Error reserving stock:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la réservation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }
@@ -190,7 +190,7 @@ export async function DELETE(
   } catch (error: unknown) {
     console.error("Error releasing stock:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'annulation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

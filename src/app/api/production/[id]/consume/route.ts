@@ -37,7 +37,7 @@ export async function GET(
   } catch (error: unknown) {
     console.error("Error generating consumption preview:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la prévisualisation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }
@@ -77,7 +77,7 @@ export async function POST(
   } catch (error: unknown) {
     console.error("Error consuming materials:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la consommation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

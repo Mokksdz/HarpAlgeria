@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
     }
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 500 },
     );
   }

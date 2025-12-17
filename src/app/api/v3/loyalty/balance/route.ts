@@ -68,7 +68,7 @@ export async function GET(_req: Request) {
   } catch (error: unknown) {
     console.error("Loyalty balance error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 500 },
     );
   }

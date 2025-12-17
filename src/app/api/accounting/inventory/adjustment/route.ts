@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error("Error creating adjustment:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'ajustement" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

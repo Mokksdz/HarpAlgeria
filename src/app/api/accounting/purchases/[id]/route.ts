@@ -120,7 +120,7 @@ export async function PATCH(
   } catch (error: unknown) {
     console.error("Error patching purchase:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'action" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

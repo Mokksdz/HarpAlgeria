@@ -20,7 +20,7 @@ export async function GET(
   } catch (error: unknown) {
     console.error("Error computing costs:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors du calcul des coûts" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }
@@ -55,7 +55,7 @@ export async function POST(
   } catch (error: unknown) {
     console.error("Error simulating costs:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la simulation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

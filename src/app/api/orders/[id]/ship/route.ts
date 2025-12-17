@@ -88,7 +88,7 @@ export async function POST(
   } catch (error: unknown) {
     console.error("Error shipping order:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'expédition" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }
@@ -155,7 +155,7 @@ export async function DELETE(
   } catch (error: unknown) {
     console.error("Error cancelling shipment:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'annulation" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

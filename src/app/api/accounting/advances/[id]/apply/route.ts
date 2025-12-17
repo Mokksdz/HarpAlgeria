@@ -53,7 +53,7 @@ export async function POST(
   } catch (error: unknown) {
     console.error("Error applying advance:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de l'application" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

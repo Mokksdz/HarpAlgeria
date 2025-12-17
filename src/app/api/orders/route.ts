@@ -162,12 +162,13 @@ export async function POST(request: NextRequest) {
     console.error("Order creation error:", error);
 
     // Handle specific Prisma errors
-    if (error?.code === "P2003") {
-      console.error("Foreign key constraint failed:", error?.meta);
+    const prismaError = error as { code?: string; meta?: { field_name?: string } };
+    if (prismaError?.code === "P2003") {
+      console.error("Foreign key constraint failed:", prismaError?.meta);
       return NextResponse.json(
         {
           error: "Référence invalide dans la commande",
-          details: error?.meta?.field_name || "foreign key",
+          details: prismaError?.meta?.field_name || "foreign key",
         },
         { status: 400 },
       );

@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json(rewards);
   } catch (error: unknown) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 500 },
     );
   }

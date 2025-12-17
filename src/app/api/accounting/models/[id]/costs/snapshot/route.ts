@@ -26,7 +26,7 @@ export async function POST(
   } catch (error: unknown) {
     console.error("Error creating snapshot:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Erreur lors de la création du snapshot" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 400 },
     );
   }

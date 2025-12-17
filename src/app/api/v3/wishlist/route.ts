@@ -15,7 +15,7 @@ export async function GET(_req: Request) {
     return NextResponse.json(wishlist);
   } catch (error: unknown) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" || "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Erreur inconnue" },
       { status: 500 },
     );
   }
