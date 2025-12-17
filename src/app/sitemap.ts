@@ -1,6 +1,9 @@
 import { MetadataRoute } from "next";
 import { PrismaClient } from "@prisma/client";
 
+// Force dynamic generation - don't try to build at compile time
+export const dynamic = "force-dynamic";
+
 const prisma = new PrismaClient();
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
