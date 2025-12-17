@@ -13,12 +13,27 @@ import {
   XCircle,
   Plus,
   Eye,
-  BarChart3,
   FolderOpen,
   RefreshCw,
   MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface Order {
+  id: string;
+  status: string;
+  total: number;
+  customerName?: string;
+  createdAt?: string;
+}
+
+interface Product {
+  id: string;
+  nameFr: string;
+  stock?: number;
+  price?: number;
+  images?: string;
+}
 
 interface DashboardStats {
   totalOrders: number;
@@ -29,8 +44,8 @@ interface DashboardStats {
   totalProducts: number;
   lowStockProducts: number;
   totalRevenue: number;
-  recentOrders: any[];
-  topProducts: any[];
+  recentOrders: Order[];
+  topProducts: Product[];
 }
 
 export default function AdminDashboard() {
@@ -69,23 +84,23 @@ export default function AdminDashboard() {
         : productsData.items || [];
 
       const pendingOrders = ordersArray.filter(
-        (o: any) => o.status === "PENDING",
+        (o: Order) => o.status === "PENDING",
       ).length;
       const confirmedOrders = ordersArray.filter(
-        (o: any) => o.status === "CONFIRMED",
+        (o: Order) => o.status === "CONFIRMED",
       ).length;
       const shippedOrders = ordersArray.filter(
-        (o: any) => o.status === "SHIPPED",
+        (o: Order) => o.status === "SHIPPED",
       ).length;
       const deliveredOrders = ordersArray.filter(
-        (o: any) => o.status === "DELIVERED",
+        (o: Order) => o.status === "DELIVERED",
       ).length;
       const lowStockProducts = productsArray.filter(
-        (p: any) => (p.stock || 0) < 5,
+        (p: Product) => (p.stock || 0) < 5,
       ).length;
       const totalRevenue = ordersArray
-        .filter((o: any) => o.status !== "CANCELLED")
-        .reduce((acc: number, o: any) => acc + (o.total || 0), 0);
+        .filter((o: Order) => o.status !== "CANCELLED")
+        .reduce((acc: number, o: Order) => acc + (o.total || 0), 0);
 
       setStats({
         totalOrders: ordersArray.length,
@@ -350,7 +365,7 @@ export default function AdminDashboard() {
                             {order.customerName}
                           </span>
                           <span className="text-xs text-gray-400">
-                            {new Date(order.createdAt).toLocaleDateString()}
+                            {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}
                           </span>
                         </div>
                       </td>

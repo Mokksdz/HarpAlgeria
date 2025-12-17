@@ -645,7 +645,7 @@ export default function AdminOrdersPage() {
                               Articles ({order.items?.length || 0})
                             </h4>
                             <div className="space-y-3">
-                              {order.items?.map((item: any) => (
+                              {order.items?.map((item: OrderItem) => (
                                 <div
                                   key={item.id}
                                   className="flex justify-between text-sm group"
