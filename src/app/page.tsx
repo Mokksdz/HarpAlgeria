@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { HomeClient } from "@/components/home/HomeClient";
 
-// Server Component - Data fetching at build/request time for better SEO and performance
+// Force dynamic rendering - don't try to access DB at build time
+export const dynamic = "force-dynamic";
+
+// Server Component - Data fetching at request time for better SEO and performance
 export default async function Home() {
   // Fetch products server-side
   const products = await prisma.product.findMany({

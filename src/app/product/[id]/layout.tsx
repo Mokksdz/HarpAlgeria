@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 
+// Force dynamic rendering - don't try to access DB at build time
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ id: string }>;
   children: React.ReactNode;
