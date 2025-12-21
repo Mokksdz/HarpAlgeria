@@ -6,6 +6,12 @@ import bcrypt from "bcryptjs";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
 
+// DEV fallback (local only) to avoid being locked out when env vars are missing
+const DEV_ADMIN_EMAIL = "admin@harp.dz";
+const DEV_ADMIN_PASSWORD = "harp2025";
+const DEV_ADMIN_PASSWORD_HASH =
+  "$2b$10$phx7m4LDHg7uxTRSEV25ruooN/m5WI2m7CMRNwlwO2vCeDDI7X6mC";
+
 // Validate required environment variables at startup
 if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH) {
   console.warn(
@@ -27,23 +33,38 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        const email = credentials.email.trim().toLowerCase();
+        const password = credentials.password;
+
+        const hasEnvAdminCreds = !!(ADMIN_EMAIL && ADMIN_PASSWORD_HASH);
+        const canUseDevFallback = process.env.NODE_ENV !== "production";
+
+        const adminEmail = (ADMIN_EMAIL || DEV_ADMIN_EMAIL).trim().toLowerCase();
+        const adminPasswordHash = hasEnvAdminCreds
+          ? (ADMIN_PASSWORD_HASH as string)
+          : canUseDevFallback
+            ? DEV_ADMIN_PASSWORD_HASH
+            : undefined;
+
         // Check if admin credentials are configured
-        if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH) {
+        if (!adminPasswordHash) {
           console.error("Admin credentials not configured in environment");
           return null;
         }
 
         // Check admin credentials
-        const isValidEmail = credentials.email === ADMIN_EMAIL;
-        const isValidPassword = await bcrypt.compare(
-          credentials.password,
-          ADMIN_PASSWORD_HASH,
-        );
+        const isValidEmail = email === adminEmail;
+
+        const isValidPassword = hasEnvAdminCreds
+          ? await bcrypt.compare(password, adminPasswordHash)
+          : canUseDevFallback
+            ? password === DEV_ADMIN_PASSWORD
+            : await bcrypt.compare(password, adminPasswordHash);
 
         if (isValidEmail && isValidPassword) {
           return {
             id: "admin-1",
-            email: credentials.email,
+            email: email,
             name: "Admin Harp",
             role: "admin",
           };
@@ -85,8 +106,8 @@ export const authOptions: NextAuthOptions = {
     maxAge: 24 * 60 * 60, // 24 hours
   },
   pages: {
-    signIn: "/auth/magic-link-request", // Default sign in page for users
-    // Admin login still accessible at /admin/login via custom page logic
+    // Force NextAuth to send unauthorized flows (ex: /admin) to the admin login screen
+    signIn: "/admin/login",
   },
   callbacks: {
     async jwt({ token, user }) {
