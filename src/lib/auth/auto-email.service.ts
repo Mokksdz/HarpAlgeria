@@ -4,9 +4,15 @@ import crypto from "crypto";
 import { sendMagicLinkEmail } from "@/lib/email/magic-link";
 import { User } from "@prisma/client";
 
-const MAGIC_LINK_SECRET = process.env.MAGIC_LINK_JWT_SECRET;
-if (!MAGIC_LINK_SECRET && process.env.NODE_ENV === "production") {
-  throw new Error("FATAL: MAGIC_LINK_JWT_SECRET must be set in production");
+function getMagicLinkSecret(): string {
+  const secret = process.env.MAGIC_LINK_JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("FATAL: MAGIC_LINK_JWT_SECRET must be set in production");
+    }
+    return "dev-only-insecure-secret";
+  }
+  return secret;
 }
 const MAGIC_LINK_EXP_MINUTES = parseInt(process.env.MAGIC_LINK_EXP_MIN || "15");
 const NEXTAUTH_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
@@ -61,7 +67,7 @@ export async function issueMagicLink(
   });
 
   // 2. Generate JWT
-  const secret = MAGIC_LINK_SECRET || "dev-only-insecure-secret";
+  const secret = getMagicLinkSecret();
   const token = jwt.sign({ email, reference, guestKey }, secret, {
     expiresIn: `${MAGIC_LINK_EXP_MINUTES}m`,
   });
@@ -100,7 +106,7 @@ export async function issueMagicLink(
 export async function verifyMagicLink(token: string) {
   try {
     // 1. Verify JWT signature
-    const secret = MAGIC_LINK_SECRET || "dev-only-insecure-secret";
+    const secret = getMagicLinkSecret();
     const payload = jwt.verify(token, secret) as { email: string; guestKey?: string };
     const { email, guestKey } = payload;
 
