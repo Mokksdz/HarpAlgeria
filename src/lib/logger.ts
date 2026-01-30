@@ -1,24 +1,43 @@
 /**
- * Production-safe logger
- * Logs are suppressed in production unless explicitly enabled
+ * Structured logging module.
+ * Outputs JSON in production for log aggregation.
+ * Outputs human-readable format in development.
  */
 
 const isDev = process.env.NODE_ENV === "development";
+const isProd = process.env.NODE_ENV === "production";
 const isDebugEnabled = process.env.DEBUG === "true";
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
-interface _LoggerOptions {
-  prefix?: string;
-  forceLog?: boolean;
-}
-
 function formatMessage(
   level: LogLevel,
   prefix: string,
-  _args: unknown[],
+  args: unknown[],
 ): string {
   const timestamp = new Date().toISOString();
+
+  if (isProd) {
+    // Structured JSON output for production log aggregation
+    const entry: Record<string, unknown> = {
+      timestamp,
+      level,
+      context: prefix,
+      message: args.length > 0 && typeof args[0] === "string" ? args[0] : undefined,
+    };
+    // Attach error details if present
+    const err = args.find((a) => a instanceof Error) as Error | undefined;
+    if (err) {
+      entry.error = { name: err.name, message: err.message };
+    }
+    // Attach extra data
+    const data = args.find((a) => typeof a === "object" && a !== null && !(a instanceof Error));
+    if (data) {
+      entry.data = data;
+    }
+    return JSON.stringify(entry);
+  }
+
   const prefixStr = prefix ? `[${prefix}]` : "";
   return `${timestamp} ${level.toUpperCase()} ${prefixStr}`;
 }
@@ -38,22 +57,26 @@ export function createLogger(namespace: string) {
   return {
     debug: (...args: unknown[]) => {
       if (shouldLog("debug")) {
-        console.debug(formatMessage("debug", namespace, args), ...args);
+        if (isProd) { console.debug(formatMessage("debug", namespace, args)); }
+        else { console.debug(formatMessage("debug", namespace, args), ...args); }
       }
     },
     info: (...args: unknown[]) => {
       if (shouldLog("info")) {
-        console.info(formatMessage("info", namespace, args), ...args);
+        if (isProd) { console.info(formatMessage("info", namespace, args)); }
+        else { console.info(formatMessage("info", namespace, args), ...args); }
       }
     },
     warn: (...args: unknown[]) => {
       if (shouldLog("warn")) {
-        console.warn(formatMessage("warn", namespace, args), ...args);
+        if (isProd) { console.warn(formatMessage("warn", namespace, args)); }
+        else { console.warn(formatMessage("warn", namespace, args), ...args); }
       }
     },
     error: (...args: unknown[]) => {
       if (shouldLog("error", true)) {
-        console.error(formatMessage("error", namespace, args), ...args);
+        if (isProd) { console.error(formatMessage("error", namespace, args)); }
+        else { console.error(formatMessage("error", namespace, args), ...args); }
       }
     },
   };

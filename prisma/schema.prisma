@@ -73,6 +73,7 @@ model Collection {
   updatedAt     DateTime    @updatedAt
 
   @@index([slug])
+  @@index([createdAt])
 }
 
 model Order {
@@ -103,6 +104,7 @@ model Order {
   @@index([status])
   @@index([createdAt])
   @@index([orderNumber])
+  @@index([userId])
 }
 
 model OrderItem {
@@ -191,6 +193,7 @@ model Purchase {
   @@index([status])
   @@index([orderDate])
   @@index([purchaseNumber])
+  @@index([receivedDate])
 }
 
 model PurchaseItem {
@@ -314,6 +317,8 @@ model InventoryItem {
   @@index([type])
   @@index([supplierId])
   @@index([isActive])
+  @@index([location])
+  @@index([lastReceivedAt])
 }
 
 model InventoryTransaction {

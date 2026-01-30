@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 type Language = "fr" | "ar";
 
@@ -18,23 +18,42 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 import { translations } from "@/lib/translations";
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("fr");
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("harp-lang") as Language | null;
+      if (saved === "fr" || saved === "ar") return saved;
+      const browserLang = navigator.language || "";
+      if (browserLang.startsWith("ar")) return "ar";
+    }
+    return "fr";
+  });
+
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("harp-lang", lang);
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = language;
     document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
   }, [language]);
 
-  const t = (key: string) => {
+  const t = useCallback((key: string): string => {
     const keys = key.split(".");
-    let value: any = translations[language];
+    let value: unknown = translations[language];
 
     for (const k of keys) {
-      value = value?.[k as keyof typeof value];
+      if (value && typeof value === "object") {
+        value = (value as Record<string, unknown>)[k];
+      } else {
+        return key;
+      }
     }
 
-    return (value as string) || (translations[language] as any)[key] || key;
-  };
+    return typeof value === "string" ? value : key;
+  }, [language]);
 
   return (
     <LanguageContext.Provider

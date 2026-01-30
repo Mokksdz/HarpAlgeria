@@ -7,6 +7,7 @@ import { ProductGridSkeleton } from "@/components/Skeleton";
 import { useLanguage } from "@/components/LanguageProvider";
 import { ChevronDown, Package, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/components/Analytics";
 
 type SortOption = "newest" | "price-asc" | "price-desc" | "name";
 
@@ -37,6 +38,22 @@ export default function ShopPage() {
           : collectionsData.items || collectionsData;
         setProducts(productsList);
         setCollections(collectionsList);
+
+        // Track view_item_list for GA4 & FB
+        if (productsList.length > 0) {
+          trackEvent.ga.viewItemList(
+            "Shop - All Products",
+            productsList.slice(0, 20).map((p: { id: string; nameFr: string; price: number }) => ({
+              item_id: p.id,
+              item_name: p.nameFr,
+              price: Number(p.price),
+            })),
+          );
+          trackEvent.fb.viewCategory(
+            "Shop",
+            productsList.slice(0, 20).map((p: { id: string }) => p.id),
+          );
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {

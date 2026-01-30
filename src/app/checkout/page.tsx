@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useCart } from "@/components/CartProvider";
-import { useLanguage } from "@/components/LanguageProvider";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,13 +24,13 @@ import {
   Loader2,
   Lock,
 } from "lucide-react";
+import { trackEvent } from "@/components/Analytics";
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
-  useLanguage();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [_currentStep, setCurrentStep] = useState(1);
+  const [, setCurrentStep] = useState(1);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -54,6 +53,23 @@ export default function CheckoutPage() {
   const [selectedStopDesk, setSelectedStopDesk] = useState<string>("");
   const [loadingStopDesks, setLoadingStopDesks] = useState(false);
 
+  // Track begin_checkout on page load
+  useEffect(() => {
+    if (items.length > 0) {
+      trackEvent.ga.beginCheckout(
+        total,
+        items.map((item) => ({
+          item_id: item.productId,
+          item_name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      );
+      trackEvent.fb.initiateCheckout(total, items.length);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Fire only once on mount
+
   // Fetch communes when wilaya changes
   useEffect(() => {
     if (formData.wilaya) {
@@ -73,7 +89,7 @@ export default function CheckoutPage() {
         .then((data) => {
           if (data.data && Array.isArray(data.data)) {
             setCommunes(
-              data.data.map((c: any) => ({
+              data.data.map((c: { id: number; name: string }) => ({
                 id: c.id,
                 name: c.name,
               })),
@@ -105,7 +121,7 @@ export default function CheckoutPage() {
           .then((data) => {
             if (data.data && Array.isArray(data.data)) {
               setStopDeskCenters(
-                data.data.map((c: any) => ({
+                data.data.map((c: { center_id: number; name: string; address: string; commune_name: string }) => ({
                   id: c.center_id,
                   name: c.name,
                   address: c.address,
@@ -128,8 +144,8 @@ export default function CheckoutPage() {
           .then((data) => {
             if (data.data && Array.isArray(data.data)) {
               setStopDeskCenters(
-                data.data.map((c: any) => ({
-                  id: c.wilayaId * 100 + data.data.indexOf(c),
+                data.data.map((c: { wilayaId: number; centerName: string; address: string; wilayaName: string }, idx: number) => ({
+                  id: c.wilayaId * 100 + idx,
                   name: c.centerName,
                   address: c.address,
                   commune: c.wilayaName,
@@ -202,6 +218,11 @@ export default function CheckoutPage() {
           price: item.price,
         })),
       };
+
+      // Track shipping & payment info
+      trackEvent.ga.addShippingInfo(total + shippingPrice, `${deliveryProvider}-${deliveryType}`);
+      trackEvent.ga.addPaymentInfo(total + shippingPrice, "COD");
+      trackEvent.fb.addPaymentInfo(total + shippingPrice);
 
       const response = await fetch("/api/orders", {
         method: "POST",

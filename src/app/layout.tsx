@@ -8,6 +8,7 @@ import { SessionProvider } from "@/components/SessionProvider";
 import { Analytics } from "@/components/Analytics";
 import { OrganizationJsonLd } from "@/components/JsonLd";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -75,6 +76,7 @@ export default function RootLayout({
       <body className="antialiased font-sans">
         <Analytics />
         <OrganizationJsonLd />
+        <ServiceWorkerRegister />
         <SessionProvider>
           <ErrorBoundary>
             <LanguageProvider>

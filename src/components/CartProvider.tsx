@@ -5,6 +5,8 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useMemo,
+  useCallback,
   useSyncExternalStore,
 } from "react";
 
@@ -41,32 +43,64 @@ function useIsMounted() {
   );
 }
 
+const CART_STORAGE_KEY = "harp-cart";
+const CART_VERSION = 1;
+const CART_EXPIRY_DAYS = 30;
+
+interface StoredCart {
+  version: number;
+  updatedAt: number;
+  items: CartItem[];
+}
+
+function loadCart(): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const stored: StoredCart = JSON.parse(raw);
+    // Version mismatch → clear
+    if (stored.version !== CART_VERSION) {
+      localStorage.removeItem(CART_STORAGE_KEY);
+      return [];
+    }
+    // Expiration check (30 days)
+    const ageMs = Date.now() - stored.updatedAt;
+    if (ageMs > CART_EXPIRY_DAYS * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(CART_STORAGE_KEY);
+      return [];
+    }
+    return Array.isArray(stored.items) ? stored.items : [];
+  } catch {
+    localStorage.removeItem(CART_STORAGE_KEY);
+    return [];
+  }
+}
+
+function saveCart(items: CartItem[]): void {
+  if (typeof window === "undefined") return;
+  const stored: StoredCart = {
+    version: CART_VERSION,
+    updatedAt: Date.now(),
+    items,
+  };
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(stored));
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const isMounted = useIsMounted();
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window !== "undefined") {
-      const savedCart = localStorage.getItem("harp-cart");
-      if (savedCart) {
-        try {
-          return JSON.parse(savedCart);
-        } catch {
-          return [];
-        }
-      }
-    }
-    return [];
-  });
+  const [items, setItems] = useState<CartItem[]>(loadCart);
   const [isOpen, setIsOpen] = useState(false);
 
   // Keep isMounted for other uses
   void isMounted;
 
-  // Save cart to local storage
+  // Save cart to local storage with versioning
   useEffect(() => {
-    localStorage.setItem("harp-cart", JSON.stringify(items));
+    saveCart(items);
   }, [items]);
 
-  const addItem = (newItem: Omit<CartItem, "id">) => {
+  const addItem = useCallback((newItem: Omit<CartItem, "id">) => {
     const id = `${newItem.productId}-${newItem.size}-${newItem.color}`;
     setItems((prev) => {
       const existing = prev.find((item) => item.id === id);
@@ -80,26 +114,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return [...prev, { ...newItem, id }];
     });
     setIsOpen(true);
-  };
+  }, []);
 
-  const removeItem = (id: string) => {
+  const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
-  };
+  }, []);
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = useCallback((id: string, quantity: number) => {
     if (quantity < 1) return;
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, quantity } : item)),
     );
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
-  };
+  }, []);
 
-  const total = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
+  const total = useMemo(
+    () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [items],
   );
 
   return (

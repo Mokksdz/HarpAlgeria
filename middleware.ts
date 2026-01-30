@@ -14,7 +14,7 @@ export default withAuth(
                 process.env.NEXT_PUBLIC_APP_URL,
                 "http://localhost:3000",
                 "https://harp-web.com",
-            ].filter(Boolean);
+            ].filter(Boolean).map((o) => (o as string).trim());
             
             if (origin && allowedOrigins.includes(origin)) {
                 response.headers.set("Access-Control-Allow-Origin", origin);
@@ -48,22 +48,22 @@ export default withAuth(
                 
                 // Protect accounting API routes (admin only)
                 if (path.startsWith("/api/accounting") && method !== "GET") {
-                    return !!token && (token as any).role === "admin";
+                    return !!token && (token as { role?: string }).role === "admin";
                 }
                 
                 // Protect v3 admin routes
                 if (path.startsWith("/api/v3/admin")) {
-                    return !!token && (token as any).role === "admin";
+                    return !!token && (token as { role?: string }).role === "admin";
                 }
                 
                 // Protect v3 compta routes (admin only for writes)
                 if (path.startsWith("/api/v3/compta") && method !== "GET") {
-                    return !!token && (token as any).role === "admin";
+                    return !!token && (token as { role?: string }).role === "admin";
                 }
                 
                 // Protect site settings (admin only)
                 if (path.startsWith("/api/v3/site") && method !== "GET") {
-                    return !!token && (token as any).role === "admin";
+                    return !!token && (token as { role?: string }).role === "admin";
                 }
                 
                 // Protect products/collections write operations

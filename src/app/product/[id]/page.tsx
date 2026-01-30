@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { getWhatsAppLink } from "@/lib/config";
 import { cn } from "@/lib/utils";
+import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/JsonLd";
 
 export default function ProductPage({
   params,
@@ -37,7 +38,21 @@ export default function ProductPage({
   const { t, language } = useLanguage();
   const { addItem } = useCart();
 
-  const [product, setProduct] = useState<any>(null);
+  interface ProductData {
+    id: string;
+    nameFr: string;
+    nameAr: string;
+    descriptionFr: string;
+    descriptionAr: string;
+    price: number;
+    images: string[];
+    sizes: string[];
+    colors: string[];
+    collectionId?: string | null;
+    showSizeGuide?: boolean;
+  }
+
+  const [product, setProduct] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
@@ -48,7 +63,9 @@ export default function ProductPage({
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
   const [isZoomed, setIsZoomed] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
-  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<
+    { id: string; nameFr: string; price: number; images: string[] }[]
+  >([]);
 
   // Customer reviews (static for now, can be from DB later)
   const reviews = [
@@ -85,10 +102,16 @@ export default function ProductPage({
         if (!res.ok) throw new Error("Product not found");
         const data = await res.json();
 
-        // Parse JSON fields
-        data.images = JSON.parse(data.images);
-        data.sizes = JSON.parse(data.sizes);
-        data.colors = JSON.parse(data.colors);
+        // Parse JSON fields safely
+        try {
+          data.images = typeof data.images === "string" ? JSON.parse(data.images) : data.images || [];
+          data.sizes = typeof data.sizes === "string" ? JSON.parse(data.sizes) : data.sizes || [];
+          data.colors = typeof data.colors === "string" ? JSON.parse(data.colors) : data.colors || [];
+        } catch {
+          data.images = [];
+          data.sizes = [];
+          data.colors = [];
+        }
 
         setProduct(data);
         // Set default selections
@@ -110,13 +133,17 @@ export default function ProductPage({
       fetch(`/api/products?collection=${product.collectionId}&limit=4`)
         .then((res) => res.json())
         .then((data) => {
-          const filtered = data
-            .filter((p: any) => p.id !== id)
+          const items = Array.isArray(data) ? data : data.items || [];
+          const filtered = items
+            .filter((p: Record<string, unknown>) => p.id !== id)
             .slice(0, 3)
-            .map((p: any) => ({
-              ...p,
-              images: JSON.parse(p.images),
-            }));
+            .map((p: Record<string, unknown>) => {
+              let images: string[] = [];
+              try {
+                images = typeof p.images === "string" ? JSON.parse(p.images) : (p.images as string[]) || [];
+              } catch { images = []; }
+              return { ...p, images };
+            });
           setRelatedProducts(filtered);
         })
         .catch(() => setRelatedProducts([]));
@@ -125,13 +152,17 @@ export default function ProductPage({
       fetch("/api/products?limit=4")
         .then((res) => res.json())
         .then((data) => {
-          const filtered = data
-            .filter((p: any) => p.id !== id)
+          const items = Array.isArray(data) ? data : data.items || [];
+          const filtered = items
+            .filter((p: Record<string, unknown>) => p.id !== id)
             .slice(0, 3)
-            .map((p: any) => ({
-              ...p,
-              images: JSON.parse(p.images),
-            }));
+            .map((p: Record<string, unknown>) => {
+              let images: string[] = [];
+              try {
+                images = typeof p.images === "string" ? JSON.parse(p.images) : (p.images as string[]) || [];
+              } catch { images = []; }
+              return { ...p, images };
+            });
           setRelatedProducts(filtered);
         })
         .catch(() => setRelatedProducts([]));
@@ -237,6 +268,29 @@ export default function ProductPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-harp-beige/20 to-white">
+      {/* Structured Data */}
+      <ProductJsonLd
+        product={{
+          name,
+          description: description || "",
+          price: product.price,
+          image: product.images[0] || "",
+          images: product.images,
+          sku: product.id,
+          slug: product.id,
+          colors: product.colors,
+          sizes: product.sizes,
+        }}
+        reviews={reviews.map((r) => ({ rating: r.rating, author: r.author, text: r.text }))}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Accueil", url: "https://harp-dz.com/" },
+          { name: "Boutique", url: "https://harp-dz.com/shop" },
+          { name, url: `https://harp-dz.com/product/${product.id}` },
+        ]}
+      />
+
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-100">
         <div className="container mx-auto px-4 py-3">
@@ -268,8 +322,12 @@ export default function ProductPage({
           <div className="space-y-4">
             {/* Main Image */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-label={isZoomed ? "Dézoomer l'image" : "Zoomer l'image"}
               className="relative aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden group cursor-zoom-in"
               onClick={() => setIsZoomed(!isZoomed)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsZoomed(!isZoomed); } }}
             >
               <Image
                 src={
@@ -291,7 +349,7 @@ export default function ProductPage({
               />
 
               {/* Zoom indicator */}
-              <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div aria-hidden="true" className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <ZoomIn size={20} className="text-gray-600" />
               </div>
 
@@ -322,7 +380,7 @@ export default function ProductPage({
                 >
                   <Image
                     src={imageError[idx] ? getFallbackImage(name) : img}
-                    alt={`Vue ${idx + 1}`}
+                    alt={`${name} - Vue ${idx + 1} sur ${product.images.length}`}
                     fill
                     sizes="(max-width: 768px) 25vw, 12vw"
                     className="object-cover"
@@ -350,6 +408,7 @@ export default function ProductPage({
               </div>
               <div className="flex gap-2">
                 <button
+                  aria-label={isWishlisted ? "Retirer de la liste de souhaits" : "Ajouter à la liste de souhaits"}
                   onClick={() => setIsWishlisted(!isWishlisted)}
                   className={cn(
                     "p-3 rounded-full transition-all",
@@ -363,7 +422,7 @@ export default function ProductPage({
                     className={isWishlisted ? "fill-current" : ""}
                   />
                 </button>
-                <button className="p-3 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200 transition-colors">
+                <button aria-label="Partager ce produit" className="p-3 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200 transition-colors">
                   <Share2 size={20} />
                 </button>
               </div>
@@ -465,15 +524,17 @@ export default function ProductPage({
               </label>
               <div className="inline-flex items-center bg-gray-100 rounded-xl">
                 <button
+                  aria-label="Diminuer la quantité"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="p-3 hover:bg-gray-200 rounded-l-xl transition-colors"
                 >
                   <Minus size={18} />
                 </button>
-                <span className="px-6 py-3 font-medium text-lg min-w-[60px] text-center">
+                <span aria-live="polite" className="px-6 py-3 font-medium text-lg min-w-[60px] text-center">
                   {quantity}
                 </span>
                 <button
+                  aria-label="Augmenter la quantité"
                   onClick={() => setQuantity(quantity + 1)}
                   className="p-3 hover:bg-gray-200 rounded-r-xl transition-colors"
                 >
@@ -681,7 +742,14 @@ export default function ProductPage({
 
       {/* Size Guide Modal */}
       {showSizeGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Guide des tailles"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSizeGuide(false); }}
+          onKeyDown={(e) => { if (e.key === "Escape") setShowSizeGuide(false); }}
+        >
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <div className="flex items-center gap-3">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateProduct, sanitizeString } from "@/lib/validations";
 import { parsePagination, paginatedResponse } from "@/lib/pagination";
+import { withRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 // Generate URL-friendly slug from name
 function generateSlug(name: string): string {
@@ -16,6 +17,10 @@ function generateSlug(name: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limit public reads
+  const rateLimited = withRateLimit(request, RATE_LIMITS.API, "products:get");
+  if (rateLimited) return rateLimited;
+
   try {
     const { searchParams } = new URL(request.url);
     const { page, pageSize, skip } = parsePagination(searchParams);
@@ -25,7 +30,7 @@ export async function GET(request: NextRequest) {
     const isActive = searchParams.get("isActive");
     const search = searchParams.get("search");
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (collectionId) {
       where.collectionId = collectionId;
@@ -43,10 +48,13 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // Only include collection data when filtering or explicitly requested
+    const includeCollection = !!collectionId || searchParams.get("include") === "collection";
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        include: { collection: true },
+        ...(includeCollection ? { include: { collection: true } } : {}),
         orderBy: { createdAt: "desc" },
         skip,
         take: pageSize,

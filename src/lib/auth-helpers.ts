@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { apiLogger } from "@/lib/logger";
 
 /**
  * Custom error class for auth/app errors
@@ -67,10 +68,10 @@ export async function requireAdmin(
     throw new AuthError("Non authentifié", 401, "NOT_AUTHENTICATED");
   }
 
-  const role = (session.user as any)?.role ?? (session as any)?.role;
+  const user = session.user as SessionUser | undefined;
+  const role = user?.role;
 
   if (role !== "admin") {
-    // User role is not admin
     throw new AuthError(
       "Accès refusé : privilèges insuffisants",
       403,
@@ -78,13 +79,12 @@ export async function requireAdmin(
     );
   }
 
-  // Return typed session
   return {
     user: {
-      id: (session.user as any)?.id,
+      id: user?.id,
       email: session.user?.email,
       name: session.user?.name,
-      role: role,
+      role,
     },
   };
 }
@@ -93,9 +93,9 @@ export async function requireAdmin(
  * Wrapper for API handlers with admin auth
  */
 export function withAdmin(
-  handler: (req: NextRequest, context: any) => Promise<NextResponse>,
+  handler: (req: NextRequest, context: Record<string, unknown>) => Promise<NextResponse>,
 ) {
-  return async (req: NextRequest, context: any) => {
+  return async (req: NextRequest, context: Record<string, unknown>) => {
     try {
       await requireAdmin(req);
       return await handler(req, context);
@@ -112,7 +112,7 @@ export function withAdmin(
           { status: error.status },
         );
       }
-      console.error("Unexpected error:", error);
+      apiLogger.error("Unexpected error:", error);
       return NextResponse.json(
         {
           success: false,

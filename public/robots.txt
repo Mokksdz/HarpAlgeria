@@ -1,0 +1,14 @@
+# Harp E-Commerce - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /auth/
+
+# Sitemap
+Sitemap: https://harp-dz.com/sitemap.xml
+
+# Crawl-delay (optional, respected by some bots)
+Crawl-delay: 1

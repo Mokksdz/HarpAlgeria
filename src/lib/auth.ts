@@ -6,16 +6,15 @@ import bcrypt from "bcryptjs";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
 
-// DEV fallback (local only) to avoid being locked out when env vars are missing
-const DEV_ADMIN_EMAIL = "admin@harp.dz";
-const DEV_ADMIN_PASSWORD = "harp2025";
-const DEV_ADMIN_PASSWORD_HASH =
-  "$2b$10$phx7m4LDHg7uxTRSEV25ruooN/m5WI2m7CMRNwlwO2vCeDDI7X6mC";
-
 // Validate required environment variables at startup
 if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "FATAL: ADMIN_EMAIL and ADMIN_PASSWORD_HASH must be set in production",
+    );
+  }
   console.warn(
-    "⚠️ ADMIN_EMAIL and ADMIN_PASSWORD_HASH must be set in environment variables",
+    "ADMIN_EMAIL and ADMIN_PASSWORD_HASH not set — admin login disabled",
   );
 }
 
@@ -36,30 +35,17 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.trim().toLowerCase();
         const password = credentials.password;
 
-        const hasEnvAdminCreds = !!(ADMIN_EMAIL && ADMIN_PASSWORD_HASH);
-        const canUseDevFallback = process.env.NODE_ENV !== "production";
-
-        const adminEmail = (ADMIN_EMAIL || DEV_ADMIN_EMAIL).trim().toLowerCase();
-        const adminPasswordHash = hasEnvAdminCreds
-          ? (ADMIN_PASSWORD_HASH as string)
-          : canUseDevFallback
-            ? DEV_ADMIN_PASSWORD_HASH
-            : undefined;
-
-        // Check if admin credentials are configured
-        if (!adminPasswordHash) {
+        // Admin login requires env vars to be set
+        if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH) {
           console.error("Admin credentials not configured in environment");
           return null;
         }
 
+        const adminEmail = ADMIN_EMAIL.trim().toLowerCase();
+
         // Check admin credentials
         const isValidEmail = email === adminEmail;
-
-        const isValidPassword = hasEnvAdminCreds
-          ? await bcrypt.compare(password, adminPasswordHash)
-          : canUseDevFallback
-            ? password === DEV_ADMIN_PASSWORD
-            : await bcrypt.compare(password, adminPasswordHash);
+        const isValidPassword = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
 
         if (isValidEmail && isValidPassword) {
           return {
@@ -112,15 +98,17 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        token.id = (user as any).id;
+        token.role = (user as { role?: string }).role;
+        token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).role = token.role;
-        (session.user as any).id = token.id;
+        (session.user as { role?: string; id?: string }).role =
+          token.role as string;
+        (session.user as { role?: string; id?: string }).id =
+          token.id as string;
       }
       return session;
     },

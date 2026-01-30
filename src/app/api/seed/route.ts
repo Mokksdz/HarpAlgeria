@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 // Generate URL-friendly slug from name
 function _generateSlug(name: string): string {
@@ -13,7 +15,25 @@ function _generateSlug(name: string): string {
     .trim();
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Block in production
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { error: "Seed endpoint is disabled in production" },
+      { status: 403 },
+    );
+  }
+
+  // Require admin authentication
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  if (!session || role !== "admin") {
+    return NextResponse.json(
+      { error: "Admin authentication required" },
+      { status: 401 },
+    );
+  }
+
   try {
     // Clear existing products to ensure clean state for the new catalog
     await prisma.orderItem.deleteMany({}); // Delete order items first due to foreign key constraints
