@@ -274,7 +274,7 @@ export function mapZRStatusToHarpStatus(zrStatus: string): string {
   return statusMap[zrStatus] || "PENDING";
 }
 
-// Liste des 58 wilayas d'Algérie
+// Liste des 69 wilayas d'Algérie
 export const WILAYAS = [
   { id: "1", name: "Adrar", name_ar: "أدرار" },
   { id: "2", name: "Chlef", name_ar: "الشلف" },
@@ -334,6 +334,17 @@ export const WILAYAS = [
   { id: "56", name: "Djanet", name_ar: "جانت" },
   { id: "57", name: "In Salah", name_ar: "عين صالح" },
   { id: "58", name: "In Guezzam", name_ar: "عين قزام" },
+  { id: "59", name: "Aflou", name_ar: "أفلو" },
+  { id: "60", name: "Barika", name_ar: "بريكة" },
+  { id: "61", name: "Ksar Chellala", name_ar: "قصر الشلالة" },
+  { id: "62", name: "Messaad", name_ar: "مسعد" },
+  { id: "63", name: "Aïn Oussara", name_ar: "عين وسارة" },
+  { id: "64", name: "Bou Saâda", name_ar: "بوسعادة" },
+  { id: "65", name: "El Abiodh Sidi Cheikh", name_ar: "الأبيض سيدي الشيخ" },
+  { id: "66", name: "El Kantara", name_ar: "القنطرة" },
+  { id: "67", name: "Bir El Ater", name_ar: "بئر العاتر" },
+  { id: "68", name: "Ksar El Boukhari", name_ar: "قصر البخاري" },
+  { id: "69", name: "El Aricha", name_ar: "العريشة" },
 ];
 
 export default ZRExpressClient;

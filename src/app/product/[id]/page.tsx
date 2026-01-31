@@ -623,7 +623,7 @@ export default function ProductPage({
                 <Truck size={20} className="text-harp-brown mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
-                    Livraison 58 wilayas
+                    Livraison 69 wilayas
                   </p>
                   <p className="text-xs text-gray-500">
                     24-72h via Yalidine/ZR

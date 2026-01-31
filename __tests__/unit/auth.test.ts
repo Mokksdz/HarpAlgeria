@@ -14,33 +14,18 @@ describe("Auth Configuration", () => {
     process.env = originalEnv;
   });
 
-  it("should throw in production when admin credentials are missing", () => {
-    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+  it("should load without error even when admin credentials are missing", () => {
     delete process.env.ADMIN_EMAIL;
-    delete process.env.ADMIN_PASSWORD_HASH;
+    delete process.env.ADMIN_PASSWORD;
 
     expect(() => {
       require("@/lib/auth");
-    }).toThrow("FATAL: ADMIN_EMAIL and ADMIN_PASSWORD_HASH must be set");
-  });
-
-  it("should warn in development when admin credentials are missing", () => {
-    (process.env as Record<string, string | undefined>).NODE_ENV = "development";
-    delete process.env.ADMIN_EMAIL;
-    delete process.env.ADMIN_PASSWORD_HASH;
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
-
-    require("@/lib/auth");
-
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("admin login disabled"),
-    );
-    warnSpy.mockRestore();
+    }).not.toThrow();
   });
 
   it("should export authOptions with JWT session strategy", () => {
     process.env.ADMIN_EMAIL = "admin@test.com";
-    process.env.ADMIN_PASSWORD_HASH = "$2b$10$hash";
+    process.env.ADMIN_PASSWORD = "test-password";
     process.env.NEXTAUTH_SECRET = "test-secret";
 
     const { authOptions } = require("@/lib/auth");

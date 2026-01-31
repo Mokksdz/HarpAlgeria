@@ -363,6 +363,72 @@ export const deliveryRates: DeliveryRate[] = [
     zrExpress: { home: 1000, desk: 0 },
     yalidine: { home: 1050, desk: 1000 },
   },
+  {
+    wilayaCode: 59,
+    wilayaName: "Aflou",
+    zrExpress: { home: 950, desk: 620 },
+    yalidine: { home: 1050, desk: 1000 },
+  },
+  {
+    wilayaCode: 60,
+    wilayaName: "Barika",
+    zrExpress: { home: 900, desk: 520 },
+    yalidine: { home: 900, desk: 850 },
+  },
+  {
+    wilayaCode: 61,
+    wilayaName: "Ksar Chellala",
+    zrExpress: { home: 850, desk: 520 },
+    yalidine: { home: 900, desk: 850 },
+  },
+  {
+    wilayaCode: 62,
+    wilayaName: "Messaad",
+    zrExpress: { home: 950, desk: 570 },
+    yalidine: { home: 1050, desk: 1000 },
+  },
+  {
+    wilayaCode: 63,
+    wilayaName: "Ain Oussara",
+    zrExpress: { home: 950, desk: 570 },
+    yalidine: { home: 1050, desk: 1000 },
+  },
+  {
+    wilayaCode: 64,
+    wilayaName: "Bou Saada",
+    zrExpress: { home: 850, desk: 570 },
+    yalidine: { home: 900, desk: 850 },
+  },
+  {
+    wilayaCode: 65,
+    wilayaName: "El Abiodh Sidi Cheikh",
+    zrExpress: { home: 1100, desk: 670 },
+    yalidine: { home: 1850, desk: 1750 },
+  },
+  {
+    wilayaCode: 66,
+    wilayaName: "El Kantara",
+    zrExpress: { home: 950, desk: 620 },
+    yalidine: { home: 1050, desk: 1000 },
+  },
+  {
+    wilayaCode: 67,
+    wilayaName: "Bir El Ater",
+    zrExpress: { home: 900, desk: 570 },
+    yalidine: { home: 1050, desk: 1000 },
+  },
+  {
+    wilayaCode: 68,
+    wilayaName: "Ksar El Boukhari",
+    zrExpress: { home: 800, desk: 520 },
+    yalidine: { home: 900, desk: 850 },
+  },
+  {
+    wilayaCode: 69,
+    wilayaName: "El Aricha",
+    zrExpress: { home: 900, desk: 570 },
+    yalidine: { home: 900, desk: 850 },
+  },
 ];
 
 export function getDeliveryPrice(

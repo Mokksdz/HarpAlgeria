@@ -48,7 +48,7 @@ export const translations = {
     "footer.newsletter.thanks": "Merci pour votre inscription !",
     "footer.nav.title": "Navigation",
     "footer.service.title": "Service Client",
-    "footer.service.delivery": "Livraison 58 wilayas",
+    "footer.service.delivery": "Livraison 69 wilayas",
     "footer.service.payment": "Paiement à la livraison",
     "footer.service.exchange": "Échange sous 2 jours",
     "footer.service.support": "Support WhatsApp",
@@ -71,7 +71,7 @@ export const translations = {
     "home.values.quality.title": "Qualité Premium",
     "home.values.quality.desc":
       "Des tissus sélectionnés avec soin pour leur durabilité et leur confort exceptionnel.",
-    "home.values.delivery.title": "Livraison 58 Wilayas",
+    "home.values.delivery.title": "Livraison 69 Wilayas",
     "home.values.delivery.desc":
       "Une expédition rapide et sécurisée partout en Algérie, avec suivi en temps réel.",
     "home.values.service.title": "Service Client",
@@ -198,7 +198,7 @@ export const translations = {
     "product.color": "Couleur",
     "product.size": "Taille",
     "product.quantity": "Quantité",
-    "product.delivery": "Livraison 58 wilayas - Paiement à la livraison",
+    "product.delivery": "Livraison 69 wilayas - Paiement à la livraison",
     "product.guarantee": "Qualité garantie - Échange possible",
     "product.loading": "Chargement...",
     "product.notFound": "Produit non trouvé",
@@ -260,7 +260,7 @@ export const translations = {
     "footer.newsletter.thanks": "شكراً لاشتراكك !",
     "footer.nav.title": "تصفح",
     "footer.service.title": "خدمة الزبائن",
-    "footer.service.delivery": "توصيل لـ 58 ولاية",
+    "footer.service.delivery": "توصيل لـ 69 ولاية",
     "footer.service.payment": "الدفع عند الاستلام",
     "footer.service.exchange": "استبدال خلال يومين",
     "footer.service.support": "دعم عبر واتساب",
@@ -283,7 +283,7 @@ export const translations = {
     "home.values.quality.title": "جودة فاخرة",
     "home.values.quality.desc":
       "أقمشة مختارة بعناية لمتانتها وراحتها الاستثنائية.",
-    "home.values.delivery.title": "توصيل 58 ولاية",
+    "home.values.delivery.title": "توصيل 69 ولاية",
     "home.values.delivery.desc":
       "شحن سريع وآمن لجميع أنحاء الجزائر، مع تتبع فوري.",
     "home.values.service.title": "خدمة الزبائن",
@@ -404,7 +404,7 @@ export const translations = {
     "product.color": "اللون",
     "product.size": "المقاس",
     "product.quantity": "الكمية",
-    "product.delivery": "توصيل لـ 58 ولاية - الدفع عند الاستلام",
+    "product.delivery": "توصيل لـ 69 ولاية - الدفع عند الاستلام",
     "product.guarantee": "جودة مضمونة - إمكانية الاستبدال",
     "product.loading": "جاري التحميل...",
     "product.notFound": "المنتج غير موجود",

@@ -8,7 +8,7 @@ interface EnvConfig {
   NEXTAUTH_SECRET: string;
   NEXTAUTH_URL: string;
   ADMIN_EMAIL: string;
-  ADMIN_PASSWORD_HASH: string;
+  ADMIN_PASSWORD: string;
   MAGIC_LINK_JWT_SECRET: string;
   CLOUDINARY_CLOUD_NAME?: string;
   CLOUDINARY_API_KEY?: string;
@@ -24,7 +24,7 @@ const REQUIRED_IN_PRODUCTION: (keyof EnvConfig)[] = [
   "NEXTAUTH_SECRET",
   "NEXTAUTH_URL",
   "ADMIN_EMAIL",
-  "ADMIN_PASSWORD_HASH",
+  "ADMIN_PASSWORD",
   "MAGIC_LINK_JWT_SECRET",
 ];
 

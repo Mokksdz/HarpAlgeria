@@ -699,6 +699,116 @@ export const ZR_EXPRESS_STOPDESKS: ZRStopDesk[] = [
     phone: "0791.69.99.02",
     stopDeskPhone: "0663.66.64.22",
   },
+
+  // 59 - AFLOU
+  {
+    wilayaId: 59,
+    wilayaName: "Aflou",
+    centerName: "Aflou",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 60 - BARIKA
+  {
+    wilayaId: 60,
+    wilayaName: "Barika",
+    centerName: "Barika",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 61 - KSAR CHELLALA
+  {
+    wilayaId: 61,
+    wilayaName: "Ksar Chellala",
+    centerName: "Ksar Chellala",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 62 - MESSAAD
+  {
+    wilayaId: 62,
+    wilayaName: "Messaad",
+    centerName: "Messaad",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 63 - AIN OUSSARA
+  {
+    wilayaId: 63,
+    wilayaName: "Aïn Oussara",
+    centerName: "Aïn Oussara",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 64 - BOU SAADA
+  {
+    wilayaId: 64,
+    wilayaName: "Bou Saâda",
+    centerName: "Bou Saâda",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 65 - EL ABIODH SIDI CHEIKH
+  {
+    wilayaId: 65,
+    wilayaName: "El Abiodh Sidi Cheikh",
+    centerName: "El Abiodh Sidi Cheikh",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 66 - EL KANTARA
+  {
+    wilayaId: 66,
+    wilayaName: "El Kantara",
+    centerName: "El Kantara",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 67 - BIR EL ATER
+  {
+    wilayaId: 67,
+    wilayaName: "Bir El Ater",
+    centerName: "Bir El Ater",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 68 - KSAR EL BOUKHARI
+  {
+    wilayaId: 68,
+    wilayaName: "Ksar El Boukhari",
+    centerName: "Ksar El Boukhari",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
+
+  // 69 - EL ARICHA
+  {
+    wilayaId: 69,
+    wilayaName: "El Aricha",
+    centerName: "El Aricha",
+    address: "",
+    phone: "",
+    stopDeskPhone: "",
+  },
 ];
 
 // Get stop desks by wilaya ID

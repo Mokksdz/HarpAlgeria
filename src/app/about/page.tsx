@@ -249,7 +249,7 @@ export default function AboutPage() {
             {[
               {
                 icon: MapPin,
-                label: "58 Wilayas",
+                label: "69 Wilayas",
                 sub: "Couverture nationale",
               },
               { icon: Truck, label: "24h - 72h", sub: "Livraison express" },

@@ -49,7 +49,7 @@ Nous nous réservons le droit d'adapter ces conditions. Les CGV applicables sont
         {
           icon: Truck,
           title: "4. Livraison",
-          content: `Nous livrons sur les 58 wilayas via nos partenaires de confiance (Yalidine, ZR Express).
+          content: `Nous livrons sur les 69 wilayas via nos partenaires de confiance (Yalidine, ZR Express).
 
 • **Délais** : 1 à 7 jours ouvrés selon la wilaya.
 • **Tarifs** : Calculés selon la destination et le mode (domicile/stop-desk).
