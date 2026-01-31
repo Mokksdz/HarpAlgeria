@@ -1,21 +1,21 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 
 // Admin credentials from environment variables (REQUIRED)
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 // Validate required environment variables at startup
-if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH) {
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
   if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "FATAL: ADMIN_EMAIL and ADMIN_PASSWORD_HASH must be set in production",
+    console.error(
+      "WARNING: ADMIN_EMAIL and ADMIN_PASSWORD must be set in production",
+    );
+  } else {
+    console.warn(
+      "ADMIN_EMAIL and ADMIN_PASSWORD not set — admin login disabled",
     );
   }
-  console.warn(
-    "ADMIN_EMAIL and ADMIN_PASSWORD_HASH not set — admin login disabled",
-  );
 }
 
 export const authOptions: NextAuthOptions = {
@@ -36,7 +36,7 @@ export const authOptions: NextAuthOptions = {
         const password = credentials.password;
 
         // Admin login requires env vars to be set
-        if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH) {
+        if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
           console.error("Admin credentials not configured in environment");
           return null;
         }
@@ -45,10 +45,7 @@ export const authOptions: NextAuthOptions = {
 
         // Check admin credentials
         const isValidEmail = email === adminEmail;
-        const isValidPassword = await bcrypt.compare(
-          password,
-          ADMIN_PASSWORD_HASH,
-        );
+        const isValidPassword = password === ADMIN_PASSWORD;
 
         if (isValidEmail && isValidPassword) {
           return {
