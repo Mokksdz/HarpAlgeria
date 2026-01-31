@@ -13,7 +13,14 @@ export default function AccountPage() {
     if (status === "unauthenticated") {
       router.push("/auth/magic-link-request");
     }
-  }, [status, router]);
+    // Redirect admins to the admin dashboard
+    if (
+      status === "authenticated" &&
+      (session?.user as { role?: string })?.role === "admin"
+    ) {
+      router.push("/admin");
+    }
+  }, [status, session, router]);
 
   const loading = status === "loading" || status === "unauthenticated";
 
