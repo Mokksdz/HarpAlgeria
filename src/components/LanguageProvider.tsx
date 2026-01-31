@@ -48,18 +48,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const t = useCallback(
     (key: string): string => {
-      const keys = key.split(".");
-      let value: unknown = translations[language];
-
-      for (const k of keys) {
-        if (value && typeof value === "object") {
-          value = (value as Record<string, unknown>)[k];
-        } else {
-          return key;
-        }
-      }
-
-      return typeof value === "string" ? value : key;
+      const langTranslations = translations[language] as Record<string, string>;
+      return langTranslations[key] || key;
     },
     [language],
   );
