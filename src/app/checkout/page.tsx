@@ -67,7 +67,7 @@ export default function CheckoutPage() {
       );
       trackEvent.fb.initiateCheckout(total, items.length);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Fire only once on mount
 
   // Fetch communes when wilaya changes
@@ -121,12 +121,19 @@ export default function CheckoutPage() {
           .then((data) => {
             if (data.data && Array.isArray(data.data)) {
               setStopDeskCenters(
-                data.data.map((c: { center_id: number; name: string; address: string; commune_name: string }) => ({
-                  id: c.center_id,
-                  name: c.name,
-                  address: c.address,
-                  commune: c.commune_name,
-                })),
+                data.data.map(
+                  (c: {
+                    center_id: number;
+                    name: string;
+                    address: string;
+                    commune_name: string;
+                  }) => ({
+                    id: c.center_id,
+                    name: c.name,
+                    address: c.address,
+                    commune: c.commune_name,
+                  }),
+                ),
               );
             } else {
               setStopDeskCenters([]);
@@ -144,12 +151,22 @@ export default function CheckoutPage() {
           .then((data) => {
             if (data.data && Array.isArray(data.data)) {
               setStopDeskCenters(
-                data.data.map((c: { wilayaId: number; centerName: string; address: string; wilayaName: string }, idx: number) => ({
-                  id: c.wilayaId * 100 + idx,
-                  name: c.centerName,
-                  address: c.address,
-                  commune: c.wilayaName,
-                })),
+                data.data.map(
+                  (
+                    c: {
+                      wilayaId: number;
+                      centerName: string;
+                      address: string;
+                      wilayaName: string;
+                    },
+                    idx: number,
+                  ) => ({
+                    id: c.wilayaId * 100 + idx,
+                    name: c.centerName,
+                    address: c.address,
+                    commune: c.wilayaName,
+                  }),
+                ),
               );
             } else {
               setStopDeskCenters([]);
@@ -220,7 +237,10 @@ export default function CheckoutPage() {
       };
 
       // Track shipping & payment info
-      trackEvent.ga.addShippingInfo(total + shippingPrice, `${deliveryProvider}-${deliveryType}`);
+      trackEvent.ga.addShippingInfo(
+        total + shippingPrice,
+        `${deliveryProvider}-${deliveryType}`,
+      );
       trackEvent.ga.addPaymentInfo(total + shippingPrice, "COD");
       trackEvent.fb.addPaymentInfo(total + shippingPrice);
 

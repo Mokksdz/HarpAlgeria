@@ -93,7 +93,10 @@ export async function requireAdmin(
  * Wrapper for API handlers with admin auth
  */
 export function withAdmin(
-  handler: (req: NextRequest, context: Record<string, unknown>) => Promise<NextResponse>,
+  handler: (
+    req: NextRequest,
+    context: Record<string, unknown>,
+  ) => Promise<NextResponse>,
 ) {
   return async (req: NextRequest, context: Record<string, unknown>) => {
     try {

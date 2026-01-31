@@ -43,11 +43,13 @@ export default function ShopPage() {
         if (productsList.length > 0) {
           trackEvent.ga.viewItemList(
             "Shop - All Products",
-            productsList.slice(0, 20).map((p: { id: string; nameFr: string; price: number }) => ({
-              item_id: p.id,
-              item_name: p.nameFr,
-              price: Number(p.price),
-            })),
+            productsList
+              .slice(0, 20)
+              .map((p: { id: string; nameFr: string; price: number }) => ({
+                item_id: p.id,
+                item_name: p.nameFr,
+                price: Number(p.price),
+              })),
           );
           trackEvent.fb.viewCategory(
             "Shop",

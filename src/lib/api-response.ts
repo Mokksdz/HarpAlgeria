@@ -58,8 +58,6 @@ export const ApiErrors = {
     apiError(`${resource} non trouvé(e)`, 404, "NOT_FOUND"),
   validationFailed: (details: string[]) =>
     apiError("Validation échouée", 400, "VALIDATION_ERROR", details),
-  internal: () =>
-    apiError("Erreur interne du serveur", 500, "INTERNAL_ERROR"),
-  rateLimited: () =>
-    apiError("Trop de requêtes", 429, "RATE_LIMITED"),
+  internal: () => apiError("Erreur interne du serveur", 500, "INTERNAL_ERROR"),
+  rateLimited: () => apiError("Trop de requêtes", 429, "RATE_LIMITED"),
 } as const;

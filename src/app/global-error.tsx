@@ -21,7 +21,9 @@ export default function GlobalError({
           color: "#1a1a1a",
         }}
       >
-        <div style={{ textAlign: "center", padding: "2rem", maxWidth: "480px" }}>
+        <div
+          style={{ textAlign: "center", padding: "2rem", maxWidth: "480px" }}
+        >
           <div
             style={{
               width: 64,
@@ -37,12 +39,18 @@ export default function GlobalError({
           >
             ⚠️
           </div>
-          <h1 style={{ fontSize: "1.5rem", marginBottom: "0.5rem", fontWeight: 600 }}>
+          <h1
+            style={{
+              fontSize: "1.5rem",
+              marginBottom: "0.5rem",
+              fontWeight: 600,
+            }}
+          >
             Une erreur est survenue
           </h1>
           <p style={{ color: "#666", lineHeight: 1.6, marginBottom: "1.5rem" }}>
-            Nous sommes désolés, quelque chose s&apos;est mal passé.
-            Veuillez réessayer ou revenir à la page d&apos;accueil.
+            Nous sommes désolés, quelque chose s&apos;est mal passé. Veuillez
+            réessayer ou revenir à la page d&apos;accueil.
           </p>
           {process.env.NODE_ENV !== "production" && error?.message && (
             <pre
@@ -60,7 +68,13 @@ export default function GlobalError({
               {error.message}
             </pre>
           )}
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              justifyContent: "center",
+            }}
+          >
             <button
               onClick={reset}
               style={{

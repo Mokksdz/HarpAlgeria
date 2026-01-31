@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 
 type Language = "fr" | "ar";
 
@@ -40,20 +46,23 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
   }, [language]);
 
-  const t = useCallback((key: string): string => {
-    const keys = key.split(".");
-    let value: unknown = translations[language];
+  const t = useCallback(
+    (key: string): string => {
+      const keys = key.split(".");
+      let value: unknown = translations[language];
 
-    for (const k of keys) {
-      if (value && typeof value === "object") {
-        value = (value as Record<string, unknown>)[k];
-      } else {
-        return key;
+      for (const k of keys) {
+        if (value && typeof value === "object") {
+          value = (value as Record<string, unknown>)[k];
+        } else {
+          return key;
+        }
       }
-    }
 
-    return typeof value === "string" ? value : key;
-  }, [language]);
+      return typeof value === "string" ? value : key;
+    },
+    [language],
+  );
 
   return (
     <LanguageContext.Provider

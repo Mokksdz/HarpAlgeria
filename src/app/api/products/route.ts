@@ -49,7 +49,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Only include collection data when filtering or explicitly requested
-    const includeCollection = !!collectionId || searchParams.get("include") === "collection";
+    const includeCollection =
+      !!collectionId || searchParams.get("include") === "collection";
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({

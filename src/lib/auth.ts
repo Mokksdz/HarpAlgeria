@@ -45,7 +45,10 @@ export const authOptions: NextAuthOptions = {
 
         // Check admin credentials
         const isValidEmail = email === adminEmail;
-        const isValidPassword = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+        const isValidPassword = await bcrypt.compare(
+          password,
+          ADMIN_PASSWORD_HASH,
+        );
 
         if (isValidEmail && isValidPassword) {
           return {

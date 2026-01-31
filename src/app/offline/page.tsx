@@ -8,8 +8,8 @@ export default function OfflinePage() {
         Vous êtes hors ligne
       </h1>
       <p className="text-gray-500 mb-6 max-w-md">
-        Vérifiez votre connexion internet et réessayez.
-        Certaines pages consultées récemment sont disponibles hors ligne.
+        Vérifiez votre connexion internet et réessayez. Certaines pages
+        consultées récemment sont disponibles hors ligne.
       </p>
       <button
         onClick={() => window.location.reload()}

@@ -104,9 +104,18 @@ export default function ProductPage({
 
         // Parse JSON fields safely
         try {
-          data.images = typeof data.images === "string" ? JSON.parse(data.images) : data.images || [];
-          data.sizes = typeof data.sizes === "string" ? JSON.parse(data.sizes) : data.sizes || [];
-          data.colors = typeof data.colors === "string" ? JSON.parse(data.colors) : data.colors || [];
+          data.images =
+            typeof data.images === "string"
+              ? JSON.parse(data.images)
+              : data.images || [];
+          data.sizes =
+            typeof data.sizes === "string"
+              ? JSON.parse(data.sizes)
+              : data.sizes || [];
+          data.colors =
+            typeof data.colors === "string"
+              ? JSON.parse(data.colors)
+              : data.colors || [];
         } catch {
           data.images = [];
           data.sizes = [];
@@ -140,8 +149,13 @@ export default function ProductPage({
             .map((p: Record<string, unknown>) => {
               let images: string[] = [];
               try {
-                images = typeof p.images === "string" ? JSON.parse(p.images) : (p.images as string[]) || [];
-              } catch { images = []; }
+                images =
+                  typeof p.images === "string"
+                    ? JSON.parse(p.images)
+                    : (p.images as string[]) || [];
+              } catch {
+                images = [];
+              }
               return { ...p, images };
             });
           setRelatedProducts(filtered);
@@ -159,8 +173,13 @@ export default function ProductPage({
             .map((p: Record<string, unknown>) => {
               let images: string[] = [];
               try {
-                images = typeof p.images === "string" ? JSON.parse(p.images) : (p.images as string[]) || [];
-              } catch { images = []; }
+                images =
+                  typeof p.images === "string"
+                    ? JSON.parse(p.images)
+                    : (p.images as string[]) || [];
+              } catch {
+                images = [];
+              }
               return { ...p, images };
             });
           setRelatedProducts(filtered);
@@ -281,7 +300,11 @@ export default function ProductPage({
           colors: product.colors,
           sizes: product.sizes,
         }}
-        reviews={reviews.map((r) => ({ rating: r.rating, author: r.author, text: r.text }))}
+        reviews={reviews.map((r) => ({
+          rating: r.rating,
+          author: r.author,
+          text: r.text,
+        }))}
       />
       <BreadcrumbJsonLd
         items={[
@@ -327,7 +350,12 @@ export default function ProductPage({
               aria-label={isZoomed ? "Dézoomer l'image" : "Zoomer l'image"}
               className="relative aspect-[3/4] bg-gray-100 rounded-2xl overflow-hidden group cursor-zoom-in"
               onClick={() => setIsZoomed(!isZoomed)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsZoomed(!isZoomed); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsZoomed(!isZoomed);
+                }
+              }}
             >
               <Image
                 src={
@@ -349,7 +377,10 @@ export default function ProductPage({
               />
 
               {/* Zoom indicator */}
-              <div aria-hidden="true" className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div
+                aria-hidden="true"
+                className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
                 <ZoomIn size={20} className="text-gray-600" />
               </div>
 
@@ -408,7 +439,11 @@ export default function ProductPage({
               </div>
               <div className="flex gap-2">
                 <button
-                  aria-label={isWishlisted ? "Retirer de la liste de souhaits" : "Ajouter à la liste de souhaits"}
+                  aria-label={
+                    isWishlisted
+                      ? "Retirer de la liste de souhaits"
+                      : "Ajouter à la liste de souhaits"
+                  }
                   onClick={() => setIsWishlisted(!isWishlisted)}
                   className={cn(
                     "p-3 rounded-full transition-all",
@@ -422,7 +457,10 @@ export default function ProductPage({
                     className={isWishlisted ? "fill-current" : ""}
                   />
                 </button>
-                <button aria-label="Partager ce produit" className="p-3 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200 transition-colors">
+                <button
+                  aria-label="Partager ce produit"
+                  className="p-3 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200 transition-colors"
+                >
                   <Share2 size={20} />
                 </button>
               </div>
@@ -530,7 +568,10 @@ export default function ProductPage({
                 >
                   <Minus size={18} />
                 </button>
-                <span aria-live="polite" className="px-6 py-3 font-medium text-lg min-w-[60px] text-center">
+                <span
+                  aria-live="polite"
+                  className="px-6 py-3 font-medium text-lg min-w-[60px] text-center"
+                >
                   {quantity}
                 </span>
                 <button
@@ -747,8 +788,12 @@ export default function ProductPage({
           role="dialog"
           aria-modal="true"
           aria-label="Guide des tailles"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowSizeGuide(false); }}
-          onKeyDown={(e) => { if (e.key === "Escape") setShowSizeGuide(false); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowSizeGuide(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setShowSizeGuide(false);
+          }}
         >
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">

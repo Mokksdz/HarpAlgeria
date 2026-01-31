@@ -23,7 +23,8 @@ function formatMessage(
       timestamp,
       level,
       context: prefix,
-      message: args.length > 0 && typeof args[0] === "string" ? args[0] : undefined,
+      message:
+        args.length > 0 && typeof args[0] === "string" ? args[0] : undefined,
     };
     // Attach error details if present
     const err = args.find((a) => a instanceof Error) as Error | undefined;
@@ -31,7 +32,9 @@ function formatMessage(
       entry.error = { name: err.name, message: err.message };
     }
     // Attach extra data
-    const data = args.find((a) => typeof a === "object" && a !== null && !(a instanceof Error));
+    const data = args.find(
+      (a) => typeof a === "object" && a !== null && !(a instanceof Error),
+    );
     if (data) {
       entry.data = data;
     }
@@ -57,26 +60,38 @@ export function createLogger(namespace: string) {
   return {
     debug: (...args: unknown[]) => {
       if (shouldLog("debug")) {
-        if (isProd) { console.debug(formatMessage("debug", namespace, args)); }
-        else { console.debug(formatMessage("debug", namespace, args), ...args); }
+        if (isProd) {
+          console.debug(formatMessage("debug", namespace, args));
+        } else {
+          console.debug(formatMessage("debug", namespace, args), ...args);
+        }
       }
     },
     info: (...args: unknown[]) => {
       if (shouldLog("info")) {
-        if (isProd) { console.info(formatMessage("info", namespace, args)); }
-        else { console.info(formatMessage("info", namespace, args), ...args); }
+        if (isProd) {
+          console.info(formatMessage("info", namespace, args));
+        } else {
+          console.info(formatMessage("info", namespace, args), ...args);
+        }
       }
     },
     warn: (...args: unknown[]) => {
       if (shouldLog("warn")) {
-        if (isProd) { console.warn(formatMessage("warn", namespace, args)); }
-        else { console.warn(formatMessage("warn", namespace, args), ...args); }
+        if (isProd) {
+          console.warn(formatMessage("warn", namespace, args));
+        } else {
+          console.warn(formatMessage("warn", namespace, args), ...args);
+        }
       }
     },
     error: (...args: unknown[]) => {
       if (shouldLog("error", true)) {
-        if (isProd) { console.error(formatMessage("error", namespace, args)); }
-        else { console.error(formatMessage("error", namespace, args), ...args); }
+        if (isProd) {
+          console.error(formatMessage("error", namespace, args));
+        } else {
+          console.error(formatMessage("error", namespace, args), ...args);
+        }
       }
     },
   };

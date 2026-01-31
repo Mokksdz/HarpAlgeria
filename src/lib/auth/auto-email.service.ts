@@ -107,7 +107,10 @@ export async function verifyMagicLink(token: string) {
   try {
     // 1. Verify JWT signature
     const secret = getMagicLinkSecret();
-    const payload = jwt.verify(token, secret) as { email: string; guestKey?: string };
+    const payload = jwt.verify(token, secret) as {
+      email: string;
+      guestKey?: string;
+    };
     const { email, guestKey } = payload;
 
     // 2. Hash to find in DB

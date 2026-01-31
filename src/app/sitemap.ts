@@ -82,7 +82,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [...staticPages, ...productUrls, ...collectionUrls];
   } catch (error) {
-    console.warn("Sitemap: DB unavailable during build, returning static pages only", error);
+    console.warn(
+      "Sitemap: DB unavailable during build, returning static pages only",
+      error,
+    );
     return staticPages;
   }
 }
