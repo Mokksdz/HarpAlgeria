@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
 
         // Check admin credentials
         const isValidEmail = email === adminEmail.trim().toLowerCase();
-        const isValidPassword = password === adminPassword;
+        const isValidPassword = password === adminPassword.trim();
 
         if (isValidEmail && isValidPassword) {
           return {
