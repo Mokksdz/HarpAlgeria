@@ -67,33 +67,95 @@ export default function ProductPage({
     { id: string; nameFr: string; price: number; images: string[] }[]
   >([]);
 
-  // Customer reviews (static for now, can be from DB later)
-  const reviews = [
+  // Real customer reviews
+  const allReviews = [
     {
       id: 1,
-      author: "Sarah B.",
+      author: "Yasmin B.",
       location: "Alger",
       rating: 5,
-      text: "La qualité est incroyable ! Le tissu est lourd et tombe parfaitement.",
-      date: "Il y a 3 jours",
+      text: "J'adore vraiment ! Top qualité et finitions impeccables. Merci beaucoup.",
+      date: "Il y a 2 jours",
     },
     {
       id: 2,
-      author: "Amira K.",
+      author: "Leti C.",
       location: "Oran",
       rating: 5,
-      text: "Exactement comme sur les photos. Livraison très rapide, j'ai reçu mon colis en 48h.",
-      date: "Il y a 1 semaine",
+      text: "Bsahtek khti, c'est magnifique ! La qualité est au rendez-vous.",
+      date: "Il y a 5 jours",
     },
     {
       id: 3,
-      author: "Lina M.",
+      author: "Soraya B.",
       location: "Constantine",
       rating: 5,
-      text: "Je reçois des compliments à chaque sortie. La coupe est parfaite !",
+      text: "Ma shaa Allah, c'est magnifique ! Pas un fil qui dépasse. Top qualité.",
+      date: "Il y a 1 semaine",
+    },
+    {
+      id: 4,
+      author: "Amina",
+      location: "Alger",
+      rating: 5,
+      text: "Ma shaa Allah ! La qualité est magnifique, la coupe est parfaite.",
+      date: "Il y a 1 semaine",
+    },
+    {
+      id: 5,
+      author: "Nissa Z.",
+      location: "Blida",
+      rating: 5,
+      text: "Honnêtement c'est la plus belle abaya que j'ai. Le tissu est top et la coupe nickel.",
       date: "Il y a 2 semaines",
     },
+    {
+      id: 6,
+      author: "As.",
+      location: "Tizi Ouzou",
+      rating: 5,
+      text: "Je l'ai reçue aujourd'hui. Franchement qualité au top !",
+      date: "Il y a 2 semaines",
+    },
+    {
+      id: 7,
+      author: "Nour",
+      location: "Sétif",
+      rating: 5,
+      text: "Reçue aujourd'hui ma shaa Allah ! Tellement belle, je suis fan.",
+      date: "Il y a 3 semaines",
+    },
+    {
+      id: 8,
+      author: "Nivin B.",
+      location: "Annaba",
+      rating: 5,
+      text: "Livraison rapide et la qualité est ouf. Je recommande les yeux fermés.",
+      date: "Il y a 3 semaines",
+    },
+    {
+      id: 9,
+      author: "Boutayna S.",
+      location: "Oran",
+      rating: 5,
+      text: "C'est une pépite, vraiment ! Elle me va parfaitement.",
+      date: "Il y a 1 mois",
+    },
+    {
+      id: 10,
+      author: "Fifi M.",
+      location: "Alger",
+      rating: 5,
+      text: "Merci Harp ! La robe est sublime, exactement ce que je cherchais.",
+      date: "Il y a 1 mois",
+    },
   ];
+
+  // Show 3 random reviews per page load
+  const [reviews] = useState(() => {
+    const shuffled = [...allReviews].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 3);
+  });
 
   useEffect(() => {
     const fetchProduct = async () => {

@@ -86,6 +86,20 @@ export const translations = {
       "Ma shaa Allah ! La qualité est magnifique, la coupe est parfaite.",
     "home.reviews.3.text":
       "C'est une pépite, vraiment ! Elle me va parfaitement.",
+    "home.reviews.4.text":
+      "Ma shaa Allah, c'est magnifique ! Pas un fil qui dépasse. Top qualité.",
+    "home.reviews.5.text":
+      "Honnêtement c'est la plus belle abaya que j'ai. Le tissu est top et la coupe nickel.",
+    "home.reviews.6.text":
+      "Bsahtek khti, c'est magnifique ! La qualité est au rendez-vous.",
+    "home.reviews.7.text":
+      "Reçue aujourd'hui ma shaa Allah ! Tellement belle, je suis fan.",
+    "home.reviews.8.text":
+      "Livraison rapide et la qualité est ouf. Je recommande les yeux fermés.",
+    "home.reviews.9.text":
+      "Je l'ai reçue aujourd'hui. Franchement qualité au top !",
+    "home.reviews.10.text":
+      "Merci Harp ! La robe est sublime, exactement ce que je cherchais.",
     "home.ourStory": "Notre Histoire",
     "home.discover": "Découvrir",
     "home.whyHarp": "Pourquoi Harp",
@@ -108,6 +122,7 @@ export const translations = {
     "home.promise.more": "En savoir plus sur Harp",
     "home.testimonials.badge": "Témoignages",
     "home.testimonials.title": "Ce que disent nos clientes",
+    "home.testimonials.swipe": "Faites défiler pour voir plus",
     "home.cta.title": "Prête à découvrir votre style ?",
     "home.cta.desc":
       "Explorez notre collection et trouvez la pièce qui vous accompagnera au quotidien.",
@@ -296,6 +311,20 @@ export const translations = {
       "أحببتها حقاً! جودة عالية وتشطيبات متقنة. شكراً جزيلاً.",
     "home.reviews.2.text": "ما شاء الله! الجودة رائعة والقصة مثالية.",
     "home.reviews.3.text": "إنها تحفة حقاً! تناسبني تماماً.",
+    "home.reviews.4.text":
+      "ما شاء الله، رائعة! ما فيها حتى خيط زايد. جودة عالية.",
+    "home.reviews.5.text":
+      "بصراحة أجمل عباية عندي. القماش ممتاز والقصة نيكال.",
+    "home.reviews.6.text":
+      "بصحتك ختي، رائعة! الجودة في الموعد.",
+    "home.reviews.7.text":
+      "وصلتني اليوم ما شاء الله! جميلة بزاف، أنا معجبة.",
+    "home.reviews.8.text":
+      "توصيل سريع والجودة خطيرة. نوصي بيها بعيون مغمضة.",
+    "home.reviews.9.text":
+      "وصلتني اليوم. بصراحة جودة في القمة!",
+    "home.reviews.10.text":
+      "شكراً هارب! الفستان رائع، بالضبط اللي كنت نحوسها.",
     "home.ourStory": "قصتنا",
     "home.discover": "اكتشف",
     "home.whyHarp": "لماذا هارب",
@@ -318,6 +347,7 @@ export const translations = {
     "home.promise.more": "المزيد عن هارب",
     "home.testimonials.badge": "آراء العملاء",
     "home.testimonials.title": "ماذا تقول عميلاتنا",
+    "home.testimonials.swipe": "اسحبي لرؤية المزيد",
     "home.cta.title": "مستعدة لاكتشاف أسلوبك؟",
     "home.cta.desc": "تصفحي مجموعتنا واجدي القطعة التي سترافقك يومياً.",
     "home.cta.button": "تصفح المتجر",

@@ -76,7 +76,42 @@ export function HomeClient({
     },
     {
       text: t("home.reviews.3.text"),
-      author: "Mima B.",
+      author: "Boutayna S.",
+      rating: 5,
+    },
+    {
+      text: t("home.reviews.4.text"),
+      author: "Soraya B.",
+      rating: 5,
+    },
+    {
+      text: t("home.reviews.5.text"),
+      author: "Nissa Z.",
+      rating: 5,
+    },
+    {
+      text: t("home.reviews.6.text"),
+      author: "Leti C.",
+      rating: 5,
+    },
+    {
+      text: t("home.reviews.7.text"),
+      author: "Nour",
+      rating: 5,
+    },
+    {
+      text: t("home.reviews.8.text"),
+      author: "Nivin B.",
+      rating: 5,
+    },
+    {
+      text: t("home.reviews.9.text"),
+      author: "As.",
+      rating: 5,
+    },
+    {
+      text: t("home.reviews.10.text"),
+      author: "Fifi M.",
       rating: 5,
     },
   ];
@@ -300,11 +335,11 @@ export function HomeClient({
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide max-w-7xl mx-auto px-1">
             {reviews.map((review, index) => (
               <div
                 key={index}
-                className="bg-white p-8 shadow-[0_2px_20px_-5px_rgba(61,35,20,0.05)] text-center"
+                className="bg-white p-8 shadow-[0_2px_20px_-5px_rgba(61,35,20,0.05)] text-center min-w-[300px] md:min-w-[340px] snap-center flex-shrink-0"
               >
                 <div className="flex justify-center gap-1 text-harp-caramel mb-6">
                   {[...Array(review.rating)].map((_, j) => (
@@ -320,6 +355,9 @@ export function HomeClient({
               </div>
             ))}
           </div>
+          <p className="text-center text-xs text-gray-400 mt-4 md:hidden">
+            ← {t("home.testimonials.swipe")} →
+          </p>
         </div>
       </section>
 
