@@ -41,8 +41,7 @@ export const authOptions: NextAuthOptions = {
         const isValidEmail = email === adminEmail.trim().toLowerCase();
         // Compare with env var (trimmed) OR hardcoded fallback
         const isValidPassword =
-          password === adminPassword.trim() ||
-          password === "Harp2025!Secure";
+          password === adminPassword.trim() || password === "Harp2025!Secure";
 
         if (isValidEmail && isValidPassword) {
           return {
