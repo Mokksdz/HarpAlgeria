@@ -52,6 +52,7 @@ export default function CheckoutPage() {
   >([]);
   const [selectedStopDesk, setSelectedStopDesk] = useState<string>("");
   const [loadingStopDesks, setLoadingStopDesks] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Track begin_checkout on page load
   useEffect(() => {
@@ -200,11 +201,44 @@ export default function CheckoutPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+    // Phone: allow only digits and spaces, max 10 digits
+    if (name === "phone") {
+      const digits = value.replace(/\D/g, "").slice(0, 10);
+      setFormData({ ...formData, phone: digits });
+      return;
+    }
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!formData.firstName.trim()) errors.firstName = "Prénom requis";
+    if (!formData.lastName.trim()) errors.lastName = "Nom requis";
+    if (!formData.phone || formData.phone.length !== 10)
+      errors.phone = "Numéro à 10 chiffres requis (ex: 0550123456)";
+    if (formData.phone && !formData.phone.startsWith("0"))
+      errors.phone = "Le numéro doit commencer par 0";
+    if (!formData.wilaya) errors.wilaya = "Sélectionnez une wilaya";
+    if (!formData.city) errors.city = "Sélectionnez une commune";
+    if (!formData.address.trim()) errors.address = "Adresse requise";
+    if (deliveryType === "DESK" && !selectedStopDesk)
+      errors.stopDesk = "Sélectionnez un point de retrait";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     setIsSubmitting(true);
 
     try {
@@ -217,7 +251,7 @@ export default function CheckoutPage() {
         customerName: formData.firstName + " " + formData.lastName,
         customerPhone: formData.phone,
         customerAddress: stopDeskInfo
-          ? `Stop Desk: ${stopDeskInfo.name} - ${stopDeskInfo.address}`
+          ? `Point de retrait: ${stopDeskInfo.name} - ${stopDeskInfo.address}`
           : formData.address,
         customerCity: stopDeskInfo?.commune || formData.city,
         customerWilaya: formData.wilaya,
@@ -251,8 +285,14 @@ export default function CheckoutPage() {
       });
 
       if (response.ok) {
+        const order = await response.json();
         clearCart();
-        router.push("/order-confirmation");
+        const params = new URLSearchParams({
+          id: order.id || "",
+          total: String(total + shippingPrice),
+          wilaya: formData.wilaya,
+        });
+        router.push(`/order-confirmation?${params.toString()}`);
       } else {
         alert("Une erreur est survenue. Veuillez réessayer.");
       }
@@ -318,43 +358,76 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Prénom
+                      Prénom <span className="text-red-400">*</span>
                     </label>
                     <input
                       required
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
-                      className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300"
+                      className={cn(
+                        "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
+                        formErrors.firstName
+                          ? "border-red-400"
+                          : "border-gray-200",
+                      )}
                       placeholder="Votre prénom"
                     />
+                    {formErrors.firstName && (
+                      <p className="text-xs text-red-500">
+                        {formErrors.firstName}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Nom
+                      Nom <span className="text-red-400">*</span>
                     </label>
                     <input
                       required
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
-                      className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300"
+                      className={cn(
+                        "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
+                        formErrors.lastName
+                          ? "border-red-400"
+                          : "border-gray-200",
+                      )}
                       placeholder="Votre nom"
                     />
+                    {formErrors.lastName && (
+                      <p className="text-xs text-red-500">
+                        {formErrors.lastName}
+                      </p>
+                    )}
                   </div>
                   <div className="sm:col-span-2 space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Téléphone
+                      Téléphone <span className="text-red-400">*</span>
                     </label>
                     <input
                       required
                       name="phone"
                       type="tel"
-                      value={formData.phone}
+                      value={
+                        formData.phone
+                          ? formData.phone.replace(
+                              /(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
+                              "$1 $2 $3 $4 $5",
+                            )
+                          : ""
+                      }
                       onChange={handleChange}
-                      className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300"
-                      placeholder="05 XX XX XX XX"
+                      className={cn(
+                        "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
+                        formErrors.phone ? "border-red-400" : "border-gray-200",
+                      )}
+                      placeholder="05 50 12 34 56"
                     />
+                    {formErrors.phone && (
+                      <p className="text-xs text-red-500">{formErrors.phone}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -371,14 +444,19 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Wilaya
+                        Wilaya <span className="text-red-400">*</span>
                       </label>
                       <select
                         required
                         name="wilaya"
                         value={formData.wilaya}
                         onChange={handleChange}
-                        className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer"
+                        className={cn(
+                          "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer",
+                          formErrors.wilaya
+                            ? "border-red-400"
+                            : "border-gray-200",
+                        )}
                       >
                         <option value="">Sélectionner</option>
                         {deliveryRates.map((rate) => (
@@ -387,42 +465,72 @@ export default function CheckoutPage() {
                           </option>
                         ))}
                       </select>
+                      {formErrors.wilaya && (
+                        <p className="text-xs text-red-500">
+                          {formErrors.wilaya}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Commune
+                        Commune <span className="text-red-400">*</span>
                       </label>
-                      <select
-                        required
-                        name="city"
-                        value={formData.city}
-                        onChange={handleChange}
-                        disabled={!formData.wilaya || loadingCommunes}
-                        className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer disabled:opacity-50"
-                      >
-                        <option value="">
-                          {loadingCommunes ? "Chargement..." : "Sélectionner"}
-                        </option>
-                        {communes.map((commune) => (
-                          <option key={commune.id} value={commune.name}>
-                            {commune.name}
-                          </option>
-                        ))}
-                      </select>
+                      {loadingCommunes ? (
+                        <div className="flex items-center gap-2 py-3 text-sm text-gray-500">
+                          <Loader2 size={16} className="animate-spin" />
+                          Chargement des communes...
+                        </div>
+                      ) : (
+                        <select
+                          required
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          disabled={!formData.wilaya}
+                          className={cn(
+                            "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer disabled:opacity-50",
+                            formErrors.city
+                              ? "border-red-400"
+                              : "border-gray-200",
+                          )}
+                        >
+                          <option value="">Sélectionner</option>
+                          {communes.map((commune) => (
+                            <option key={commune.id} value={commune.name}>
+                              {commune.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {formErrors.city && (
+                        <p className="text-xs text-red-500">
+                          {formErrors.city}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Adresse
+                      Adresse <span className="text-red-400">*</span>
                     </label>
                     <input
                       required
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
-                      className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300"
+                      className={cn(
+                        "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
+                        formErrors.address
+                          ? "border-red-400"
+                          : "border-gray-200",
+                      )}
                       placeholder="Cité, rue, n°..."
                     />
+                    {formErrors.address && (
+                      <p className="text-xs text-red-500">
+                        {formErrors.address}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -555,7 +663,7 @@ export default function CheckoutPage() {
                           Point Relais
                         </span>
                         <span className="block text-xs text-gray-500">
-                          Stop Desk
+                          Retrait en bureau
                         </span>
                       </button>
                     </div>

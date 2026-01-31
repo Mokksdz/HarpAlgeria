@@ -1,12 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, MessageCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { CheckCircle2, MessageCircle, Copy, Check } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { siteConfig } from "@/lib/config";
+import { useState } from "react";
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   useLanguage();
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("id");
+  const totalParam = searchParams.get("total");
+  const wilaya = searchParams.get("wilaya");
+  const [copied, setCopied] = useState(false);
+
+  const orderRef = orderId ? orderId.slice(0, 8).toUpperCase() : null;
+  const totalAmount = totalParam ? parseInt(totalParam) : null;
+
+  // Estimate delivery based on wilaya zone
+  const getEstimate = () => {
+    if (!wilaya) return "2-5 jours ouvrés";
+    const code = parseInt(wilaya);
+    // Major cities — faster delivery
+    if ([16, 9, 31, 25, 19, 23, 15, 6, 35, 42].includes(code)) return "24-48h";
+    // South / remote wilayas
+    if (code >= 47) return "3-7 jours ouvrés";
+    return "2-4 jours ouvrés";
+  };
+
+  const handleCopy = async () => {
+    if (orderRef) {
+      await navigator.clipboard.writeText(orderRef);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white pt-32 pb-20">
@@ -17,14 +47,67 @@ export default function OrderConfirmationPage() {
             <CheckCircle2 size={40} strokeWidth={1.5} />
           </div>
 
-          <h1 className="text-3xl md:text-5xl font-serif font-medium text-gray-900 mb-6">
+          <h1 className="text-3xl md:text-5xl font-serif font-medium text-gray-900 mb-4">
             Merci pour votre commande
           </h1>
 
-          <p className="text-gray-500 text-lg font-light leading-relaxed mb-12">
+          {/* Order Reference */}
+          {orderRef && (
+            <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-5 py-2 mb-4">
+              <span className="text-sm text-gray-500">Réf:</span>
+              <span className="font-mono font-bold text-gray-900 tracking-wider">
+                {orderRef}
+              </span>
+              <button
+                onClick={handleCopy}
+                className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                aria-label="Copier la référence"
+              >
+                {copied ? (
+                  <Check size={14} className="text-green-600" />
+                ) : (
+                  <Copy size={14} className="text-gray-400" />
+                )}
+              </button>
+            </div>
+          )}
+
+          <p className="text-gray-500 text-lg font-light leading-relaxed mb-8">
             Nous avons bien reçu votre commande. Un membre de notre équipe vous
             contactera très prochainement pour la confirmer.
           </p>
+
+          {/* Order Summary Card */}
+          {(totalAmount || wilaya) && (
+            <div className="bg-gray-50 rounded-2xl p-6 mb-8 text-left grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {totalAmount && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                    Total
+                  </p>
+                  <p className="text-lg font-bold text-harp-brown">
+                    {totalAmount.toLocaleString()} DZD
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Paiement
+                </p>
+                <p className="text-sm font-medium text-gray-900">
+                  À la livraison
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Livraison estimée
+                </p>
+                <p className="text-sm font-medium text-gray-900">
+                  {getEstimate()}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Next Steps Timeline */}
           <div className="bg-gray-50 rounded-3xl p-8 md:p-12 text-left mb-12">
@@ -34,8 +117,22 @@ export default function OrderConfirmationPage() {
 
             <div className="space-y-8 relative before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
               <div className="relative flex gap-6">
-                <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-gray-900 flex items-center justify-center text-xs font-bold text-gray-900">
-                  1
+                <div className="relative z-10 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold">
+                  <Check size={14} />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    Commande reçue
+                  </h3>
+                  <p className="text-sm text-gray-500 font-light">
+                    Votre commande a bien été enregistrée
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative flex gap-6">
+                <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-amber-400 flex items-center justify-center text-xs font-bold text-amber-500">
+                  2
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1">
@@ -49,7 +146,7 @@ export default function OrderConfirmationPage() {
 
               <div className="relative flex gap-6">
                 <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-xs font-bold text-gray-400">
-                  2
+                  3
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1">Expédition</h3>
@@ -61,7 +158,7 @@ export default function OrderConfirmationPage() {
 
               <div className="relative flex gap-6">
                 <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-xs font-bold text-gray-400">
-                  3
+                  4
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1">Livraison</h3>
@@ -107,5 +204,19 @@ export default function OrderConfirmationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      }
+    >
+      <OrderConfirmationContent />
+    </Suspense>
   );
 }

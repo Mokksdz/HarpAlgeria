@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, Menu, X, User } from "lucide-react";
+import { ShoppingBag, Menu, X, User, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLanguage } from "./LanguageProvider";
 import { useCart } from "./CartProvider";
@@ -137,6 +137,14 @@ export function Header() {
               {language === "fr" ? "العربية" : "FR"}
             </button>
 
+            <Link
+              href="/wishlist"
+              className="hidden md:flex p-2.5 hover:bg-harp-sand/50 rounded-full transition-colors text-harp-brown"
+              aria-label="Favoris"
+            >
+              <Heart size={20} />
+            </Link>
+
             <button
               onClick={() => setCartOpen(true)}
               className="relative p-2.5 hover:bg-harp-sand/50 rounded-full transition-colors group text-harp-brown"
@@ -221,6 +229,15 @@ export function Header() {
 
           {/* Bottom Actions */}
           <div className="space-y-6 pt-8 border-t border-gray-100">
+            <Link
+              href="/wishlist"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-3 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <Heart size={20} />
+              <span className="text-sm uppercase tracking-widest">Favoris</span>
+            </Link>
+
             <Link
               href={session ? "/account" : "/auth/magic-link-request"}
               onClick={() => setIsMenuOpen(false)}

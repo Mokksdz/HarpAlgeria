@@ -460,6 +460,26 @@ export default function ProductPage({
                 <button
                   aria-label="Partager ce produit"
                   className="p-3 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200 transition-colors"
+                  onClick={async () => {
+                    const shareData = {
+                      title: product
+                        ? language === "ar"
+                          ? product.nameAr
+                          : product.nameFr
+                        : "Harp",
+                      url: window.location.href,
+                    };
+                    if (navigator.share) {
+                      try {
+                        await navigator.share(shareData);
+                      } catch {
+                        /* user cancelled */
+                      }
+                    } else {
+                      await navigator.clipboard.writeText(window.location.href);
+                      alert("Lien copié !");
+                    }
+                  }}
                 >
                   <Share2 size={20} />
                 </button>
@@ -485,6 +505,24 @@ export default function ProductPage({
               >
                 Suivre un colis →
               </Link>
+            </div>
+
+            {/* Mobile Trust Strip — visible only on mobile, above fold */}
+            <div className="flex items-center justify-between gap-2 lg:hidden text-[11px] text-gray-600">
+              <span className="flex items-center gap-1">
+                <CreditCard size={13} className="text-harp-brown" />
+                Paiement à la livraison
+              </span>
+              <span className="w-px h-3 bg-gray-300" />
+              <span className="flex items-center gap-1">
+                <ShieldCheck size={13} className="text-harp-brown" />
+                Qualité garantie
+              </span>
+              <span className="w-px h-3 bg-gray-300" />
+              <span className="flex items-center gap-1">
+                <RotateCcw size={13} className="text-harp-brown" />
+                Échange 48h
+              </span>
             </div>
 
             {/* Description */}
