@@ -1,22 +1,15 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// Admin credentials from environment variables (REQUIRED)
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-
-// Validate required environment variables at startup
-if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-  if (process.env.NODE_ENV === "production") {
-    console.error(
-      "WARNING: ADMIN_EMAIL and ADMIN_PASSWORD must be set in production",
-    );
-  } else {
-    console.warn(
-      "ADMIN_EMAIL and ADMIN_PASSWORD not set — admin login disabled",
-    );
-  }
+// Admin credentials — read lazily at runtime to avoid build-time issues
+function getAdminEmail(): string | undefined {
+  return process.env.ADMIN_EMAIL;
 }
+function getAdminPassword(): string | undefined {
+  return process.env.ADMIN_PASSWORD;
+}
+
+// Validation happens at runtime inside authorize()
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -35,17 +28,18 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.trim().toLowerCase();
         const password = credentials.password;
 
-        // Admin login requires env vars to be set
-        if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+        // Read env vars at runtime (not build time)
+        const adminEmail = getAdminEmail();
+        const adminPassword = getAdminPassword();
+
+        if (!adminEmail || !adminPassword) {
           console.error("Admin credentials not configured in environment");
           return null;
         }
 
-        const adminEmail = ADMIN_EMAIL.trim().toLowerCase();
-
         // Check admin credentials
-        const isValidEmail = email === adminEmail;
-        const isValidPassword = password === ADMIN_PASSWORD;
+        const isValidEmail = email === adminEmail.trim().toLowerCase();
+        const isValidPassword = password === adminPassword;
 
         if (isValidEmail && isValidPassword) {
           return {
