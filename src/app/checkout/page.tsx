@@ -81,11 +81,9 @@ export default function CheckoutPage() {
       );
       setShippingPrice(price);
 
-      // Fetch communes from Yalidine
+      // Fetch communes (public route)
       setLoadingCommunes(true);
-      fetch(
-        `/api/shipping/yalidine?action=communes&wilaya_id=${formData.wilaya}`,
-      )
+      fetch(`/api/shipping/communes?wilaya_id=${formData.wilaya}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.data && Array.isArray(data.data)) {
@@ -114,10 +112,8 @@ export default function CheckoutPage() {
       setSelectedStopDesk("");
 
       if (deliveryProvider === "Yalidine") {
-        // Fetch from Yalidine API
-        fetch(
-          `/api/shipping/yalidine?action=centers&wilaya_id=${formData.wilaya}`,
-        )
+        // Fetch from public centers route
+        fetch(`/api/shipping/centers?wilaya_id=${formData.wilaya}`)
           .then((res) => res.json())
           .then((data) => {
             if (data.data && Array.isArray(data.data)) {
@@ -146,8 +142,8 @@ export default function CheckoutPage() {
           })
           .finally(() => setLoadingStopDesks(false));
       } else if (deliveryProvider === "ZR Express") {
-        // Fetch from local ZR Express data
-        fetch(`/api/shipping?action=stopdesks&wilaya_id=${formData.wilaya}`)
+        // Fetch from public centers route
+        fetch(`/api/shipping/centers?wilaya_id=${formData.wilaya}&provider=zrexpress`)
           .then((res) => res.json())
           .then((data) => {
             if (data.data && Array.isArray(data.data)) {
