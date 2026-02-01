@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { put } from "@vercel/blob";
 
 export async function POST(request: Request) {
   try {
@@ -17,33 +15,36 @@ export async function POST(request: Request) {
     const isImage = file.type.startsWith("image/");
 
     if (!isVideo && !isImage) {
-      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid file type" },
+        { status: 400 },
+      );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large (max 10MB)" },
+        { status: 400 },
+      );
     }
 
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 8);
     const extension = file.name.split(".").pop() || (isVideo ? "mp4" : "jpg");
-    const filename = `${timestamp}-${randomString}.${extension}`;
-    const filepath = path.join(uploadsDir, filename);
+    const folder = isVideo ? "videos" : "images";
+    const filename = `harp/${folder}/${timestamp}-${randomString}.${extension}`;
 
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
-
-    // Return the public URL
-    const url = `/uploads/${filename}`;
+    // Upload to Vercel Blob
+    const blob = await put(filename, file, {
+      access: "public",
+      addRandomSuffix: false,
+    });
 
     return NextResponse.json({
-      url,
-      filename,
+      url: blob.url,
+      filename: blob.pathname,
       type: isVideo ? "video" : "image",
       size: file.size,
     });

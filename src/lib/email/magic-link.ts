@@ -1,46 +1,8 @@
+import { Resend } from "resend";
 import nodemailer from "nodemailer";
 
-export async function sendMagicLinkEmail(
-  email: string,
-  link: string,
-  _guestKey?: string,
-) {
-  // Validate SMTP configuration
-  if (!process.env.SMTP_HOST) {
-    console.error(
-      "[Magic Link] SMTP not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS environment variables.",
-    );
-    throw new Error("Email service not configured");
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_PORT === "465",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-
-  const expMin = process.env.MAGIC_LINK_EXP_MIN || "15";
-  const fromAddress =
-    process.env.SMTP_FROM || `"Harp" <${process.env.SMTP_USER}>`;
-
-  await transporter.sendMail({
-    from: fromAddress,
-    to: email,
-    subject: "Voici votre lien de connexion HARP",
-    text: `Bonjour,
-
-Cliquez sur ce lien pour vous connecter à Harp (valable ${expMin} minutes) :
-${link}
-
-Si vous n'avez pas demandé ce lien, ignorez cet email.
-
-À bientôt,
-L'équipe Harp`,
-    html: `
+function buildHtml(link: string, expMin: string) {
+  return `
 <!doctype html>
 <html>
   <body style="font-family:Inter,Arial,sans-serif;color:#333;margin:0;padding:0;background:#f9f7f2;">
@@ -77,8 +39,86 @@ L'équipe Harp`,
       </tr>
     </table>
   </body>
-</html>`,
-  });
+</html>`;
+}
 
-  console.log(`[Magic Link] Email sent successfully to ${email}`);
+function buildText(link: string, expMin: string) {
+  return `Bonjour,
+
+Cliquez sur ce lien pour vous connecter à Harp (valable ${expMin} minutes) :
+${link}
+
+Si vous n'avez pas demandé ce lien, ignorez cet email.
+
+À bientôt,
+L'équipe Harp`;
+}
+
+export async function sendMagicLinkEmail(
+  email: string,
+  link: string,
+  _guestKey?: string,
+) {
+  const expMin = process.env.MAGIC_LINK_EXP_MIN || "15";
+  const html = buildHtml(link, expMin);
+  const text = buildText(link, expMin);
+  const subject = "Voici votre lien de connexion HARP";
+
+  // Strategy 1: Resend API (preferred — works perfectly on Vercel)
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const fromAddress =
+      process.env.RESEND_FROM || "Harp <onboarding@resend.dev>";
+
+    const { error } = await resend.emails.send({
+      from: fromAddress,
+      to: email,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.error("[Magic Link] Resend error:", error);
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
+
+    console.log(`[Magic Link] Email sent via Resend to ${email}`);
+    return;
+  }
+
+  // Strategy 2: SMTP via Nodemailer (fallback)
+  if (process.env.SMTP_HOST) {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || "587"),
+      secure: process.env.SMTP_PORT === "465",
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const fromAddress =
+      process.env.SMTP_FROM || `"Harp" <${process.env.SMTP_USER}>`;
+
+    await transporter.sendMail({
+      from: fromAddress,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+
+    console.log(`[Magic Link] Email sent via SMTP to ${email}`);
+    return;
+  }
+
+  // No email provider configured
+  console.error(
+    "[Magic Link] No email provider configured. Set RESEND_API_KEY or SMTP_HOST.",
+  );
+  throw new Error(
+    "Service email non configuré. Veuillez contacter le support.",
+  );
 }
