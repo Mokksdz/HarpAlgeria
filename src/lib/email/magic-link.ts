@@ -70,7 +70,7 @@ export async function sendMagicLinkEmail(
     const fromAddress =
       process.env.RESEND_FROM || "Harp <onboarding@resend.dev>";
 
-    const { error } = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: fromAddress,
       to: email,
       subject,
@@ -79,11 +79,22 @@ export async function sendMagicLinkEmail(
     });
 
     if (error) {
-      console.error("[Magic Link] Resend error:", error);
-      throw new Error(`Failed to send email: ${error.message}`);
+      console.error("[Magic Link] Resend error:", JSON.stringify(error));
+      // If domain not verified, give a clear message
+      if (
+        error.message?.includes("verify a domain") ||
+        error.message?.includes("testing emails")
+      ) {
+        throw new Error(
+          "Le service email nécessite la vérification du domaine. Contactez l'administrateur.",
+        );
+      }
+      throw new Error(`Échec de l'envoi de l'email: ${error.message}`);
     }
 
-    console.log(`[Magic Link] Email sent via Resend to ${email}`);
+    console.log(
+      `[Magic Link] Email sent via Resend to ${email} (id: ${data?.id})`,
+    );
     return;
   }
 

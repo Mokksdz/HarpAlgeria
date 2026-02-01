@@ -56,6 +56,19 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("Auto-Auth Error:", err);
+    // Return the actual error message for email-related errors
+    if (err instanceof Error && (
+      err.message.includes("email") ||
+      err.message.includes("Email") ||
+      err.message.includes("Échec") ||
+      err.message.includes("domaine") ||
+      err.message.includes("configuré")
+    )) {
+      return NextResponse.json(
+        { success: false, error: err.message },
+        { status: 503 },
+      );
+    }
     return handleApiError(err);
   }
 }
