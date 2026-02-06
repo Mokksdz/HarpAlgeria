@@ -81,25 +81,25 @@ export const translations = {
     "home.join.title": "Rejoignez l'univers Harp",
     "home.join.cta": "Explorer la boutique",
     "home.reviews.1.text":
-      "J'adore vraiment ! Top qualité et finitions impeccables. Merci beaucoup.",
+      "J'adore vraiment ! Top qualité et finitions impeccables. Merci beaucoup, je suis ravie !",
     "home.reviews.2.text":
-      "Ma shaa Allah ! La qualité est magnifique, la coupe est parfaite.",
+      "Merci beaucoup pour la veste, je l'ai bien reçue. Elle est magnifique, vraiment ! À la prochaine inshallah et bonne continuation.",
     "home.reviews.3.text":
-      "C'est une pépite, vraiment ! Elle me va parfaitement.",
+      "Je vous remercie, il me va super bien. Très beau modèle et très belle qualité. Merci beaucoup !",
     "home.reviews.4.text":
-      "Ma shaa Allah, c'est magnifique ! Pas un fil qui dépasse. Top qualité.",
+      "Ma shaa Allah, que Dieu vous accorde la santé. Je ne trouve pas les mots… merci énormément ! Le cadeau m'a touchée, la qualité est magnifique, la coupe est parfaite et le rendu est encore plus beau en vrai. Je vous souhaite encore plus de réussite et de belles créations. Vous le méritez vraiment.",
     "home.reviews.5.text":
-      "Honnêtement c'est la plus belle abaya que j'ai. Le tissu est top et la coupe nickel.",
+      "Merci beaucoup ma chérie 🥰 J'ai reçu les blazers, c'est bon. Chabiin qualité, finition, tissu lah ybarek. Vraiment top du top ❤️ Lah yaâtik saha !",
     "home.reviews.6.text":
-      "Bsahtek khti, c'est magnifique ! La qualité est au rendez-vous.",
+      "Ohhh wow ! Rabi yehfedlek ♥️ J'ai bien reçu le colis, je suis trop contente, mille merci pour la qualité, le soin et la coupe ! Wallah j'ai adoré.",
     "home.reviews.7.text":
-      "Reçue aujourd'hui ma shaa Allah ! Tellement belle, je suis fan.",
+      "Oui je l'ai récupéré ce matin, J'AI ADORÉ 😍😍😍 yâtikoum saha ! Je suis vraiment contente. J'ai montré à ma sœur et elle veut passer une deuxième commande. Je vous enverrai une photo une fois porté.",
     "home.reviews.8.text":
-      "Livraison rapide et la qualité est ouf. Je recommande les yeux fermés.",
+      "La pièce est magnifique, je suis trop contente. Le tissu, la finition, la coupe… tout est parfait. Rabi yberek ! Merci infiniment pour votre adorable retour.",
     "home.reviews.9.text":
-      "Je l'ai reçue aujourd'hui. Franchement qualité au top !",
+      "Merci beaucoup madame, vous avez fait un excellent travail, que ce soit du côté couture ou commercial. Bravo, bon courage et plein de succès ! Je serai une cliente fidèle à votre marque sublime.",
     "home.reviews.10.text":
-      "Merci Harp ! La robe est sublime, exactement ce que je cherchais.",
+      "J'ai reçu mon ensemble d'été, merci ! 😍 C'est exactement la taille qu'il me fallait ❤️ La couleur me plaît beaucoup, c'est un magnifique ensemble. Bravo à vous, c'est un plaisir de traiter avec vous.",
     "home.ourStory": "Notre Histoire",
     "home.discover": "Découvrir",
     "home.whyHarp": "Pourquoi Harp",
@@ -127,6 +127,15 @@ export const translations = {
     "home.cta.desc":
       "Explorez notre collection et trouvez la pièce qui vous accompagnera au quotidien.",
     "home.cta.button": "Découvrir la boutique",
+
+    // Loyalty
+    "home.loyalty.badge": "Programme Fidélité",
+    "home.loyalty.title": "Vos achats vous récompensent",
+    "home.loyalty.desc":
+      "Chaque commande vous rapproche d'avantages exclusifs. Cumulez des points, montez en grade et profitez de privilèges réservés à nos clientes fidèles.",
+    "home.loyalty.earnTitle": "Comment gagner des points",
+    "home.loyalty.vipTitle": "Niveaux VIP",
+    "home.loyalty.cta": "En savoir plus",
 
     // Shop
     "shop.hero.subtitle": "Découvrez nos pièces élégantes et intemporelles",
@@ -308,23 +317,25 @@ export const translations = {
     "home.join.title": "انضمي لعالم هارب",
     "home.join.cta": "تصفح المتجر",
     "home.reviews.1.text":
-      "أحببتها حقاً! جودة عالية وتشطيبات متقنة. شكراً جزيلاً.",
-    "home.reviews.2.text": "ما شاء الله! الجودة رائعة والقصة مثالية.",
-    "home.reviews.3.text": "إنها تحفة حقاً! تناسبني تماماً.",
+      "أحببتها حقاً! جودة عالية وتشطيبات متقنة. شكراً جزيلاً، أنا سعيدة جداً!",
+    "home.reviews.2.text":
+      "شكراً جزيلاً على السترة، وصلتني. رائعة حقاً! إلى المرة القادمة إن شاء الله وبالتوفيق.",
+    "home.reviews.3.text":
+      "شكراً لكم، يناسبني جداً. موديل جميل وجودة عالية جداً. شكراً جزيلاً!",
     "home.reviews.4.text":
-      "ما شاء الله، رائعة! ما فيها حتى خيط زايد. جودة عالية.",
+      "ما شاء الله، الله يعطيكم الصحة. ما لقيت الكلمات… شكراً بزاف! الهدية أثرت فيّا، الجودة رائعة، القصة مثالية والنتيجة أجمل في الواقع. نتمنالكم مزيد من النجاح والإبداع. تستاهلوا حقاً.",
     "home.reviews.5.text":
-      "بصراحة أجمل عباية عندي. القماش ممتاز والقصة نيكال.",
+      "شكراً بزاف حبيبتي 🥰 وصلوني البليزرات. شابين الجودة، التشطيب، القماش الله يبارك. حقاً توب دو توب ❤️ الله يعطيك الصحة!",
     "home.reviews.6.text":
-      "بصحتك ختي، رائعة! الجودة في الموعد.",
+      "أوه واو! ربي يحفظلك ♥️ وصلني الطرد، أنا فرحانة بزاف، ألف شكر على الجودة، العناية والقصة! والله عجبتني.",
     "home.reviews.7.text":
-      "وصلتني اليوم ما شاء الله! جميلة بزاف، أنا معجبة.",
+      "إيه جابتهولي الصباح، عجبتني بزاااف 😍😍😍 يعطيكم الصحة! أنا فرحانة حقاً. وريتها لختي وتبغي تدير طلبية ثانية. نبعثلكم صورة كي نلبسها.",
     "home.reviews.8.text":
-      "توصيل سريع والجودة خطيرة. نوصي بيها بعيون مغمضة.",
+      "القطعة رائعة، أنا فرحانة بزاف. القماش، التشطيب، القصة… كلشي تمام. ربي يبارك! شكراً جزيلاً على ردكم اللطيف.",
     "home.reviews.9.text":
-      "وصلتني اليوم. بصراحة جودة في القمة!",
+      "شكراً بزاف مدام، خدمتوا عمل ممتاز، سواء من ناحية الخياطة أو التجارة. برافو، بالتوفيق والنجاح! راح نكون عميلة وفية لعلامتكم الرائعة.",
     "home.reviews.10.text":
-      "شكراً هارب! الفستان رائع، بالضبط اللي كنت نحوسها.",
+      "وصلني طقم الصيف، شكراً! 😍 بالضبط المقاس اللي يناسبني ❤️ اللون عجبني بزاف، طقم رائع. برافو عليكم، فرحة التعامل معاكم.",
     "home.ourStory": "قصتنا",
     "home.discover": "اكتشف",
     "home.whyHarp": "لماذا هارب",
@@ -351,6 +362,15 @@ export const translations = {
     "home.cta.title": "مستعدة لاكتشاف أسلوبك؟",
     "home.cta.desc": "تصفحي مجموعتنا واجدي القطعة التي سترافقك يومياً.",
     "home.cta.button": "تصفح المتجر",
+
+    // Loyalty
+    "home.loyalty.badge": "برنامج الولاء",
+    "home.loyalty.title": "مشترياتك تكافئك",
+    "home.loyalty.desc":
+      "كل طلبية تقربك من مزايا حصرية. اجمعي النقاط، ارتقي في المستوى واستمتعي بامتيازات خاصة بعميلاتنا الوفيات.",
+    "home.loyalty.earnTitle": "كيف تكسبين النقاط",
+    "home.loyalty.vipTitle": "مستويات VIP",
+    "home.loyalty.cta": "اكتشفي المزيد",
 
     // Shop
     "shop.hero.subtitle": "اكتشفي قطعنا الأنيقة والخالدة",

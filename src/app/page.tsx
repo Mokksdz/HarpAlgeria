@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { HomeClient } from "@/components/home/HomeClient";
+import { getSiteSettings } from "@/lib/site/settings.service";
 
 // Force dynamic rendering - don't try to access DB at build time
 export const dynamic = "force-dynamic";
@@ -39,8 +40,8 @@ function HomeSkeleton() {
 
 // Async data-fetching component
 async function HomeContent() {
-  // Fetch products & collections in parallel
-  const [products, collections] = await Promise.all([
+  // Fetch products, collections & site settings in parallel
+  const [products, collections, siteSettings] = await Promise.all([
     prisma.product.findMany({
       where: { isActive: true },
       take: 4,
@@ -50,6 +51,9 @@ async function HomeContent() {
         nameFr: true,
         nameAr: true,
         price: true,
+        promoPrice: true,
+        promoStart: true,
+        promoEnd: true,
         images: true,
       },
     }),
@@ -63,18 +67,36 @@ async function HomeContent() {
         image: true,
       },
     }),
+    getSiteSettings(),
   ]);
 
   // Convert Decimal to number for serialization
   const serializedProducts = products.map((p) => ({
     ...p,
     price: Number(p.price),
+    promoPrice: p.promoPrice ? Number(p.promoPrice) : null,
+    promoStart: p.promoStart ? p.promoStart.toISOString() : null,
+    promoEnd: p.promoEnd ? p.promoEnd.toISOString() : null,
   }));
 
   return (
     <HomeClient
       initialProducts={serializedProducts}
       initialCollections={collections}
+      siteSettings={
+        siteSettings
+          ? {
+              featuredImageUrl: siteSettings.featuredImageUrl,
+              featuredBadgeFr: siteSettings.featuredBadgeFr,
+              featuredBadgeAr: siteSettings.featuredBadgeAr,
+              featuredTitleFr: siteSettings.featuredTitleFr,
+              featuredTitleAr: siteSettings.featuredTitleAr,
+              featuredDescFr: siteSettings.featuredDescFr,
+              featuredDescAr: siteSettings.featuredDescAr,
+              featuredCtaUrl: siteSettings.featuredCtaUrl,
+            }
+          : null
+      }
     />
   );
 }

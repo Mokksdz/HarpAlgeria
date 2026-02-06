@@ -121,27 +121,82 @@ export async function POST(request: NextRequest) {
       }),
     );
 
-    // Create the order and its items in a transaction
-    const order = await prisma.order.create({
-      data: {
-        customerName: sanitizeString(body.customerName),
-        customerPhone: sanitizeString(body.customerPhone),
-        customerAddress: sanitizeString(body.customerAddress),
-        customerCity: sanitizeString(body.customerCity),
-        customerWilaya: body.customerWilaya,
-        deliveryProvider: body.deliveryProvider || null,
-        deliveryType: body.deliveryType || null,
-        shippingPrice: parseFloat(body.shippingPrice) || 0,
-        subtotal,
-        total: totalAmount,
-        userId: userId || null, // Link order to user if logged in
-        items: {
-          create: itemsData,
+    // Create the order and decrement stock in a single transaction
+    const order = await prisma.$transaction(async (tx) => {
+      // Validate & decrement variant stock for each item
+      for (const item of body.items) {
+        if (!item.productId) continue;
+        const qty = parseInt(String(item.quantity));
+
+        // Try to find a matching variant
+        const variant = await tx.productVariant.findUnique({
+          where: {
+            productId_size_color: {
+              productId: item.productId,
+              size: item.size,
+              color: item.color,
+            },
+          },
+        });
+
+        if (variant) {
+          // Variant-level stock check
+          if (variant.stock < qty) {
+            throw new Error(
+              `Stock insuffisant pour ${item.productName} (${item.size}/${item.color}): ${variant.stock} disponible(s)`,
+            );
+          }
+          await tx.productVariant.update({
+            where: { id: variant.id },
+            data: { stock: { decrement: qty } },
+          });
+          // Also decrement the product-level total stock
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: qty } },
+          });
+        } else {
+          // No variant: fallback to product-level stock
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+            select: { stock: true },
+          });
+          if (product && product.stock < qty) {
+            throw new Error(
+              `Stock insuffisant pour ${item.productName}: ${product.stock} disponible(s)`,
+            );
+          }
+          if (product) {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: { stock: { decrement: qty } },
+            });
+          }
+        }
+      }
+
+      // Create the order
+      return tx.order.create({
+        data: {
+          customerName: sanitizeString(body.customerName),
+          customerPhone: sanitizeString(body.customerPhone),
+          customerAddress: sanitizeString(body.customerAddress),
+          customerCity: sanitizeString(body.customerCity),
+          customerWilaya: body.customerWilaya,
+          deliveryProvider: body.deliveryProvider || null,
+          deliveryType: body.deliveryType || null,
+          shippingPrice: parseFloat(body.shippingPrice) || 0,
+          subtotal,
+          total: totalAmount,
+          userId: userId || null,
+          items: {
+            create: itemsData,
+          },
         },
-      },
-      include: {
-        items: true,
-      },
+        include: {
+          items: true,
+        },
+      });
     });
 
     // Loyalty: Award points if user is logged in
@@ -160,6 +215,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(order, { status: 201 });
   } catch (error: unknown) {
     console.error("Order creation error:", error);
+
+    // Handle stock insufficiency errors
+    if (error instanceof Error && error.message.startsWith("Stock insuffisant")) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 },
+      );
+    }
 
     // Handle specific Prisma errors
     const prismaError = error as {

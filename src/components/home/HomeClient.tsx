@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useLanguage } from "@/components/LanguageProvider";
 import { ProductCard } from "@/components/ProductCard";
 import { Star, ArrowRight } from "lucide-react";
+import { getActivePrice } from "@/lib/product-utils";
+import { LoyaltySection } from "@/components/home/LoyaltySection";
 
 // Intersection Observer hook for scroll animations
 function useInView(threshold = 0.1): [React.RefCallback<HTMLElement>, boolean] {
@@ -37,6 +39,9 @@ interface Product {
   nameFr: string;
   nameAr: string;
   price: number;
+  promoPrice?: number | null;
+  promoStart?: string | null;
+  promoEnd?: string | null;
   images: string;
 }
 
@@ -47,14 +52,27 @@ interface Collection {
   image: string | null;
 }
 
+interface FeaturedSettings {
+  featuredImageUrl?: string | null;
+  featuredBadgeFr?: string | null;
+  featuredBadgeAr?: string | null;
+  featuredTitleFr?: string | null;
+  featuredTitleAr?: string | null;
+  featuredDescFr?: string | null;
+  featuredDescAr?: string | null;
+  featuredCtaUrl?: string | null;
+}
+
 interface HomeClientProps {
   initialProducts: Product[];
   initialCollections: Collection[];
+  siteSettings?: FeaturedSettings | null;
 }
 
 export function HomeClient({
   initialProducts,
   initialCollections,
+  siteSettings,
 }: HomeClientProps) {
   const { t, language } = useLanguage();
 
@@ -71,17 +89,17 @@ export function HomeClient({
     },
     {
       text: t("home.reviews.2.text"),
-      author: "Amina",
+      author: "Leti C.",
       rating: 5,
     },
     {
       text: t("home.reviews.3.text"),
-      author: "Boutayna S.",
+      author: "Soraya B.",
       rating: 5,
     },
     {
       text: t("home.reviews.4.text"),
-      author: "Soraya B.",
+      author: "Amina",
       rating: 5,
     },
     {
@@ -91,7 +109,7 @@ export function HomeClient({
     },
     {
       text: t("home.reviews.6.text"),
-      author: "Leti C.",
+      author: "As.",
       rating: 5,
     },
     {
@@ -106,7 +124,7 @@ export function HomeClient({
     },
     {
       text: t("home.reviews.9.text"),
-      author: "As.",
+      author: "Boutayna S.",
       rating: 5,
     },
     {
@@ -115,6 +133,24 @@ export function HomeClient({
       rating: 5,
     },
   ];
+
+  // Featured section content — uses admin settings with translation fallbacks
+  const featuredImage =
+    siteSettings?.featuredImageUrl ||
+    "https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?w=1200&q=80";
+  const featuredBadge =
+    language === "fr"
+      ? siteSettings?.featuredBadgeFr || t("home.featured.badge")
+      : siteSettings?.featuredBadgeAr || t("home.featured.badge");
+  const featuredTitle =
+    language === "fr"
+      ? siteSettings?.featuredTitleFr || t("home.featured.title")
+      : siteSettings?.featuredTitleAr || t("home.featured.title");
+  const featuredDesc =
+    language === "fr"
+      ? siteSettings?.featuredDescFr || t("home.featured.desc")
+      : siteSettings?.featuredDescAr || t("home.featured.desc");
+  const featuredCtaUrl = siteSettings?.featuredCtaUrl || "/shop";
 
   return (
     <div className="flex flex-col bg-harp-cream">
@@ -179,6 +215,7 @@ export function HomeClient({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
               {initialProducts.map((product, index) => {
                 const images = JSON.parse(product.images);
+                const { price, originalPrice } = getActivePrice(product);
                 return (
                   <div
                     key={product.id}
@@ -188,7 +225,8 @@ export function HomeClient({
                     <ProductCard
                       id={product.id}
                       name={language === "fr" ? product.nameFr : product.nameAr}
-                      price={product.price}
+                      price={price}
+                      originalPrice={originalPrice || undefined}
                       image={images[0]}
                       category={t("shop.badge.new")}
                       isNew={true}
@@ -219,8 +257,8 @@ export function HomeClient({
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
           <div className="relative h-[500px] lg:h-auto order-1">
             <Image
-              src="https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?w=1200&q=80"
-              alt="La pièce du moment"
+              src={featuredImage}
+              alt={featuredBadge}
               fill
               className="object-cover"
             />
@@ -228,16 +266,16 @@ export function HomeClient({
           <div className="flex items-center justify-center p-12 lg:p-24 order-2">
             <div className="max-w-md">
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-harp-caramel mb-6 block">
-                {t("home.featured.badge")}
+                {featuredBadge}
               </span>
               <h2 className="text-4xl md:text-5xl font-serif font-medium text-harp-brown mb-6">
-                {t("home.featured.title")}
+                {featuredTitle}
               </h2>
               <p className="text-gray-600 text-lg leading-relaxed mb-8 font-light">
-                {t("home.featured.desc")}
+                {featuredDesc}
               </p>
               <Link
-                href="/shop"
+                href={featuredCtaUrl}
                 className="inline-block bg-harp-brown text-white px-8 py-4 text-xs uppercase tracking-[0.2em] hover:bg-harp-caramel transition-colors"
               >
                 {t("home.discover")}
@@ -278,6 +316,9 @@ export function HomeClient({
           </div>
         </div>
       </section>
+
+      {/* Loyalty Program Section */}
+      <LoyaltySection />
 
       {/* Collections Showcase - Visual */}
       {initialCollections.length > 0 && (

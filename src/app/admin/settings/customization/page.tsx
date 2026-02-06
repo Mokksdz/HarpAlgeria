@@ -1,5 +1,6 @@
 import { getSiteSettings } from "@/lib/site/settings.service";
 import AdminHeroEditor from "@/components/admin/AdminHeroEditor";
+import AdminFeaturedEditor from "@/components/admin/AdminFeaturedEditor";
 import { Palette } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export default async function CustomizationPage() {
           Personnalisation
         </h1>
         <p className="text-gray-500 mt-1">
-          Configurez l'apparence de votre site
+          Configurez l&apos;apparence de votre site
         </p>
       </div>
 
@@ -26,6 +27,19 @@ export default async function CustomizationPage() {
           Section Hero
         </h2>
         <AdminHeroEditor initial={settings} />
+      </div>
+
+      {/* Featured Product Section */}
+      <div className="bg-gray-50 rounded-2xl p-6">
+        <h2 className="text-lg font-semibold text-harp-brown mb-4">
+          Section Produit Vedette
+        </h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Modifiez la photo et le texte de la section &quot;La Pièce du
+          Moment&quot; / &quot;L&apos;Ensemble Signature&quot; sur la page
+          d&apos;accueil.
+        </p>
+        <AdminFeaturedEditor initial={settings} />
       </div>
     </div>
   );

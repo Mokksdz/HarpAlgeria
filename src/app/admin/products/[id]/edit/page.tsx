@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import StockMatrix from "@/components/admin/StockMatrix";
 
 interface Collection {
   id: string;
@@ -42,12 +43,18 @@ export default function EditProductPage({
   const [mediaItems, setMediaItems] = useState<UploadedMedia[]>([]);
   const [uploadMode, setUploadMode] = useState<"file" | "url">("file");
   const [newImageUrl, setNewImageUrl] = useState("");
+  const [variants, setVariants] = useState<
+    { size: string; color: string; stock: number }[]
+  >([]);
   const [formData, setFormData] = useState({
     nameFr: "",
     nameAr: "",
     descriptionFr: "",
     descriptionAr: "",
     price: "",
+    promoPrice: "",
+    promoStart: "",
+    promoEnd: "",
     stock: "0",
     sizes: "",
     colors: "",
@@ -83,12 +90,29 @@ export default function EditProductPage({
           descriptionFr: data.descriptionFr,
           descriptionAr: data.descriptionAr,
           price: data.price.toString(),
+          promoPrice: data.promoPrice ? data.promoPrice.toString() : "",
+          promoStart: data.promoStart
+            ? new Date(data.promoStart).toISOString().slice(0, 16)
+            : "",
+          promoEnd: data.promoEnd
+            ? new Date(data.promoEnd).toISOString().slice(0, 16)
+            : "",
           stock: (data.stock || 0).toString(),
           sizes: JSON.parse(data.sizes).join(", "),
           colors: JSON.parse(data.colors).join(", "),
           collectionId: data.collectionId || "",
           showSizeGuide: data.showSizeGuide !== false,
         });
+
+        if (data.variants && data.variants.length > 0) {
+          setVariants(
+            data.variants.map((v: any) => ({
+              size: v.size,
+              color: v.color,
+              stock: v.stock,
+            })),
+          );
+        }
       } catch (error) {
         console.error("Error fetching product:", error);
         alert("Erreur lors du chargement du produit");
@@ -191,12 +215,27 @@ export default function EditProductPage({
         body: JSON.stringify({
           ...formData,
           price: parseFloat(formData.price),
-          stock: parseInt(formData.stock) || 0,
+          promoPrice: formData.promoPrice
+            ? parseFloat(formData.promoPrice)
+            : null,
+          promoStart: formData.promoStart || null,
+          promoEnd: formData.promoEnd || null,
+          stock:
+            variants.length > 0
+              ? variants.reduce((s, v) => s + v.stock, 0)
+              : parseInt(formData.stock) || 0,
           images: completedMedia.map((m) => m.url),
-          sizes: formData.sizes.split(",").map((s: string) => s.trim()),
-          colors: formData.colors.split(",").map((s: string) => s.trim()),
+          sizes: formData.sizes
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter(Boolean),
+          colors: formData.colors
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter(Boolean),
           collectionId: formData.collectionId || null,
           showSizeGuide: formData.showSizeGuide,
+          variants: variants,
         }),
       });
 
@@ -308,13 +347,13 @@ export default function EditProductPage({
           </div>
         </div>
 
-        {/* Price, Stock & Collection */}
+        {/* Price & Collection */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
           <h2 className="text-lg font-medium text-gray-900 border-b border-gray-50 pb-4">
-            Prix, Stock & Collection
+            Prix & Collection
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
                 Prix (DZD)
@@ -335,20 +374,6 @@ export default function EditProductPage({
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                Stock disponible
-              </label>
-              <input
-                required
-                type="number"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                min="0"
-                className="w-full bg-gray-50 border-none p-3 rounded-xl focus:ring-2 focus:ring-gray-200 outline-none transition-all placeholder:text-gray-400"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
                 Collection
               </label>
               <select
@@ -365,6 +390,70 @@ export default function EditProductPage({
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Promotional Price */}
+          <div className="pt-4 border-t border-gray-50 space-y-4">
+            <h3 className="text-sm font-medium text-gray-900">
+              Prix promotionnel{" "}
+              <span className="text-gray-400 font-normal">(optionnel)</span>
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Prix promo (DZD)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    name="promoPrice"
+                    value={formData.promoPrice}
+                    onChange={handleChange}
+                    placeholder="Laisser vide = pas de promo"
+                    className="w-full bg-gray-50 border-none p-3 pr-16 rounded-xl focus:ring-2 focus:ring-gray-200 outline-none transition-all placeholder:text-gray-400"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">
+                    DZD
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Début promo
+                </label>
+                <input
+                  type="datetime-local"
+                  name="promoStart"
+                  value={formData.promoStart}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border-none p-3 rounded-xl focus:ring-2 focus:ring-gray-200 outline-none transition-all placeholder:text-gray-400"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Fin promo
+                </label>
+                <input
+                  type="datetime-local"
+                  name="promoEnd"
+                  value={formData.promoEnd}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border-none p-3 rounded-xl focus:ring-2 focus:ring-gray-200 outline-none transition-all placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+            {formData.promoPrice && formData.price && (
+              <p className="text-sm text-green-600">
+                Remise :{" "}
+                {Math.round(
+                  (1 -
+                    parseFloat(formData.promoPrice) /
+                      parseFloat(formData.price)) *
+                    100,
+                )}
+                % — L&apos;ancien prix sera barré sur la boutique
+              </p>
+            )}
           </div>
         </div>
 
@@ -527,10 +616,10 @@ export default function EditProductPage({
           )}
         </div>
 
-        {/* Variants */}
+        {/* Variants & Stock */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
           <h2 className="text-lg font-medium text-gray-900 border-b border-gray-50 pb-4">
-            Variantes
+            Variantes & Stock
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -558,6 +647,34 @@ export default function EditProductPage({
                 className="w-full bg-gray-50 border-none p-3 rounded-xl focus:ring-2 focus:ring-gray-200 outline-none transition-all placeholder:text-gray-400"
               />
             </div>
+          </div>
+
+          {/* Stock Matrix */}
+          <div className="pt-4 border-t border-gray-50 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                Stock par variante
+              </label>
+              <span className="text-sm text-gray-500">
+                Total :{" "}
+                {variants.length > 0
+                  ? variants.reduce((s, v) => s + v.stock, 0)
+                  : formData.stock}{" "}
+                unités
+              </span>
+            </div>
+            <StockMatrix
+              sizes={formData.sizes
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)}
+              colors={formData.colors
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)}
+              variants={variants}
+              onChange={setVariants}
+            />
           </div>
 
           {/* Size Guide Toggle */}

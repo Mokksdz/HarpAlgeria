@@ -10,7 +10,7 @@ export async function GET(
     const { id } = await params;
     const product = await prisma.product.findUnique({
       where: { id },
-      include: { collection: true },
+      include: { collection: true, variants: true },
     });
 
     if (!product) {
@@ -54,6 +54,9 @@ export async function PUT(
         descriptionFr: sanitizeString(body.descriptionFr),
         descriptionAr: sanitizeString(body.descriptionAr),
         price: parseFloat(body.price),
+        promoPrice: body.promoPrice ? parseFloat(body.promoPrice) : null,
+        promoStart: body.promoStart ? new Date(body.promoStart) : null,
+        promoEnd: body.promoEnd ? new Date(body.promoEnd) : null,
         images: JSON.stringify(body.images),
         sizes: JSON.stringify(body.sizes),
         colors: JSON.stringify(body.colors),
@@ -65,6 +68,29 @@ export async function PUT(
         collectionId: body.collectionId || null,
       },
     });
+
+    // Handle variants
+    if (body.variants && Array.isArray(body.variants)) {
+      await prisma.productVariant.deleteMany({ where: { productId: id } });
+
+      if (body.variants.length > 0) {
+        await prisma.productVariant.createMany({
+          data: body.variants.map((v: { size: string; color: string; stock: number }) => ({
+            productId: id,
+            size: v.size,
+            color: v.color,
+            stock: v.stock || 0,
+          })),
+        });
+      }
+
+      const totalStock = body.variants.reduce((sum: number, v: { stock: number }) => sum + (v.stock || 0), 0);
+      await prisma.product.update({
+        where: { id },
+        data: { stock: totalStock },
+      });
+    }
+
     return NextResponse.json(product);
   } catch (error) {
     console.error("Error updating product:", error);

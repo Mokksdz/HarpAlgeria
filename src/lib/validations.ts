@@ -77,6 +77,20 @@ export function validateProduct(data: any): ValidationResult {
     errors.push("Le prix doit être un nombre positif");
   }
 
+  if (
+    data.promoPrice !== undefined &&
+    data.promoPrice !== null &&
+    data.promoPrice !== ""
+  ) {
+    const promo = parseFloat(data.promoPrice);
+    if (isNaN(promo) || promo <= 0) {
+      errors.push("Le prix promo doit être un nombre positif");
+    }
+    if (!isNaN(promo) && !isNaN(price) && promo >= price) {
+      errors.push("Le prix promo doit être inférieur au prix normal");
+    }
+  }
+
   if (!Array.isArray(data.images) || data.images.length === 0) {
     errors.push("Au moins une image est requise");
   } else {

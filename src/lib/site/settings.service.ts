@@ -96,6 +96,67 @@ export async function updateHeroSettings(data: HeroSettings, userId?: string) {
   });
 }
 
+export interface FeaturedSettings {
+  featuredImageUrl?: string | null;
+  featuredImagePublicId?: string | null;
+  featuredBadgeFr?: string | null;
+  featuredBadgeAr?: string | null;
+  featuredTitleFr?: string | null;
+  featuredTitleAr?: string | null;
+  featuredDescFr?: string | null;
+  featuredDescAr?: string | null;
+  featuredCtaUrl?: string | null;
+}
+
+/**
+ * Update featured section settings with audit trail
+ */
+export async function updateFeaturedSettings(
+  data: FeaturedSettings,
+  userId?: string,
+) {
+  return prisma.$transaction(async (tx) => {
+    const prev = await tx.siteSetting.findUnique({
+      where: { id: "default" },
+    });
+
+    if (!prev) {
+      await tx.siteSetting.create({ data: { id: "default" } });
+    }
+
+    if (prev) {
+      await tx.siteSettingHistory.create({
+        data: {
+          settingId: "default",
+          snapshot: JSON.stringify(prev),
+          userId,
+        },
+      });
+    }
+
+    const updated = await tx.siteSetting.update({
+      where: { id: "default" },
+      data: {
+        ...data,
+        lastUpdatedById: userId || null,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        action: "UPDATE_FEATURED",
+        entity: "SiteSetting",
+        entityId: "default",
+        userId: userId || null,
+        before: prev ? JSON.stringify(prev) : null,
+        after: JSON.stringify(updated),
+      },
+    });
+
+    return { prev, updated };
+  });
+}
+
 /**
  * Get settings history for rollback
  */

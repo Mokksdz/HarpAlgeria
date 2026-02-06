@@ -28,6 +28,7 @@ import {
 import { getWhatsAppLink } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/JsonLd";
+import { getActivePrice } from "@/lib/product-utils";
 
 export default function ProductPage({
   params,
@@ -38,6 +39,13 @@ export default function ProductPage({
   const { t, language } = useLanguage();
   const { addItem } = useCart();
 
+  interface ProductVariant {
+    id: string;
+    size: string;
+    color: string;
+    stock: number;
+  }
+
   interface ProductData {
     id: string;
     nameFr: string;
@@ -45,9 +53,14 @@ export default function ProductPage({
     descriptionFr: string;
     descriptionAr: string;
     price: number;
+    promoPrice?: number | null;
+    promoStart?: string | null;
+    promoEnd?: string | null;
+    stock: number;
     images: string[];
     sizes: string[];
     colors: string[];
+    variants?: ProductVariant[];
     collectionId?: string | null;
     showSizeGuide?: boolean;
   }
@@ -74,7 +87,7 @@ export default function ProductPage({
       author: "Yasmin B.",
       location: "Alger",
       rating: 5,
-      text: "J'adore vraiment ! Top qualité et finitions impeccables. Merci beaucoup.",
+      text: "J'adore vraiment ! Top qualité et finitions impeccables. Merci beaucoup, je suis ravie !",
       date: "Il y a 2 jours",
     },
     {
@@ -82,7 +95,7 @@ export default function ProductPage({
       author: "Leti C.",
       location: "Oran",
       rating: 5,
-      text: "Bsahtek khti, c'est magnifique ! La qualité est au rendez-vous.",
+      text: "Merci beaucoup pour la veste, je l'ai bien reçue. Elle est magnifique, vraiment ! À la prochaine inshallah et bonne continuation.",
       date: "Il y a 5 jours",
     },
     {
@@ -90,7 +103,7 @@ export default function ProductPage({
       author: "Soraya B.",
       location: "Constantine",
       rating: 5,
-      text: "Ma shaa Allah, c'est magnifique ! Pas un fil qui dépasse. Top qualité.",
+      text: "Je vous remercie, il me va super bien. Très beau modèle et très belle qualité. Merci beaucoup !",
       date: "Il y a 1 semaine",
     },
     {
@@ -98,7 +111,7 @@ export default function ProductPage({
       author: "Amina",
       location: "Alger",
       rating: 5,
-      text: "Ma shaa Allah ! La qualité est magnifique, la coupe est parfaite.",
+      text: "Ma shaa Allah, que Dieu vous accorde la santé. Je ne trouve pas les mots… merci énormément ! Le cadeau m'a touchée, la qualité est magnifique, la coupe est parfaite et le rendu est encore plus beau en vrai. Je vous souhaite encore plus de réussite et de belles créations. Vous le méritez vraiment.",
       date: "Il y a 1 semaine",
     },
     {
@@ -106,7 +119,7 @@ export default function ProductPage({
       author: "Nissa Z.",
       location: "Blida",
       rating: 5,
-      text: "Honnêtement c'est la plus belle abaya que j'ai. Le tissu est top et la coupe nickel.",
+      text: "Merci beaucoup ma chérie 🥰 J'ai reçu les blazers, c'est bon. Chabiin qualité, finition, tissu lah ybarek. Vraiment top du top ❤️ Lah yaâtik saha !",
       date: "Il y a 2 semaines",
     },
     {
@@ -114,7 +127,7 @@ export default function ProductPage({
       author: "As.",
       location: "Tizi Ouzou",
       rating: 5,
-      text: "Je l'ai reçue aujourd'hui. Franchement qualité au top !",
+      text: "Ohhh wow ! Rabi yehfedlek ♥️ J'ai bien reçu le colis, je suis trop contente, mille merci pour la qualité, le soin et la coupe ! Wallah j'ai adoré.",
       date: "Il y a 2 semaines",
     },
     {
@@ -122,7 +135,7 @@ export default function ProductPage({
       author: "Nour",
       location: "Sétif",
       rating: 5,
-      text: "Reçue aujourd'hui ma shaa Allah ! Tellement belle, je suis fan.",
+      text: "Oui je l'ai récupéré ce matin, J'AI ADORÉ 😍😍😍 yâtikoum saha ! Je suis vraiment contente. J'ai montré à ma sœur et elle veut passer une deuxième commande. Je vous enverrai une photo une fois porté.",
       date: "Il y a 3 semaines",
     },
     {
@@ -130,7 +143,7 @@ export default function ProductPage({
       author: "Nivin B.",
       location: "Annaba",
       rating: 5,
-      text: "Livraison rapide et la qualité est ouf. Je recommande les yeux fermés.",
+      text: "La pièce est magnifique, je suis trop contente. Le tissu, la finition, la coupe… tout est parfait. Rabi yberek ! Merci infiniment pour votre adorable retour.",
       date: "Il y a 3 semaines",
     },
     {
@@ -138,7 +151,7 @@ export default function ProductPage({
       author: "Boutayna S.",
       location: "Oran",
       rating: 5,
-      text: "C'est une pépite, vraiment ! Elle me va parfaitement.",
+      text: "Merci beaucoup madame, vous avez fait un excellent travail, que ce soit du côté couture ou commercial. Bravo, bon courage et plein de succès ! Je serai une cliente fidèle à votre marque sublime.",
       date: "Il y a 1 mois",
     },
     {
@@ -146,7 +159,7 @@ export default function ProductPage({
       author: "Fifi M.",
       location: "Alger",
       rating: 5,
-      text: "Merci Harp ! La robe est sublime, exactement ce que je cherchais.",
+      text: "J'ai reçu mon ensemble d'été, merci ! 😍 C'est exactement la taille qu'il me fallait ❤️ La couleur me plaît beaucoup, c'est un magnifique ensemble. Bravo à vous, c'est un plaisir de traiter avec vous.",
       date: "Il y a 1 mois",
     },
   ];
@@ -250,16 +263,34 @@ export default function ProductPage({
     }
   }, [product, id]);
 
+  // Get variant stock for the currently selected size+color
+  const getVariantStock = (): number | null => {
+    if (!product || !product.variants || product.variants.length === 0) return null;
+    if (!selectedSize || !selectedColor) return null;
+    const v = product.variants.find(
+      (v) => v.size === selectedSize && v.color === selectedColor,
+    );
+    return v ? v.stock : 0;
+  };
+
+  const variantStock = getVariantStock();
+  const isOutOfStock = variantStock !== null && variantStock <= 0;
+
   const handleAddToCart = () => {
     if (!product) return;
     if (!selectedSize || !selectedColor) {
       alert("Veuillez sélectionner une taille et une couleur");
       return;
     }
+    if (isOutOfStock) {
+      alert("Ce produit est en rupture de stock pour cette combinaison taille/couleur.");
+      return;
+    }
+    const { price: activePrice } = getActivePrice(product);
     addItem({
       productId: product.id,
       name: language === "fr" ? product.nameFr : product.nameAr,
-      price: product.price,
+      price: activePrice,
       image: product.images[0],
       size: selectedSize,
       color: selectedColor,
@@ -272,7 +303,8 @@ export default function ProductPage({
   const handleWhatsApp = () => {
     if (!product) return;
     const productName = language === "fr" ? product.nameFr : product.nameAr;
-    const message = `Bonjour, je souhaite commander:\n\n🛍️ ${productName}\n📏 Taille: ${selectedSize}\n🎨 Couleur: ${selectedColor}\n🔢 Quantité: ${quantity}\n💰 Prix: ${product.price * quantity} DZD`;
+    const { price: activePrice } = getActivePrice(product);
+    const message = `Bonjour, je souhaite commander:\n\n🛍️ ${productName}\n📏 Taille: ${selectedSize}\n🎨 Couleur: ${selectedColor}\n🔢 Quantité: ${quantity}\n💰 Prix: ${activePrice * quantity} DZD`;
     window.open(getWhatsAppLink(message), "_blank");
   };
 
@@ -354,7 +386,7 @@ export default function ProductPage({
         product={{
           name,
           description: description || "",
-          price: product.price,
+          price: getActivePrice(product).price,
           image: product.images[0] || "",
           images: product.images,
           sku: product.id,
@@ -494,10 +526,27 @@ export default function ProductPage({
                 <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 mb-2">
                   {name}
                 </h1>
-                <p className="text-2xl md:text-3xl font-bold text-harp-brown">
-                  {product.price.toLocaleString()}{" "}
-                  <span className="text-lg font-normal">DZD</span>
-                </p>
+                {(() => {
+                  const { price: activePrice, originalPrice, isPromo } = getActivePrice(product);
+                  return (
+                    <div className="flex items-baseline gap-3">
+                      <p className="text-2xl md:text-3xl font-bold text-harp-brown">
+                        {activePrice.toLocaleString()}{" "}
+                        <span className="text-lg font-normal">DZD</span>
+                      </p>
+                      {isPromo && originalPrice && (
+                        <>
+                          <p className="text-lg text-gray-400 line-through">
+                            {originalPrice.toLocaleString()} DZD
+                          </p>
+                          <span className="text-xs font-bold text-white bg-red-500 px-2 py-0.5 rounded-full">
+                            -{Math.round(((originalPrice - activePrice) / originalPrice) * 100)}%
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="flex gap-2">
                 <button
@@ -655,6 +704,28 @@ export default function ProductPage({
               </div>
             </div>
 
+            {/* Variant Stock Indicator */}
+            {selectedSize && selectedColor && variantStock !== null && (
+              <div className={cn(
+                "flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg",
+                isOutOfStock
+                  ? "bg-red-50 text-red-600"
+                  : variantStock <= 3
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-green-50 text-green-700",
+              )}>
+                <span className={cn(
+                  "w-2 h-2 rounded-full",
+                  isOutOfStock ? "bg-red-500" : variantStock <= 3 ? "bg-amber-500" : "bg-green-500",
+                )} />
+                {isOutOfStock
+                  ? "Rupture de stock"
+                  : variantStock <= 3
+                    ? `Plus que ${variantStock} en stock`
+                    : "En stock"}
+              </div>
+            )}
+
             {/* Quantity */}
             <div>
               <label className="block text-sm font-medium text-gray-900 uppercase tracking-wide mb-3">
@@ -688,15 +759,19 @@ export default function ProductPage({
             <div className="space-y-3 pt-4">
               <button
                 onClick={handleAddToCart}
-                disabled={addedToCart}
+                disabled={addedToCart || isOutOfStock}
                 className={cn(
                   "w-full py-4 rounded-xl font-medium uppercase tracking-widest transition-all flex items-center justify-center gap-2",
-                  addedToCart
-                    ? "bg-green-600 text-white"
-                    : "bg-harp-brown text-white hover:bg-harp-caramel shadow-lg shadow-harp-brown/20",
+                  isOutOfStock
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : addedToCart
+                      ? "bg-green-600 text-white"
+                      : "bg-harp-brown text-white hover:bg-harp-caramel shadow-lg shadow-harp-brown/20",
                 )}
               >
-                {addedToCart ? (
+                {isOutOfStock ? (
+                  "Rupture de stock"
+                ) : addedToCart ? (
                   <>
                     <Check size={20} />
                     Ajouté au panier
@@ -768,9 +843,15 @@ export default function ProductPage({
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 lg:hidden z-40 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <button
           onClick={handleAddToCart}
-          className="flex-1 bg-harp-brown text-white py-3 rounded-xl font-medium text-sm uppercase tracking-widest"
+          disabled={isOutOfStock}
+          className={cn(
+            "flex-1 py-3 rounded-xl font-medium text-sm uppercase tracking-widest",
+            isOutOfStock
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-harp-brown text-white",
+          )}
         >
-          {addedToCart ? "Ajouté !" : "Ajouter au panier"}
+          {isOutOfStock ? "Rupture de stock" : addedToCart ? "Ajouté !" : "Ajouter au panier"}
         </button>
         <button
           onClick={handleWhatsApp}
