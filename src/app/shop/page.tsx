@@ -8,6 +8,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { ChevronDown, Package, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/components/Analytics";
+import { getActivePrice } from "@/lib/product-utils";
 
 type SortOption = "newest" | "price-asc" | "price-desc" | "name";
 
@@ -257,23 +258,29 @@ export default function ShopPage() {
                   className="animate-fade-in-up"
                   style={{ animationDelay: `${Math.min(index * 50, 400)}ms` }}
                 >
-                  <ProductCard
-                    id={product.id}
-                    name={language === "fr" ? product.nameFr : product.nameAr}
-                    price={product.price}
-                    image={images[0]}
-                    category={
-                      collection
-                        ? language === "fr"
-                          ? collection.nameFr
-                          : collection.nameAr
-                        : undefined
-                    }
-                    isNew={
-                      new Date(product.createdAt) >
-                      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                    }
-                  />
+                  {(() => {
+                    const { price: activePrice, originalPrice } = getActivePrice(product);
+                    return (
+                      <ProductCard
+                        id={product.id}
+                        name={language === "fr" ? product.nameFr : product.nameAr}
+                        price={activePrice}
+                        originalPrice={originalPrice ?? undefined}
+                        image={images[0]}
+                        category={
+                          collection
+                            ? language === "fr"
+                              ? collection.nameFr
+                              : collection.nameAr
+                            : undefined
+                        }
+                        isNew={
+                          new Date(product.createdAt) >
+                          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                        }
+                      />
+                    );
+                  })()}
                 </div>
               );
             })}

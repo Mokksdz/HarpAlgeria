@@ -157,6 +157,69 @@ export async function updateFeaturedSettings(
   });
 }
 
+export interface AboutSettings {
+  aboutImage1Url?: string | null;
+  aboutImage2Url?: string | null;
+  aboutImage3Url?: string | null;
+  aboutHeroTitle?: string | null;
+  aboutHeroSubtitle?: string | null;
+  aboutStoryTitle?: string | null;
+  aboutStoryP1?: string | null;
+  aboutStoryP2?: string | null;
+  aboutStoryP3?: string | null;
+  aboutQuote?: string | null;
+  aboutQuoteAuthor?: string | null;
+}
+
+/**
+ * Update about page settings with audit trail
+ */
+export async function updateAboutSettings(
+  data: AboutSettings,
+  userId?: string,
+) {
+  return prisma.$transaction(async (tx) => {
+    const prev = await tx.siteSetting.findUnique({
+      where: { id: "default" },
+    });
+
+    if (!prev) {
+      await tx.siteSetting.create({ data: { id: "default" } });
+    }
+
+    if (prev) {
+      await tx.siteSettingHistory.create({
+        data: {
+          settingId: "default",
+          snapshot: JSON.stringify(prev),
+          userId,
+        },
+      });
+    }
+
+    const updated = await tx.siteSetting.update({
+      where: { id: "default" },
+      data: {
+        ...data,
+        lastUpdatedById: userId || null,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        action: "UPDATE_ABOUT",
+        entity: "SiteSetting",
+        entityId: "default",
+        userId: userId || null,
+        before: prev ? JSON.stringify(prev) : null,
+        after: JSON.stringify(updated),
+      },
+    });
+
+    return { prev, updated };
+  });
+}
+
 /**
  * Get settings history for rollback
  */

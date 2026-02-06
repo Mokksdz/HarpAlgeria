@@ -7,7 +7,7 @@ export const LOYALTY_RULES = {
   ABANDONED_CART_RECOVERY_BONUS: 200,
   NEWSLETTER_SIGNUP_BONUS: 50,
   REVIEW_WITH_PHOTO_BONUS: 150,
-  BIRTHDAY_BONUS: 5000, // Points anniversaire
+  BIRTHDAY_BONUS: 2500, // Points anniversaire
   WISHLIST_ADD_BONUS: 10,
   WISHLIST_PURCHASE_BONUS: 50,
 };
@@ -24,7 +24,6 @@ export const VIP_LEVELS = {
     multiplier: 1.5,
     benefits: [
       "Livraison gratuite sans minimum",
-      "Service conciergerie",
       "Cadeau surprise",
     ],
   },

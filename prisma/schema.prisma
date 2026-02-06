@@ -811,6 +811,19 @@ model SiteSetting {
   featuredDescAr        String?
   featuredCtaUrl        String?
 
+  // About Page
+  aboutImage1Url        String?   // Brand origin section - left image
+  aboutImage2Url        String?   // Brand origin section - right image
+  aboutImage3Url        String?   // Quality section - full image
+  aboutHeroTitle        String?
+  aboutHeroSubtitle     String?
+  aboutStoryTitle       String?
+  aboutStoryP1          String?
+  aboutStoryP2          String?
+  aboutStoryP3          String?
+  aboutQuote            String?
+  aboutQuoteAuthor      String?
+
   // Audit
   lastUpdatedById     String?
   lastUpdatedBy       User?     @relation("SiteSettingsUpdater", fields: [lastUpdatedById], references: [id])

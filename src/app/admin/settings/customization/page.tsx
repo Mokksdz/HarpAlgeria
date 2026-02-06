@@ -1,6 +1,7 @@
 import { getSiteSettings } from "@/lib/site/settings.service";
 import AdminHeroEditor from "@/components/admin/AdminHeroEditor";
 import AdminFeaturedEditor from "@/components/admin/AdminFeaturedEditor";
+import AdminAboutEditor from "@/components/admin/AdminAboutEditor";
 import { Palette } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,17 @@ export default async function CustomizationPage() {
           d&apos;accueil.
         </p>
         <AdminFeaturedEditor initial={settings} />
+      </div>
+
+      {/* About Page Section */}
+      <div className="bg-gray-50 rounded-2xl p-6">
+        <h2 className="text-lg font-semibold text-harp-brown mb-4">
+          Page À Propos
+        </h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Modifiez les photos et textes de la page &quot;À Propos&quot;.
+        </p>
+        <AdminAboutEditor initialSettings={settings} />
       </div>
     </div>
   );

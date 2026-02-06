@@ -9,6 +9,7 @@ import {
   LOYALTY_RULES,
 } from "@/lib/loyalty/services/loyalty.service";
 import { withRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { getActivePrice } from "@/lib/product-utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -199,10 +200,34 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    // Loyalty: Award points if user is logged in
+    // Loyalty: Award points only on non-promo items
     if (userId) {
       try {
-        const points = Math.floor(totalAmount * LOYALTY_RULES.POINTS_PER_DZD);
+        // Fetch product details to check promo status
+        let eligibleAmount = 0;
+        for (const item of body.items) {
+          if (!item.productId) {
+            // No product ID — count full amount
+            eligibleAmount += parseInt(String(item.quantity)) * parseFloat(String(item.price));
+            continue;
+          }
+          const prod = await prisma.product.findUnique({
+            where: { id: item.productId },
+            select: { price: true, promoPrice: true, promoStart: true, promoEnd: true },
+          });
+          if (prod) {
+            const { isPromo } = getActivePrice({
+              price: Number(prod.price),
+              promoPrice: prod.promoPrice ? Number(prod.promoPrice) : null,
+              promoStart: prod.promoStart,
+              promoEnd: prod.promoEnd,
+            });
+            if (!isPromo) {
+              eligibleAmount += parseInt(String(item.quantity)) * parseFloat(String(item.price));
+            }
+          }
+        }
+        const points = Math.floor(eligibleAmount * LOYALTY_RULES.POINTS_PER_DZD);
         if (points > 0) {
           await earnPoints(userId, points, "PURCHASE", order.id);
         }

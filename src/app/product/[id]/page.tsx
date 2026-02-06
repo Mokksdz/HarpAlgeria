@@ -704,25 +704,11 @@ export default function ProductPage({
               </div>
             </div>
 
-            {/* Variant Stock Indicator */}
-            {selectedSize && selectedColor && variantStock !== null && (
-              <div className={cn(
-                "flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg",
-                isOutOfStock
-                  ? "bg-red-50 text-red-600"
-                  : variantStock <= 3
-                    ? "bg-amber-50 text-amber-700"
-                    : "bg-green-50 text-green-700",
-              )}>
-                <span className={cn(
-                  "w-2 h-2 rounded-full",
-                  isOutOfStock ? "bg-red-500" : variantStock <= 3 ? "bg-amber-500" : "bg-green-500",
-                )} />
-                {isOutOfStock
-                  ? "Rupture de stock"
-                  : variantStock <= 3
-                    ? `Plus que ${variantStock} en stock`
-                    : "En stock"}
+            {/* Variant Stock Indicator — only show when out of stock */}
+            {selectedSize && selectedColor && isOutOfStock && (
+              <div className="flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-red-50 text-red-600">
+                <span className="w-2 h-2 rounded-full bg-red-500" />
+                Rupture de stock
               </div>
             )}
 

@@ -1,6 +1,3 @@
-"use client";
-
-import { useLanguage } from "@/components/LanguageProvider";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -13,9 +10,44 @@ import {
   Star,
   Package,
 } from "lucide-react";
+import { getSiteSettings } from "@/lib/site/settings.service";
 
-export default function AboutPage() {
-  useLanguage(); // Keep for potential future i18n
+export const dynamic = "force-dynamic";
+
+// Default content (fallbacks when admin hasn't set values)
+const DEFAULTS = {
+  heroTitle: "L'Élégance Intemporelle,\nRedéfinie.",
+  heroSubtitle:
+    "Une ode à la femme moderne qui ne choisit jamais entre pudeur et style. Harp incarne une vision nouvelle de la mode algérienne.",
+  storyTitle: "Une histoire de passion et d'exigence.",
+  storyP1:
+    "est née d'une volonté simple mais ambitieuse : offrir aux femmes algériennes une mode qui célèbre leur identité avec raffinement.",
+  storyP2:
+    "Loin de la fast-fashion, nous prenons le temps. Le temps de dessiner, de choisir, d'ajuster. Fondée en Algérie, notre maison s'inspire de l'héritage local tout en regardant vers l'avenir.",
+  storyP3:
+    "Nos collections sont le fruit d'un savoir-faire artisanal, où chaque couture raconte une histoire de dévouement et de précision.",
+  quote:
+    "L'élégance n'est pas une question de vêtements, c'est une attitude. Harp vous donne simplement l'assurance de l'exprimer.",
+  quoteAuthor: "L'Équipe Harp",
+  image1: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&q=80",
+  image2: "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=600&q=80",
+  image3: "https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=1200&q=80",
+};
+
+export default async function AboutPage() {
+  const settings = await getSiteSettings();
+
+  const heroTitle = settings.aboutHeroTitle || DEFAULTS.heroTitle;
+  const heroSubtitle = settings.aboutHeroSubtitle || DEFAULTS.heroSubtitle;
+  const storyTitle = settings.aboutStoryTitle || DEFAULTS.storyTitle;
+  const storyP1 = settings.aboutStoryP1 || DEFAULTS.storyP1;
+  const storyP2 = settings.aboutStoryP2 || DEFAULTS.storyP2;
+  const storyP3 = settings.aboutStoryP3 || DEFAULTS.storyP3;
+  const quote = settings.aboutQuote || DEFAULTS.quote;
+  const quoteAuthor = settings.aboutQuoteAuthor || DEFAULTS.quoteAuthor;
+  const image1 = settings.aboutImage1Url || DEFAULTS.image1;
+  const image2 = settings.aboutImage2Url || DEFAULTS.image2;
+  const image3 = settings.aboutImage3Url || DEFAULTS.image3;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-harp-cream/30 to-white">
@@ -26,14 +58,11 @@ export default function AboutPage() {
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-4 block">
               Notre Histoire
             </span>
-            <h1 className="text-4xl md:text-6xl font-serif font-medium text-gray-900 mb-6 leading-tight">
-              L'Élégance Intemporelle,
-              <br />
-              Redéfinie.
+            <h1 className="text-4xl md:text-6xl font-serif font-medium text-gray-900 mb-6 leading-tight whitespace-pre-line">
+              {heroTitle}
             </h1>
             <p className="text-lg md:text-xl text-gray-500 leading-relaxed font-light max-w-2xl mx-auto">
-              Une ode à la femme moderne qui ne choisit jamais entre pudeur et
-              style. Harp incarne une vision nouvelle de la mode algérienne.
+              {heroSubtitle}
             </p>
           </div>
         </div>
@@ -52,27 +81,16 @@ export default function AboutPage() {
             {/* Text Content */}
             <div className="lg:col-span-5 order-2 lg:order-1">
               <h2 className="text-3xl md:text-4xl font-serif font-medium text-gray-900 mb-8">
-                Une histoire de passion <br /> et d'exigence.
+                {storyTitle}
               </h2>
 
               <div className="space-y-6 text-gray-600 font-light leading-relaxed">
                 <p>
                   <strong className="text-gray-900 font-medium">Harp</strong>{" "}
-                  est née d'une volonté simple mais ambitieuse : offrir aux
-                  femmes algériennes une mode qui célèbre leur identité avec
-                  raffinement.
+                  {storyP1}
                 </p>
-                <p>
-                  Loin de la fast-fashion, nous prenons le temps. Le temps de
-                  dessiner, de choisir, d'ajuster. Fondée en Algérie, notre
-                  maison s'inspire de l'héritage local tout en regardant vers
-                  l'avenir.
-                </p>
-                <p>
-                  Nos collections sont le fruit d'un savoir-faire artisanal, où
-                  chaque couture raconte une histoire de dévouement et de
-                  précision.
-                </p>
+                <p>{storyP2}</p>
+                <p>{storyP3}</p>
               </div>
 
               <div className="flex gap-12 mt-12 pt-8 border-t border-gray-100">
@@ -101,7 +119,7 @@ export default function AboutPage() {
                 <div className="space-y-4 mt-12">
                   <div className="relative aspect-[3/4] overflow-hidden rounded-sm">
                     <Image
-                      src="https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&q=80"
+                      src={image1}
                       alt="Création Harp"
                       fill
                       className="object-cover hover:scale-105 transition-transform duration-700"
@@ -111,7 +129,7 @@ export default function AboutPage() {
                 <div className="space-y-4">
                   <div className="relative aspect-[3/4] overflow-hidden rounded-sm">
                     <Image
-                      src="https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=600&q=80"
+                      src={image2}
                       alt="Style Harp"
                       fill
                       className="object-cover hover:scale-105 transition-transform duration-700"
@@ -132,7 +150,7 @@ export default function AboutPage() {
               Notre Philosophie
             </h2>
             <p className="text-lg text-gray-500 font-light">
-              L'équilibre parfait entre esthétique contemporaine et valeurs
+              L&apos;équilibre parfait entre esthétique contemporaine et valeurs
               traditionnelles.
             </p>
           </div>
@@ -178,11 +196,10 @@ export default function AboutPage() {
           <div className="max-w-3xl mx-auto text-center">
             <Quote size={32} className="text-gray-300 mx-auto mb-8" />
             <blockquote className="text-2xl md:text-4xl font-serif text-gray-900 leading-relaxed mb-8">
-              "L'élégance n'est pas une question de vêtements, c'est une
-              attitude. Harp vous donne simplement l'assurance de l'exprimer."
+              &ldquo;{quote}&rdquo;
             </blockquote>
             <cite className="text-sm uppercase tracking-widest text-gray-400 not-italic">
-              — L'Équipe Harp
+              — {quoteAuthor}
             </cite>
           </div>
         </div>
@@ -193,7 +210,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2">
           <div className="relative aspect-square lg:aspect-auto lg:h-full min-h-[500px]">
             <Image
-              src="https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=1200&q=80"
+              src={image3}
               alt="Qualité Harp"
               fill
               className="object-cover"
@@ -205,7 +222,7 @@ export default function AboutPage() {
                 Notre Promesse
               </span>
               <h2 className="text-3xl md:text-4xl font-serif font-medium text-gray-900 mb-8">
-                L'Excellence sans compromis.
+                L&apos;Excellence sans compromis.
               </h2>
 
               <div className="space-y-8">

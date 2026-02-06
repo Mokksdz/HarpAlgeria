@@ -11,7 +11,7 @@ const EARN_WAYS = [
   { icon: MessageCircle, pointsFr: "+20 pts", pointsAr: "+20 نقطة", labelFr: "Partage WhatsApp", labelAr: "مشاركة واتساب" },
   { icon: Camera, pointsFr: "+150 pts", pointsAr: "+150 نقطة", labelFr: "Avis avec photo", labelAr: "تقييم بصورة" },
   { icon: Mail, pointsFr: "+50 pts", pointsAr: "+50 نقطة", labelFr: "Newsletter", labelAr: "النشرة البريدية" },
-  { icon: Cake, pointsFr: "+5 000 pts", pointsAr: "+5,000 نقطة", labelFr: "Anniversaire", labelAr: "عيد الميلاد" },
+  { icon: Cake, pointsFr: "+2 500 pts", pointsAr: "+2,500 نقطة", labelFr: "Anniversaire", labelAr: "عيد الميلاد" },
   { icon: Gift, pointsFr: "+100 pts", pointsAr: "+100 نقطة", labelFr: "Inscription", labelAr: "التسجيل" },
 ];
 
@@ -46,8 +46,8 @@ const VIP_TIERS = [
     color: "from-gray-800 to-gray-950",
     textColor: "text-white",
     borderColor: "border-gray-700",
-    benefitsFr: ["Multiplicateur x1.5", "Livraison gratuite illimitée", "Service conciergerie", "Cadeau surprise"],
-    benefitsAr: ["مضاعف x1.5", "توصيل مجاني بدون حد أدنى", "خدمة كونسيرج", "هدية مفاجئة"],
+    benefitsFr: ["Multiplicateur x1.5", "Livraison gratuite illimitée", "Cadeau surprise"],
+    benefitsAr: ["مضاعف x1.5", "توصيل مجاني بدون حد أدنى", "هدية مفاجئة"],
   },
 ];
 
