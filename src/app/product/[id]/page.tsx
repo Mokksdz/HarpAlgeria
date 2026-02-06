@@ -278,6 +278,12 @@ export default function ProductPage({
 
   const variantStock = getVariantStock();
   const isOutOfStock = variantStock !== null && variantStock <= 0;
+  const availableStock = variantStock !== null ? variantStock : (product?.stock ?? 0);
+
+  // Reset quantity when size/color changes
+  useEffect(() => {
+    setQuantity(1);
+  }, [selectedSize, selectedColor]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -287,6 +293,10 @@ export default function ProductPage({
     }
     if (isOutOfStock) {
       alert("Ce produit est en rupture de stock pour cette combinaison taille/couleur.");
+      return;
+    }
+    if (availableStock > 0 && quantity > availableStock) {
+      alert(`Stock insuffisant. Seulement ${availableStock} disponible(s).`);
       return;
     }
     const { price: activePrice } = getActivePrice(product);
@@ -757,12 +767,23 @@ export default function ProductPage({
                 </span>
                 <button
                   aria-label="Augmenter la quantité"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="p-3 hover:bg-gray-200 rounded-r-xl transition-colors"
+                  onClick={() => setQuantity(Math.min(quantity + 1, availableStock > 0 ? availableStock : quantity + 1))}
+                  disabled={availableStock > 0 && quantity >= availableStock}
+                  className={cn(
+                    "p-3 rounded-r-xl transition-colors",
+                    availableStock > 0 && quantity >= availableStock
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "hover:bg-gray-200",
+                  )}
                 >
                   <Plus size={18} />
                 </button>
               </div>
+              {availableStock > 0 && availableStock <= 10 && !isOutOfStock && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {availableStock} disponible{availableStock > 1 ? "s" : ""}
+                </p>
+              )}
             </div>
 
             {/* Actions */}

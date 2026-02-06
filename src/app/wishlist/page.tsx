@@ -5,7 +5,7 @@ import { Heart, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, safeParseImages } from "@/lib/utils";
 import { useCart } from "@/components/CartProvider";
 
 interface WishlistItem {
@@ -94,7 +94,7 @@ export default function WishlistPage() {
       productId: product.id,
       name: product.nameFr,
       price: Number(product.price),
-      image: JSON.parse(product.images)[0],
+      image: safeParseImages(product.images)[0] || "",
       color: "Default", // TODO: Size/Color selection
       size: "M",
       quantity: 1,

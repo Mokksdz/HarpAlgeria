@@ -18,7 +18,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, safeParseImages } from "@/lib/utils";
 
 interface Order {
   id: string;
@@ -466,7 +466,7 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-4">
                   {stats.topProducts.map((product: Product) => {
-                    const images = JSON.parse(product.images || "[]");
+                    const images = safeParseImages(product.images);
                     return (
                       <Link
                         key={product.id}

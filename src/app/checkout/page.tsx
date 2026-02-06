@@ -290,7 +290,9 @@ export default function CheckoutPage() {
         });
         router.push(`/order-confirmation?${params.toString()}`);
       } else {
-        alert("Une erreur est survenue. Veuillez réessayer.");
+        const errorData = await response.json().catch(() => null);
+        const errorMsg = errorData?.error || "Une erreur est survenue. Veuillez réessayer.";
+        alert(errorMsg);
       }
     } catch (error) {
       console.error("Error submitting order:", error);
