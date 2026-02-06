@@ -42,7 +42,9 @@ export default function WishlistPage() {
       const res = await fetch("/api/v3/wishlist");
       if (res.ok) {
         const data = await res.json();
-        setItems(data);
+        // API returns { items: [...], count: N } — extract the array
+        const list = Array.isArray(data) ? data : data.items || [];
+        setItems(list);
       }
     } catch (err) {
       console.error(err);
