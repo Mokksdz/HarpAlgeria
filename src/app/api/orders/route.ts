@@ -200,6 +200,41 @@ export async function POST(request: NextRequest) {
       });
     });
 
+    // Send order confirmation email (non-blocking)
+    if (userId) {
+      try {
+        const userForEmail = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true, name: true },
+        });
+        if (userForEmail?.email) {
+          const { sendOrderConfirmationEmail } = await import("@/lib/email/order-confirmation");
+          sendOrderConfirmationEmail({
+            customerName: body.customerName,
+            customerEmail: userForEmail.email,
+            orderNumber: order.id.slice(0, 8).toUpperCase(),
+            items: body.items.map((item: any) => ({
+              productName: item.productName,
+              size: item.size,
+              color: item.color,
+              quantity: parseInt(String(item.quantity)),
+              price: parseFloat(String(item.price)),
+            })),
+            subtotal,
+            shippingPrice: parseFloat(body.shippingPrice) || 0,
+            total: totalAmount,
+            deliveryProvider: body.deliveryProvider || "Standard",
+            deliveryType: body.deliveryType || "HOME",
+            customerAddress: body.customerAddress,
+            customerCity: body.customerCity,
+            customerWilaya: body.customerWilaya,
+          }).catch((e: any) => console.error("Order confirmation email failed:", e));
+        }
+      } catch (e) {
+        console.error("Email setup error:", e);
+      }
+    }
+
     // Loyalty: Award points only on non-promo items
     if (userId) {
       try {
