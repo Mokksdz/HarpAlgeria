@@ -40,7 +40,8 @@ export type LoyaltyAction =
   | "NEWSLETTER"
   | "WHATSAPP_SHARE"
   | "WISHLIST_ADD"
-  | "WISHLIST_PURCHASE";
+  | "WISHLIST_PURCHASE"
+  | "PROFILE_COMPLETE";
 
 /**
  * Calculate VIP level based on total lifetime points
