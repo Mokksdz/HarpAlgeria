@@ -33,6 +33,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
+      url: `${baseUrl}/journal`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/loyalty`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
       url: `${baseUrl}/suivi`,
       lastModified: new Date(),
       changeFrequency: "monthly",
@@ -59,26 +71,55 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const [products, collections] = await Promise.all([
       prisma.product.findMany({
         where: { isActive: true },
-        select: { id: true, slug: true, updatedAt: true },
+        select: {
+          id: true,
+          slug: true,
+          nameFr: true,
+          images: true,
+          updatedAt: true,
+        },
       }),
       prisma.collection.findMany({
         select: { id: true, slug: true, updatedAt: true },
       }),
     ]);
 
-    const productUrls = products.map((product) => ({
-      url: `${baseUrl}/product/${product.slug || product.id}`,
-      lastModified: product.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    }));
+    const productUrls: MetadataRoute.Sitemap = products.map((product) => {
+      // Parse product images for sitemap image data
+      let firstImage: string | undefined;
+      try {
+        const parsed =
+          typeof product.images === "string"
+            ? JSON.parse(product.images)
+            : [];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          firstImage = parsed[0];
+        }
+      } catch {
+        // ignore parse errors
+      }
 
-    const collectionUrls = collections.map((collection) => ({
-      url: `${baseUrl}/collection/${collection.slug || collection.id}`,
-      lastModified: collection.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
+      return {
+        url: `${baseUrl}/product/${product.slug || product.id}`,
+        lastModified: product.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+        ...(firstImage
+          ? {
+              images: [firstImage],
+            }
+          : {}),
+      };
+    });
+
+    const collectionUrls: MetadataRoute.Sitemap = collections.map(
+      (collection) => ({
+        url: `${baseUrl}/collection/${collection.slug || collection.id}`,
+        lastModified: collection.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }),
+    );
 
     return [...staticPages, ...productUrls, ...collectionUrls];
   } catch (error) {

@@ -17,6 +17,7 @@ import {
   Calculator,
   Users,
   Palette,
+  Newspaper,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -69,6 +70,7 @@ export default function AdminLayout({
     { href: "/admin/shipping", label: "Livraison", icon: Truck },
     { href: "/admin/products", label: "Produits", icon: Package },
     { href: "/admin/collections", label: "Collections", icon: FolderOpen },
+    { href: "/admin/blog", label: "Journal", icon: Newspaper },
     { href: "/admin/compta", label: "Comptabilité", icon: Calculator },
     {
       href: "/admin/settings/customization",

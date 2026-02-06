@@ -1,53 +1,48 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Check, Loader2, Mail, Phone } from "lucide-react";
+import { Bell, CheckCircle, Mail, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BackInStockAlertProps {
   productId: string;
-  productName: string;
   size?: string;
   color?: string;
+  isOutOfStock: boolean;
   className?: string;
 }
 
 export function BackInStockAlert({
   productId,
-  productName,
   size,
   color,
+  isOutOfStock,
   className,
 }: BackInStockAlertProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [method, setMethod] = useState<"email" | "phone">("phone");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
+  if (!isOutOfStock) return null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email) return;
+
     setLoading(true);
     setError("");
 
     try {
-      const res = await fetch("/api/stock-alerts", {
+      const res = await fetch("/api/v3/back-in-stock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          email: method === "email" ? email : undefined,
-          phone: method === "phone" ? phone : undefined,
-          size,
-          color,
-        }),
+        body: JSON.stringify({ email, productId, size, color }),
       });
 
       const data = await res.json();
 
-      if (res.ok) {
+      if (res.ok && data.success) {
         setSuccess(true);
       } else {
         setError(data.error || "Une erreur est survenue");
@@ -63,139 +58,57 @@ export function BackInStockAlert({
     return (
       <div
         className={cn(
-          "bg-green-50 border border-green-200 rounded-xl p-4",
+          "flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl",
           className,
         )}
       >
-        <div className="flex items-center gap-3 text-green-700">
-          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-            <Check size={20} />
-          </div>
-          <div>
-            <p className="font-medium">Alerte créée !</p>
-            <p className="text-sm text-green-600">
-              Vous serez notifié(e) dès que ce produit sera disponible.
-            </p>
-          </div>
-        </div>
+        <CheckCircle size={20} className="text-green-600 shrink-0" />
+        <p className="text-sm font-medium text-green-700">
+          Nous vous préviendrons !
+        </p>
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "bg-amber-50 border border-amber-200 rounded-xl p-4",
-        className,
-      )}
-    >
-      {!isOpen ? (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-              <Bell size={18} className="text-amber-600" />
-            </div>
-            <div>
-              <p className="font-medium text-amber-800">Produit épuisé</p>
-              <p className="text-sm text-amber-600">
-                Ce produit est temporairement indisponible
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsOpen(true)}
-            className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
-          >
-            M'alerter
-          </button>
+    <div className={cn("mt-2", className)}>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+          <Bell size={14} className="text-harp-brown" />
+          <span>Soyez alerté(e) du retour en stock</span>
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Bell size={20} className="text-amber-600" />
-            <p className="font-medium text-amber-800">
-              Recevoir une alerte pour "{productName}"
-            </p>
-          </div>
-
-          {/* Method selector */}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setMethod("phone")}
-              className={cn(
-                "flex-1 py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors",
-                method === "phone"
-                  ? "bg-amber-600 text-white"
-                  : "bg-white border border-amber-200 text-amber-700 hover:bg-amber-50",
-              )}
-            >
-              <Phone size={16} />
-              WhatsApp
-            </button>
-            <button
-              type="button"
-              onClick={() => setMethod("email")}
-              className={cn(
-                "flex-1 py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors",
-                method === "email"
-                  ? "bg-amber-600 text-white"
-                  : "bg-white border border-amber-200 text-amber-700 hover:bg-amber-50",
-              )}
-            >
-              <Mail size={16} />
-              Email
-            </button>
-          </div>
-
-          {/* Input */}
-          {method === "phone" ? (
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="0550 12 34 56"
-              className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-              required
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Mail
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             />
-          ) : (
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="votre@email.com"
-              className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-harp-brown/30 focus:border-harp-brown"
               required
             />
-          )}
-
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="flex-1 py-2 px-4 border border-amber-200 rounded-lg text-amber-700 hover:bg-amber-50 transition-colors"
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2 px-4 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <>
-                  <Bell size={18} />
-                  Créer l'alerte
-                </>
-              )}
-            </button>
           </div>
-        </form>
-      )}
+          <button
+            type="submit"
+            disabled={loading || !email}
+            className="px-4 py-2.5 bg-harp-brown text-white rounded-xl text-sm font-medium hover:bg-harp-caramel transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
+          >
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <>
+                <Bell size={14} />
+                Me prévenir
+              </>
+            )}
+          </button>
+        </div>
+        {error && <p className="text-red-500 text-xs">{error}</p>}
+      </form>
     </div>
   );
 }

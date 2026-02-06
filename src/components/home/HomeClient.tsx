@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { Star, ArrowRight } from "lucide-react";
 import { getActivePrice } from "@/lib/product-utils";
 import { LoyaltySection } from "@/components/home/LoyaltySection";
+import { InstagramFeed } from "@/components/home/InstagramFeed";
 
 // Intersection Observer hook for scroll animations
 function useInView(threshold = 0.1): [React.RefCallback<HTMLElement>, boolean] {
@@ -401,6 +402,9 @@ export function HomeClient({
           </p>
         </div>
       </section>
+
+      {/* Instagram Feed */}
+      <InstagramFeed />
 
       {/* Simple CTA */}
       <section className="py-32 bg-white text-center border-t border-harp-sand/30">

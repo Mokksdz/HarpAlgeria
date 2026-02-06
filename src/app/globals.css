@@ -29,6 +29,7 @@
   --animate-shimmer: shimmer 2s linear infinite;
   --animate-float: float 6s ease-in-out infinite;
   --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-slide-up: slide-up 0.5s ease-out forwards;
 }
 
 @keyframes fade-in {
@@ -138,6 +139,17 @@
   }
   to {
     box-shadow: 0 0 40px rgba(201, 184, 150, 0.4);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

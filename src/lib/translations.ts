@@ -231,6 +231,18 @@ export const translations = {
     "product.card.wishlist.add": "Ajouter aux favoris",
     "product.card.wishlist.remove": "Retirer des favoris",
 
+    // Search
+    "search.title": "Rechercher",
+    "search.placeholder": "Rechercher un produit ou une collection...",
+    "search.close": "Fermer la recherche",
+    "search.loading": "Recherche en cours...",
+    "search.noResults": "Aucun résultat",
+    "search.noResultsHint": "Essayez avec d'autres mots-clés",
+    "search.products": "Produits",
+    "search.collections": "Collections",
+    "search.viewCollection": "Voir la collection",
+    "search.hint": "Tapez au moins 2 caractères pour rechercher",
+
     // Order Confirmation
     "order.success": "Commande confirmée !",
     "order.thankYou":
@@ -462,6 +474,18 @@ export const translations = {
     "product.card.view": "مشاهدة المنتج",
     "product.card.wishlist.add": "إضافة للمفضلة",
     "product.card.wishlist.remove": "إزالة من المفضلة",
+
+    // Search
+    "search.title": "بحث",
+    "search.placeholder": "ابحثي عن منتج أو مجموعة...",
+    "search.close": "إغلاق البحث",
+    "search.loading": "جاري البحث...",
+    "search.noResults": "لا توجد نتائج",
+    "search.noResultsHint": "جربي كلمات مفتاحية أخرى",
+    "search.products": "المنتجات",
+    "search.collections": "المجموعات",
+    "search.viewCollection": "عرض المجموعة",
+    "search.hint": "اكتبي حرفين على الأقل للبحث",
 
     // Order Confirmation
     "order.success": "تم تأكيد الطلب !",

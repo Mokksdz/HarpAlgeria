@@ -3,18 +3,21 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, Menu, X, User, Heart } from "lucide-react";
+import { ShoppingBag, Menu, X, User, Heart, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLanguage } from "./LanguageProvider";
 import { useCart } from "./CartProvider";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { SearchOverlay } from "./SearchOverlay";
+import { VipBadge } from "./VipBadge";
 
 export function Header() {
   const { t, language, setLanguage } = useLanguage();
   const { setIsOpen: setCartOpen, items } = useCart();
   const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
 
@@ -137,6 +140,14 @@ export function Header() {
               {language === "fr" ? "العربية" : "FR"}
             </button>
 
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="hidden md:flex p-2.5 hover:bg-harp-sand/50 rounded-full transition-colors text-harp-brown"
+              aria-label={t("search.title")}
+            >
+              <Search size={20} />
+            </button>
+
             <Link
               href="/wishlist"
               className="hidden md:flex p-2.5 hover:bg-harp-sand/50 rounded-full transition-colors text-harp-brown"
@@ -157,6 +168,8 @@ export function Header() {
                 </span>
               )}
             </button>
+
+            <VipBadge />
 
             <Link
               href={session ? "/account" : "/auth/magic-link-request"}
@@ -229,6 +242,19 @@ export function Header() {
 
           {/* Bottom Actions */}
           <div className="space-y-6 pt-8 border-t border-gray-100">
+            <button
+              onClick={() => {
+                setIsMenuOpen(false);
+                setIsSearchOpen(true);
+              }}
+              className="flex items-center gap-3 text-gray-600 hover:text-gray-900 transition-colors w-full"
+            >
+              <Search size={20} />
+              <span className="text-sm uppercase tracking-widest">
+                {t("search.title")}
+              </span>
+            </button>
+
             <Link
               href="/wishlist"
               onClick={() => setIsMenuOpen(false)}
@@ -238,16 +264,19 @@ export function Header() {
               <span className="text-sm uppercase tracking-widest">Favoris</span>
             </Link>
 
-            <Link
-              href={session ? "/account" : "/auth/magic-link-request"}
-              onClick={() => setIsMenuOpen(false)}
-              className="flex items-center gap-3 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <User size={20} />
-              <span className="text-sm uppercase tracking-widest">
-                {session ? "Mon Compte" : "Se connecter"}
-              </span>
-            </Link>
+            <div className="flex items-center gap-3 text-gray-600">
+              <Link
+                href={session ? "/account" : "/auth/magic-link-request"}
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 hover:text-gray-900 transition-colors flex-1"
+              >
+                <User size={20} />
+                <span className="text-sm uppercase tracking-widest">
+                  {session ? "Mon Compte" : "Se connecter"}
+                </span>
+              </Link>
+              <VipBadge />
+            </div>
 
             <button
               onClick={() => {
@@ -274,6 +303,12 @@ export function Header() {
           </div>
         </nav>
       </div>
+
+      {/* Search Overlay */}
+      <SearchOverlay
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </>
   );
 }

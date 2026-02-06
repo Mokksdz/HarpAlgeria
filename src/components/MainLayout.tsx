@@ -6,6 +6,8 @@ import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import PromoBanner from "./PromoBanner";
+import { NewsletterPopup } from "./NewsletterPopup";
+import { AbandonedCartReminder } from "./AbandonedCartReminder";
 import { useLanguage } from "./LanguageProvider";
 
 // Custom hook to detect client-side mounting
@@ -47,6 +49,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <CartDrawer />
       <main className="min-h-screen">{children}</main>
       <Footer />
+      <NewsletterPopup />
+      <AbandonedCartReminder />
     </div>
   );
 }

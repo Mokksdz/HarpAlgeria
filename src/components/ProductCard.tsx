@@ -106,6 +106,11 @@ export function ProductCard({
               </p>
             )}
           </div>
+          {numericPrice >= 3000 && (
+            <p className="text-[10px] text-gray-400 mt-1">
+              ou 3x {Math.ceil(numericPrice / 3).toLocaleString()} DZD
+            </p>
+          )}
         </div>
       </Link>
 
