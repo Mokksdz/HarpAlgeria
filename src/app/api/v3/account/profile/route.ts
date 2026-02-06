@@ -92,6 +92,23 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
+    // Award profile completion points if profile is now complete
+    // and user hasn't already received them
+    if (updated.name && updated.phone && updated.birthDate) {
+      try {
+        const { earnPoints, LOYALTY_RULES } = await import("@/lib/loyalty/services/loyalty.service");
+        await earnPoints(
+          updated.id,
+          LOYALTY_RULES.PROFILE_COMPLETE_BONUS,
+          "PROFILE_COMPLETE" as any,
+          `profile-complete-${updated.id}`,
+        );
+      } catch (e) {
+        // Points already awarded (idempotent) or error — don't fail the request
+        console.log("Profile completion points:", e);
+      }
+    }
+
     return NextResponse.json({ success: true, user: updated });
   } catch (error: unknown) {
     console.error("Profile PATCH error:", error);
