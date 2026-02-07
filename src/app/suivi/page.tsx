@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   Package,
@@ -35,28 +36,28 @@ interface TrackingResult {
   error?: string;
 }
 
-export default function TrackingPage() {
+function TrackingPageInner() {
   useLanguage();
+  const searchParams = useSearchParams();
   const [trackingNumber, setTrackingNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TrackingResult | null>(null);
   const [error, setError] = useState("");
 
-  const handleTrack = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!trackingNumber.trim()) return;
+  // Auto-search function
+  const doTrack = useCallback(async (number: string) => {
+    if (!number.trim()) return;
 
     setLoading(true);
     setError("");
     setResult(null);
 
     try {
-      // Determine provider from tracking number format
-      const isYalidine = trackingNumber.toLowerCase().startsWith("yal-");
+      const isYalidine = number.toLowerCase().startsWith("yal-");
       const provider = isYalidine ? "yalidine" : "zrexpress";
 
       const response = await fetch(
-        `/api/tracking?tracking=${trackingNumber}&provider=${provider}`,
+        `/api/tracking?tracking=${number}&provider=${provider}`,
       );
       const data = await response.json();
 
@@ -70,6 +71,21 @@ export default function TrackingPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Pre-fill and auto-search from URL ?tracking=XXX
+  useEffect(() => {
+    const trackingFromUrl = searchParams.get("tracking");
+    if (trackingFromUrl) {
+      const upper = trackingFromUrl.toUpperCase();
+      setTrackingNumber(upper);
+      doTrack(upper);
+    }
+  }, [searchParams, doTrack]);
+
+  const handleTrack = async (e: React.FormEvent) => {
+    e.preventDefault();
+    doTrack(trackingNumber);
   };
 
   const getStatusColor = (status: string) => {
@@ -306,5 +322,19 @@ export default function TrackingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function TrackingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white pt-32 pb-20 flex items-center justify-center">
+          <Loader2 size={32} className="animate-spin text-gray-400" />
+        </div>
+      }
+    >
+      <TrackingPageInner />
+    </Suspense>
   );
 }
