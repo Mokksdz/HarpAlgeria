@@ -152,7 +152,9 @@ export default function CheckoutPage() {
           .finally(() => setLoadingStopDesks(false));
       } else if (deliveryProvider === "ZR Express") {
         // Fetch from public centers route
-        fetch(`/api/shipping/centers?wilaya_id=${formData.wilaya}&provider=zrexpress`)
+        fetch(
+          `/api/shipping/centers?wilaya_id=${formData.wilaya}&provider=zrexpress`,
+        )
           .then((res) => res.json())
           .then((data) => {
             if (data.data && Array.isArray(data.data)) {
@@ -240,7 +242,7 @@ export default function CheckoutPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const discountAmount = Math.round(total * promoDiscount / 100);
+  const discountAmount = Math.round((total * promoDiscount) / 100);
   const discountedTotal = total - discountAmount;
   const finalTotal = discountedTotal + shippingPrice;
 
@@ -350,7 +352,8 @@ export default function CheckoutPage() {
         router.push(`/order-confirmation?${params.toString()}`);
       } else {
         const errorData = await response.json().catch(() => null);
-        const errorMsg = errorData?.error || "Une erreur est survenue. Veuillez réessayer.";
+        const errorMsg =
+          errorData?.error || "Une erreur est survenue. Veuillez réessayer.";
         alert(errorMsg);
       }
     } catch (error) {
@@ -728,7 +731,10 @@ export default function CheckoutPage() {
                   {deliveryType === "HOME" && (
                     <div className="space-y-2 animate-fade-in">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Adresse <span className="text-gray-400 normal-case tracking-normal font-normal">(optionnel)</span>
+                        Adresse{" "}
+                        <span className="text-gray-400 normal-case tracking-normal font-normal">
+                          (optionnel)
+                        </span>
                       </label>
                       <input
                         name="address"
@@ -801,8 +807,12 @@ export default function CheckoutPage() {
                   <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
                     <div className="flex items-center gap-2">
                       <Tag size={14} className="text-green-600" />
-                      <span className="text-sm font-medium text-green-700">{promoCode}</span>
-                      <span className="text-xs text-green-600">-{promoDiscount}%</span>
+                      <span className="text-sm font-medium text-green-700">
+                        {promoCode}
+                      </span>
+                      <span className="text-xs text-green-600">
+                        -{promoDiscount}%
+                      </span>
                     </div>
                     <button
                       type="button"

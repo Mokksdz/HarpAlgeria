@@ -5,7 +5,13 @@ import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductGridSkeleton } from "@/components/Skeleton";
 import { useLanguage } from "@/components/LanguageProvider";
-import { ChevronDown, Package, ChevronRight, Search, Filter } from "lucide-react";
+import {
+  ChevronDown,
+  Package,
+  ChevronRight,
+  Search,
+  Filter,
+} from "lucide-react";
 import { cn, safeParseImages } from "@/lib/utils";
 import { trackEvent } from "@/components/Analytics";
 import { getActivePrice } from "@/lib/product-utils";
@@ -72,15 +78,33 @@ export default function ShopPage() {
   }, []);
 
   // Extract unique sizes and colors from all products
-  const allSizes = [...new Set(products.flatMap((p) => {
-    try { return typeof p.sizes === "string" ? JSON.parse(p.sizes) : p.sizes || []; }
-    catch { return []; }
-  }))].sort() as string[];
+  const allSizes = [
+    ...new Set(
+      products.flatMap((p) => {
+        try {
+          return typeof p.sizes === "string"
+            ? JSON.parse(p.sizes)
+            : p.sizes || [];
+        } catch {
+          return [];
+        }
+      }),
+    ),
+  ].sort() as string[];
 
-  const allColors = [...new Set(products.flatMap((p) => {
-    try { return typeof p.colors === "string" ? JSON.parse(p.colors) : p.colors || []; }
-    catch { return []; }
-  }))].sort() as string[];
+  const allColors = [
+    ...new Set(
+      products.flatMap((p) => {
+        try {
+          return typeof p.colors === "string"
+            ? JSON.parse(p.colors)
+            : p.colors || [];
+        } catch {
+          return [];
+        }
+      }),
+    ),
+  ].sort() as string[];
 
   // Filter products by collection, search, size, color, and price
   const filteredProducts = products.filter((p) => {
@@ -94,25 +118,37 @@ export default function ShopPage() {
     let matchesSize = selectedSizes.length === 0;
     if (!matchesSize) {
       try {
-        const productSizes = typeof p.sizes === "string" ? JSON.parse(p.sizes) : p.sizes || [];
+        const productSizes =
+          typeof p.sizes === "string" ? JSON.parse(p.sizes) : p.sizes || [];
         matchesSize = selectedSizes.some((s) => productSizes.includes(s));
-      } catch { matchesSize = true; }
+      } catch {
+        matchesSize = true;
+      }
     }
 
     // Color filter
     let matchesColor = selectedColors.length === 0;
     if (!matchesColor) {
       try {
-        const productColors = typeof p.colors === "string" ? JSON.parse(p.colors) : p.colors || [];
+        const productColors =
+          typeof p.colors === "string" ? JSON.parse(p.colors) : p.colors || [];
         matchesColor = selectedColors.some((c) => productColors.includes(c));
-      } catch { matchesColor = true; }
+      } catch {
+        matchesColor = true;
+      }
     }
 
     // Price filter
     const price = Number(p.promoPrice || p.price);
     const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
 
-    return matchesCollection && matchesSearch && matchesSize && matchesColor && matchesPrice;
+    return (
+      matchesCollection &&
+      matchesSearch &&
+      matchesSize &&
+      matchesColor &&
+      matchesPrice
+    );
   });
 
   // Sort products
@@ -223,14 +259,20 @@ export default function ShopPage() {
                 onClick={() => setShowFilters(!showFilters)}
                 className={cn(
                   "flex items-center gap-2 text-sm font-medium transition-all uppercase tracking-wide",
-                  showFilters ? "text-harp-brown" : "text-gray-400 hover:text-gray-900"
+                  showFilters
+                    ? "text-harp-brown"
+                    : "text-gray-400 hover:text-gray-900",
                 )}
               >
                 <Filter size={14} />
                 <span className="hidden sm:inline">Filtres</span>
-                {(selectedSizes.length > 0 || selectedColors.length > 0 || priceRange[1] < 50000) && (
+                {(selectedSizes.length > 0 ||
+                  selectedColors.length > 0 ||
+                  priceRange[1] < 50000) && (
                   <span className="w-5 h-5 rounded-full bg-harp-brown text-white text-[10px] flex items-center justify-center">
-                    {selectedSizes.length + selectedColors.length + (priceRange[1] < 50000 ? 1 : 0)}
+                    {selectedSizes.length +
+                      selectedColors.length +
+                      (priceRange[1] < 50000 ? 1 : 0)}
                   </span>
                 )}
               </button>
@@ -283,59 +325,77 @@ export default function ShopPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Size Filter */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Taille</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">
+                  Taille
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {allSizes.map((size) => (
                     <button
                       key={size}
-                      onClick={() => setSelectedSizes((prev) =>
-                        prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
-                      )}
+                      onClick={() =>
+                        setSelectedSizes((prev) =>
+                          prev.includes(size)
+                            ? prev.filter((s) => s !== size)
+                            : [...prev, size],
+                        )
+                      }
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-medium border transition-all",
                         selectedSizes.includes(size)
                           ? "border-harp-brown bg-harp-brown/10 text-harp-brown"
-                          : "border-gray-200 text-gray-500 hover:border-gray-300"
+                          : "border-gray-200 text-gray-500 hover:border-gray-300",
                       )}
                     >
                       {size}
                     </button>
                   ))}
                   {allSizes.length === 0 && (
-                    <span className="text-xs text-gray-400">Aucune taille disponible</span>
+                    <span className="text-xs text-gray-400">
+                      Aucune taille disponible
+                    </span>
                   )}
                 </div>
               </div>
 
               {/* Color Filter */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Couleur</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">
+                  Couleur
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {allColors.map((color) => (
                     <button
                       key={color}
-                      onClick={() => setSelectedColors((prev) =>
-                        prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
-                      )}
+                      onClick={() =>
+                        setSelectedColors((prev) =>
+                          prev.includes(color)
+                            ? prev.filter((c) => c !== color)
+                            : [...prev, color],
+                        )
+                      }
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-medium border transition-all",
                         selectedColors.includes(color)
                           ? "border-harp-brown bg-harp-brown/10 text-harp-brown"
-                          : "border-gray-200 text-gray-500 hover:border-gray-300"
+                          : "border-gray-200 text-gray-500 hover:border-gray-300",
                       )}
                     >
                       {color}
                     </button>
                   ))}
                   {allColors.length === 0 && (
-                    <span className="text-xs text-gray-400">Aucune couleur disponible</span>
+                    <span className="text-xs text-gray-400">
+                      Aucune couleur disponible
+                    </span>
                   )}
                 </div>
               </div>
 
               {/* Price Range */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Prix</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">
+                  Prix
+                </h4>
                 <div className="space-y-3">
                   <input
                     type="range"
@@ -343,7 +403,9 @@ export default function ShopPage() {
                     max={50000}
                     step={500}
                     value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                    onChange={(e) =>
+                      setPriceRange([priceRange[0], parseInt(e.target.value)])
+                    }
                     className="w-full accent-harp-brown"
                   />
                   <div className="flex justify-between text-sm text-gray-500">
@@ -355,10 +417,15 @@ export default function ShopPage() {
             </div>
 
             {/* Active filter count and clear */}
-            {(selectedSizes.length > 0 || selectedColors.length > 0 || priceRange[1] < 50000) && (
+            {(selectedSizes.length > 0 ||
+              selectedColors.length > 0 ||
+              priceRange[1] < 50000) && (
               <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
                 <span className="text-xs text-gray-500">
-                  {selectedSizes.length + selectedColors.length + (priceRange[1] < 50000 ? 1 : 0)} filtre(s) actif(s)
+                  {selectedSizes.length +
+                    selectedColors.length +
+                    (priceRange[1] < 50000 ? 1 : 0)}{" "}
+                  filtre(s) actif(s)
                 </span>
                 <button
                   onClick={() => {
@@ -382,7 +449,11 @@ export default function ShopPage() {
             {sortedProducts.length > 1 ? "Produits" : "Produit"}
           </span>
 
-          {(activeCollection || searchQuery || selectedSizes.length > 0 || selectedColors.length > 0 || priceRange[1] < 50000) && (
+          {(activeCollection ||
+            searchQuery ||
+            selectedSizes.length > 0 ||
+            selectedColors.length > 0 ||
+            priceRange[1] < 50000) && (
             <button
               onClick={() => {
                 setActiveCollection(null);
@@ -415,11 +486,14 @@ export default function ShopPage() {
                   style={{ animationDelay: `${Math.min(index * 50, 400)}ms` }}
                 >
                   {(() => {
-                    const { price: activePrice, originalPrice } = getActivePrice(product);
+                    const { price: activePrice, originalPrice } =
+                      getActivePrice(product);
                     return (
                       <ProductCard
                         id={product.id}
-                        name={language === "fr" ? product.nameFr : product.nameAr}
+                        name={
+                          language === "fr" ? product.nameFr : product.nameAr
+                        }
                         price={activePrice}
                         originalPrice={originalPrice ?? undefined}
                         image={images[0]}

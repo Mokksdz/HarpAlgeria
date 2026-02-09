@@ -127,17 +127,26 @@ export async function POST(request: Request) {
     });
 
     // Create variants if provided
-    if (body.variants && Array.isArray(body.variants) && body.variants.length > 0) {
+    if (
+      body.variants &&
+      Array.isArray(body.variants) &&
+      body.variants.length > 0
+    ) {
       await prisma.productVariant.createMany({
-        data: body.variants.map((v: { size: string; color: string; stock: number }) => ({
-          productId: product.id,
-          size: v.size,
-          color: v.color,
-          stock: v.stock || 0,
-        })),
+        data: body.variants.map(
+          (v: { size: string; color: string; stock: number }) => ({
+            productId: product.id,
+            size: v.size,
+            color: v.color,
+            stock: v.stock || 0,
+          }),
+        ),
       });
 
-      const totalStock = body.variants.reduce((sum: number, v: { stock: number }) => sum + (v.stock || 0), 0);
+      const totalStock = body.variants.reduce(
+        (sum: number, v: { stock: number }) => sum + (v.stock || 0),
+        0,
+      );
       await prisma.product.update({
         where: { id: product.id },
         data: { stock: totalStock },

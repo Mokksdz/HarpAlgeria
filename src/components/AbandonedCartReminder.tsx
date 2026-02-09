@@ -29,7 +29,10 @@ export function AbandonedCartReminder() {
 
   if (!show || items.length === 0) return null;
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const cartSummary = items
     .map((i) => `${i.name} (${i.size}/${i.color}) x${i.quantity}`)
     .join("\n");

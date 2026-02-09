@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 const FROM_EMAIL = process.env.RESEND_FROM || "Harp <noreply@harpalgeria.com>";
 
 /**
@@ -97,7 +99,9 @@ export async function sendComebackEmail(params: {
             Nous avons pens&eacute; &agrave; vous ! D&eacute;couvrez nos derni&egrave;res cr&eacute;ations.
           </p>
 
-          ${params.loyaltyPoints ? `
+          ${
+            params.loyaltyPoints
+              ? `
           <div style="background: linear-gradient(135deg, #3D2314 0%, #8B6914 100%); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
             <p style="color: #E8DDD0; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px;">
               Vos points fid&eacute;lit&eacute;
@@ -106,7 +110,9 @@ export async function sendComebackEmail(params: {
               ${params.loyaltyPoints.toLocaleString()} pts
             </p>
           </div>
-          ` : ""}
+          `
+              : ""
+          }
 
           <div style="text-align: center; margin-bottom: 30px;">
             <a href="${baseUrl}/shop"

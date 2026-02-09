@@ -25,7 +25,9 @@ interface OrderConfirmationData {
 
 export async function sendOrderConfirmationEmail(data: OrderConfirmationData) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn("[Order Confirmation] RESEND_API_KEY not configured — skipping email");
+    console.warn(
+      "[Order Confirmation] RESEND_API_KEY not configured — skipping email",
+    );
     return;
   }
 
@@ -166,11 +168,16 @@ Harp — Une élégance qui résonne`;
     });
 
     if (error) {
-      console.error("[Order Confirmation] Resend error:", JSON.stringify(error));
+      console.error(
+        "[Order Confirmation] Resend error:",
+        JSON.stringify(error),
+      );
       throw new Error(`Email send failed: ${error.message}`);
     }
 
-    console.log(`[Order Confirmation] Email sent to ${data.customerEmail} (id: ${result?.id})`);
+    console.log(
+      `[Order Confirmation] Email sent to ${data.customerEmail} (id: ${result?.id})`,
+    );
   } catch (err) {
     console.error("[Order Confirmation] Failed to send email:", err);
     throw err;

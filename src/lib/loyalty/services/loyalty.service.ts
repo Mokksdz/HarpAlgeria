@@ -23,10 +23,7 @@ export const VIP_LEVELS = {
   BLACK: {
     threshold: 150000,
     multiplier: 1.5,
-    benefits: [
-      "Livraison gratuite sans minimum",
-      "Cadeau surprise",
-    ],
+    benefits: ["Livraison gratuite sans minimum", "Cadeau surprise"],
   },
 };
 

@@ -194,7 +194,8 @@ export async function PATCH(
             select: { email: true },
           });
           if (userForEmail?.email) {
-            const { sendShippingNotificationEmail } = await import("@/lib/email/shipping-notification");
+            const { sendShippingNotificationEmail } =
+              await import("@/lib/email/shipping-notification");
             sendShippingNotificationEmail({
               customerName: updatedOrder.customerName,
               customerEmail: userForEmail.email,
@@ -202,7 +203,9 @@ export async function PATCH(
               trackingNumber: shipmentResult.tracking,
               deliveryProvider: updatedOrder.deliveryProvider || "Standard",
               estimatedDelivery: "24-72h",
-            }).catch((e: any) => console.error("Shipping notification email failed:", e));
+            }).catch((e: any) =>
+              console.error("Shipping notification email failed:", e),
+            );
           }
         }
       } catch (e) {

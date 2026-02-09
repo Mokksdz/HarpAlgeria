@@ -4,7 +4,9 @@ interface StockMatrixProps {
   sizes: string[];
   colors: string[];
   variants: { size: string; color: string; stock: number }[];
-  onChange: (variants: { size: string; color: string; stock: number }[]) => void;
+  onChange: (
+    variants: { size: string; color: string; stock: number }[],
+  ) => void;
 }
 
 export default function StockMatrix({

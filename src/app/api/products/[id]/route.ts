@@ -75,16 +75,21 @@ export async function PUT(
 
       if (body.variants.length > 0) {
         await prisma.productVariant.createMany({
-          data: body.variants.map((v: { size: string; color: string; stock: number }) => ({
-            productId: id,
-            size: v.size,
-            color: v.color,
-            stock: v.stock || 0,
-          })),
+          data: body.variants.map(
+            (v: { size: string; color: string; stock: number }) => ({
+              productId: id,
+              size: v.size,
+              color: v.color,
+              stock: v.stock || 0,
+            }),
+          ),
         });
       }
 
-      const totalStock = body.variants.reduce((sum: number, v: { stock: number }) => sum + (v.stock || 0), 0);
+      const totalStock = body.variants.reduce(
+        (sum: number, v: { stock: number }) => sum + (v.stock || 0),
+        0,
+      );
       await prisma.product.update({
         where: { id },
         data: { stock: totalStock },

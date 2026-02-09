@@ -267,7 +267,8 @@ export default function ProductPage({
 
   // Get variant stock for the currently selected size+color
   const getVariantStock = (): number | null => {
-    if (!product || !product.variants || product.variants.length === 0) return null;
+    if (!product || !product.variants || product.variants.length === 0)
+      return null;
     if (!selectedSize || !selectedColor) return null;
     const v = product.variants.find(
       (v) => v.size === selectedSize && v.color === selectedColor,
@@ -277,7 +278,8 @@ export default function ProductPage({
 
   const variantStock = getVariantStock();
   const isOutOfStock = variantStock !== null && variantStock <= 0;
-  const availableStock = variantStock !== null ? variantStock : (product?.stock ?? 0);
+  const availableStock =
+    variantStock !== null ? variantStock : (product?.stock ?? 0);
 
   // Reset quantity when size/color changes
   useEffect(() => {
@@ -291,7 +293,9 @@ export default function ProductPage({
       return;
     }
     if (isOutOfStock) {
-      alert("Ce produit est en rupture de stock pour cette combinaison taille/couleur.");
+      alert(
+        "Ce produit est en rupture de stock pour cette combinaison taille/couleur.",
+      );
       return;
     }
     if (availableStock > 0 && quantity > availableStock) {
@@ -539,7 +543,11 @@ export default function ProductPage({
                   {name}
                 </h1>
                 {(() => {
-                  const { price: activePrice, originalPrice, isPromo } = getActivePrice(product);
+                  const {
+                    price: activePrice,
+                    originalPrice,
+                    isPromo,
+                  } = getActivePrice(product);
                   return (
                     <div className="flex items-baseline gap-3">
                       <p className="text-2xl md:text-3xl font-bold text-harp-brown">
@@ -552,7 +560,12 @@ export default function ProductPage({
                             {originalPrice.toLocaleString()} DZD
                           </p>
                           <span className="text-xs font-bold text-white bg-red-500 px-2 py-0.5 rounded-full">
-                            -{Math.round(((originalPrice - activePrice) / originalPrice) * 100)}%
+                            -
+                            {Math.round(
+                              ((originalPrice - activePrice) / originalPrice) *
+                                100,
+                            )}
+                            %
                           </span>
                         </>
                       )}
@@ -760,7 +773,14 @@ export default function ProductPage({
                 </span>
                 <button
                   aria-label="Augmenter la quantité"
-                  onClick={() => setQuantity(Math.min(quantity + 1, availableStock > 0 ? availableStock : quantity + 1))}
+                  onClick={() =>
+                    setQuantity(
+                      Math.min(
+                        quantity + 1,
+                        availableStock > 0 ? availableStock : quantity + 1,
+                      ),
+                    )
+                  }
                   disabled={availableStock > 0 && quantity >= availableStock}
                   className={cn(
                     "p-3 rounded-r-xl transition-colors",
@@ -875,7 +895,11 @@ export default function ProductPage({
               : "bg-harp-brown text-white",
           )}
         >
-          {isOutOfStock ? "Rupture de stock" : addedToCart ? "Ajouté !" : "Ajouter au panier"}
+          {isOutOfStock
+            ? "Rupture de stock"
+            : addedToCart
+              ? "Ajouté !"
+              : "Ajouter au panier"}
         </button>
         <button
           onClick={handleWhatsApp}

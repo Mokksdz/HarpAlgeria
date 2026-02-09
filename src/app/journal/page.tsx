@@ -150,10 +150,7 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
         <div className="container mx-auto px-4">
           {posts.length === 0 ? (
             <div className="text-center py-20">
-              <BookOpen
-                size={48}
-                className="mx-auto text-gray-300 mb-4"
-              />
+              <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
               <h3 className="text-xl font-serif text-gray-400 mb-2">
                 Aucun article pour le moment
               </h3>
@@ -229,73 +226,71 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
 
               {/* Remaining Posts Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {posts
-                  .slice(currentPage === 1 ? 1 : 0)
-                  .map((post) => (
-                    <Link
-                      key={post.id}
-                      href={`/journal/${post.slug}`}
-                      className="group block"
-                    >
-                      <article className="h-full flex flex-col">
-                        {/* Cover Image */}
-                        <div className="relative aspect-[3/2] rounded-xl overflow-hidden bg-harp-sand/30 mb-5">
-                          {post.coverImage ? (
-                            <Image
-                              src={post.coverImage}
-                              alt={post.titleFr}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-700"
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                {posts.slice(currentPage === 1 ? 1 : 0).map((post) => (
+                  <Link
+                    key={post.id}
+                    href={`/journal/${post.slug}`}
+                    className="group block"
+                  >
+                    <article className="h-full flex flex-col">
+                      {/* Cover Image */}
+                      <div className="relative aspect-[3/2] rounded-xl overflow-hidden bg-harp-sand/30 mb-5">
+                        {post.coverImage ? (
+                          <Image
+                            src={post.coverImage}
+                            alt={post.titleFr}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-700"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <BookOpen
+                              size={40}
+                              className="text-harp-caramel/30"
                             />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <BookOpen
-                                size={40}
-                                className="text-harp-caramel/30"
-                              />
-                            </div>
-                          )}
-                          <div className="absolute top-3 left-3">
-                            <span className="px-2.5 py-1 bg-white/90 backdrop-blur-sm text-harp-brown text-[10px] font-bold uppercase tracking-wider rounded-full">
-                              {getCategoryLabel(post.category)}
-                            </span>
                           </div>
+                        )}
+                        <div className="absolute top-3 left-3">
+                          <span className="px-2.5 py-1 bg-white/90 backdrop-blur-sm text-harp-brown text-[10px] font-bold uppercase tracking-wider rounded-full">
+                            {getCategoryLabel(post.category)}
+                          </span>
                         </div>
+                      </div>
 
-                        {/* Content */}
-                        <div className="flex-1 flex flex-col">
-                          <div className="flex items-center gap-3 mb-3">
-                            <span className="text-xs text-gray-400 flex items-center gap-1">
-                              <Calendar size={12} />
-                              {formatDate(post.publishedAt)}
-                            </span>
-                            <span className="text-xs text-gray-400 flex items-center gap-1">
-                              <Eye size={12} />
-                              {post.views}
-                            </span>
-                          </div>
-                          <h3 className="text-xl font-serif font-medium text-harp-brown group-hover:text-harp-caramel transition-colors mb-2 line-clamp-2">
-                            {post.titleFr}
-                          </h3>
-                          {post.excerptFr && (
-                            <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 flex-1">
-                              {post.excerptFr}
-                            </p>
-                          )}
-                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                            <span className="text-xs text-gray-400">
-                              {post.authorName}
-                            </span>
-                            <span className="text-xs text-harp-caramel font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-                              Lire
-                              <ArrowRight size={12} />
-                            </span>
-                          </div>
+                      {/* Content */}
+                      <div className="flex-1 flex flex-col">
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <Calendar size={12} />
+                            {formatDate(post.publishedAt)}
+                          </span>
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <Eye size={12} />
+                            {post.views}
+                          </span>
                         </div>
-                      </article>
-                    </Link>
-                  ))}
+                        <h3 className="text-xl font-serif font-medium text-harp-brown group-hover:text-harp-caramel transition-colors mb-2 line-clamp-2">
+                          {post.titleFr}
+                        </h3>
+                        {post.excerptFr && (
+                          <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 flex-1">
+                            {post.excerptFr}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                          <span className="text-xs text-gray-400">
+                            {post.authorName}
+                          </span>
+                          <span className="text-xs text-harp-caramel font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+                            Lire
+                            <ArrowRight size={12} />
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                ))}
               </div>
 
               {/* Pagination */}

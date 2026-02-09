@@ -447,10 +447,7 @@ export default function AdminBlogPage() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <Newspaper
-                                size={18}
-                                className="text-gray-300"
-                              />
+                              <Newspaper size={18} className="text-gray-300" />
                             </div>
                           )}
                         </div>
@@ -664,7 +661,10 @@ export default function AdminBlogPage() {
                       )}
                     >
                       {uploading ? (
-                        <Loader2 size={18} className="animate-spin text-gray-400" />
+                        <Loader2
+                          size={18}
+                          className="animate-spin text-gray-400"
+                        />
                       ) : (
                         <Upload size={18} className="text-gray-400" />
                       )}
@@ -754,7 +754,8 @@ export default function AdminBlogPage() {
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-200 focus:border-gray-300 outline-none transition-all"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Format JSON array, ex: [&quot;mode&quot;, &quot;tendances&quot;]
+                  Format JSON array, ex: [&quot;mode&quot;,
+                  &quot;tendances&quot;]
                 </p>
               </div>
 

@@ -37,8 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `Découvrez la collection ${collection.nameFr} de Harp. Mode féminine élégante et modeste, fabriquée en Algérie.`,
     openGraph: {
       title: `${collection.nameFr} - Harp Algérie`,
-      description:
-        collection.description || `Collection ${collection.nameFr}`,
+      description: collection.description || `Collection ${collection.nameFr}`,
       images: collection.image ? [{ url: collection.image }] : [],
       url: `${baseUrl}/collection/${slug}`,
     },
@@ -73,9 +72,7 @@ export default async function CollectionPage({ params }: Props) {
     let images: string[] = [];
     try {
       images =
-        typeof product.images === "string"
-          ? JSON.parse(product.images)
-          : [];
+        typeof product.images === "string" ? JSON.parse(product.images) : [];
     } catch {
       images = [];
     }
@@ -85,7 +82,14 @@ export default async function CollectionPage({ params }: Props) {
   // Prepare data for CollectionJsonLd
   const jsonLdProducts = productsWithImages.map((p) => ({
     name: p.nameFr,
-    price: Number(getActivePrice({ price: Number(p.price), promoPrice: p.promoPrice ? Number(p.promoPrice) : undefined, promoStart: p.promoStart, promoEnd: p.promoEnd }).price),
+    price: Number(
+      getActivePrice({
+        price: Number(p.price),
+        promoPrice: p.promoPrice ? Number(p.promoPrice) : undefined,
+        promoStart: p.promoStart,
+        promoEnd: p.promoEnd,
+      }).price,
+    ),
     image: p.parsedImages[0] || "",
     slug: p.slug || p.id,
   }));
@@ -121,9 +125,7 @@ export default async function CollectionPage({ params }: Props) {
             Boutique
           </Link>
           <ChevronRight size={10} />
-          <span className="text-gray-900 font-medium">
-            {collection.nameFr}
-          </span>
+          <span className="text-gray-900 font-medium">{collection.nameFr}</span>
         </nav>
       </div>
 

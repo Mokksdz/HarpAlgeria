@@ -37,7 +37,8 @@ export async function GET(_req: NextRequest) {
     // were never granted (catches users who completed profile before this feature)
     if (user.name && user.phone && user.birthDate) {
       try {
-        const { earnPoints, LOYALTY_RULES } = await import("@/lib/loyalty/services/loyalty.service");
+        const { earnPoints, LOYALTY_RULES } =
+          await import("@/lib/loyalty/services/loyalty.service");
         await earnPoints(
           user.id,
           LOYALTY_RULES.PROFILE_COMPLETE_BONUS,
@@ -127,7 +128,8 @@ export async function PATCH(req: NextRequest) {
     // and user hasn't already received them (idempotent via referenceId)
     if (updated.name && updated.phone && updated.birthDate) {
       try {
-        const { earnPoints, LOYALTY_RULES } = await import("@/lib/loyalty/services/loyalty.service");
+        const { earnPoints, LOYALTY_RULES } =
+          await import("@/lib/loyalty/services/loyalty.service");
         await earnPoints(
           updated.id,
           LOYALTY_RULES.PROFILE_COMPLETE_BONUS,

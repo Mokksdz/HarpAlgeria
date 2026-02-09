@@ -134,7 +134,11 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-    } else if (e.key === "Enter" && selectedIndex >= 0 && allItems[selectedIndex]) {
+    } else if (
+      e.key === "Enter" &&
+      selectedIndex >= 0 &&
+      allItems[selectedIndex]
+    ) {
       e.preventDefault();
       router.push(allItems[selectedIndex].href);
       onClose();
@@ -151,7 +155,8 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
       if (Array.isArray(images) && images.length > 0) return images[0];
     } catch {
       // images might be a direct URL string
-      if (product.images && !product.images.startsWith("[")) return product.images;
+      if (product.images && !product.images.startsWith("["))
+        return product.images;
     }
     return `https://placehold.co/200x260/F5F1EC/4A3A2A?text=${encodeURIComponent(
       language === "ar" ? product.nameAr : product.nameFr,
@@ -198,7 +203,10 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
               spellCheck={false}
             />
             {isLoading && (
-              <Loader2 size={18} className="text-harp-caramel animate-spin shrink-0" />
+              <Loader2
+                size={18}
+                className="text-harp-caramel animate-spin shrink-0"
+              />
             )}
             <button
               onClick={onClose}
@@ -286,9 +294,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                             <span
                               className={cn(
                                 "text-sm font-semibold",
-                                isPromo
-                                  ? "text-red-600"
-                                  : "text-harp-brown",
+                                isPromo ? "text-red-600" : "text-harp-brown",
                               )}
                             >
                               {formatPrice(price)}
@@ -328,9 +334,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     const collIndex = results.products.length + index;
                     const isSelected = selectedIndex === collIndex;
                     const name =
-                      language === "ar"
-                        ? collection.nameAr
-                        : collection.nameFr;
+                      language === "ar" ? collection.nameAr : collection.nameFr;
 
                     return (
                       <Link
@@ -374,9 +378,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             {/* Hint when nothing typed yet */}
             {!hasSearched && !isLoading && query.length < 2 && (
               <div className="px-5 py-8 text-center">
-                <p className="text-sm text-gray-400">
-                  {t("search.hint")}
-                </p>
+                <p className="text-sm text-gray-400">{t("search.hint")}</p>
               </div>
             )}
           </div>

@@ -44,9 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     let allImages: string[] = [];
     try {
       const parsed =
-        typeof product.images === "string"
-          ? JSON.parse(product.images)
-          : [];
+        typeof product.images === "string" ? JSON.parse(product.images) : [];
       if (Array.isArray(parsed)) {
         allImages = parsed;
       }
@@ -71,14 +69,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: `${product.nameFr} - ${categoryLabel} | Harp Algérie`,
         description,
         url: productUrl,
-        images: allImages.length > 0
-          ? allImages.map((img) => ({
-              url: img,
-              width: 600,
-              height: 800,
-              alt: product.nameFr,
-            }))
-          : [],
+        images:
+          allImages.length > 0
+            ? allImages.map((img) => ({
+                url: img,
+                width: 600,
+                height: 800,
+                alt: product.nameFr,
+              }))
+            : [],
         type: "website",
         locale: "fr_FR",
       },

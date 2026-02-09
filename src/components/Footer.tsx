@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Instagram,
-  Phone,
-  Mail,
-  ArrowRight,
-  Facebook,
-} from "lucide-react";
+import { Instagram, Phone, Mail, ArrowRight, Facebook } from "lucide-react";
 import { useState } from "react";
 import { useLanguage } from "./LanguageProvider";
 import { siteConfig, getWhatsAppLink } from "@/lib/config";

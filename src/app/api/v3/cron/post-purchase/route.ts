@@ -65,12 +65,8 @@ export async function GET(request: Request) {
     // J+14: Comeback / loyalty emails
     // Orders delivered ~14 days ago (between 14 and 15 days ago)
     // ---------------------------------------------------------------
-    const fourteenDaysAgo = new Date(
-      now.getTime() - 14 * 24 * 60 * 60 * 1000,
-    );
-    const fifteenDaysAgo = new Date(
-      now.getTime() - 15 * 24 * 60 * 60 * 1000,
-    );
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
 
     const oldOrders = await prisma.order.findMany({
       where: {

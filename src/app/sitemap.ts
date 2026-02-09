@@ -89,9 +89,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       let firstImage: string | undefined;
       try {
         const parsed =
-          typeof product.images === "string"
-            ? JSON.parse(product.images)
-            : [];
+          typeof product.images === "string" ? JSON.parse(product.images) : [];
         if (Array.isArray(parsed) && parsed.length > 0) {
           firstImage = parsed[0];
         }

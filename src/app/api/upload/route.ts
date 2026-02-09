@@ -15,10 +15,7 @@ export async function POST(request: Request) {
     const isImage = file.type.startsWith("image/");
 
     if (!isVideo && !isImage) {
-      return NextResponse.json(
-        { error: "Invalid file type" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
     }
 
     // Validate file size (10MB max)

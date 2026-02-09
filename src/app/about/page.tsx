@@ -28,9 +28,12 @@ const DEFAULTS = {
   quote:
     "L'élégance n'est pas une question de vêtements, c'est une attitude. Harp vous donne simplement l'assurance de l'exprimer.",
   quoteAuthor: "L'Équipe Harp",
-  image1: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&q=80",
-  image2: "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=600&q=80",
-  image3: "https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=1200&q=80",
+  image1:
+    "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&q=80",
+  image2:
+    "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?w=600&q=80",
+  image3:
+    "https://images.unsplash.com/photo-1551232864-3f0890e580d9?w=1200&q=80",
 };
 
 export default async function AboutPage() {

@@ -103,7 +103,11 @@ export default function AdminDashboard() {
       ).length;
       const totalRevenue = ordersArray
         .filter((o: Order) => o.status !== "CANCELLED")
-        .reduce((acc: number, o: Order) => acc + (Number(o.total) - Number((o as any).shippingPrice || 0)), 0);
+        .reduce(
+          (acc: number, o: Order) =>
+            acc + (Number(o.total) - Number((o as any).shippingPrice || 0)),
+          0,
+        );
 
       setStats({
         totalOrders: ordersArray.length,

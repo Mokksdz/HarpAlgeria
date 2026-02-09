@@ -1,18 +1,77 @@
 "use client";
 
 import { useLanguage } from "@/components/LanguageProvider";
-import { Gift, Star, Crown, Truck, ShoppingBag, Heart, MessageCircle, Camera, Mail, Cake } from "lucide-react";
+import {
+  Gift,
+  Star,
+  Crown,
+  Truck,
+  ShoppingBag,
+  Heart,
+  MessageCircle,
+  Camera,
+  Mail,
+  Cake,
+} from "lucide-react";
 import Link from "next/link";
 
 const EARN_WAYS = [
-  { icon: ShoppingBag, pointsFr: "1 pt / DZD", pointsAr: "1 نقطة / دج", labelFr: "Achats", labelAr: "المشتريات" },
-  { icon: Heart, pointsFr: "+10 pts", pointsAr: "+10 نقاط", labelFr: "Ajout wishlist", labelAr: "إضافة للمفضلة" },
-  { icon: ShoppingBag, pointsFr: "+50 pts", pointsAr: "+50 نقطة", labelFr: "Achat wishlist", labelAr: "شراء من المفضلة" },
-  { icon: MessageCircle, pointsFr: "+20 pts", pointsAr: "+20 نقطة", labelFr: "Partage WhatsApp", labelAr: "مشاركة واتساب" },
-  { icon: Camera, pointsFr: "+150 pts", pointsAr: "+150 نقطة", labelFr: "Avis avec photo", labelAr: "تقييم بصورة" },
-  { icon: Mail, pointsFr: "+50 pts", pointsAr: "+50 نقطة", labelFr: "Newsletter", labelAr: "النشرة البريدية" },
-  { icon: Cake, pointsFr: "+2 000 pts", pointsAr: "+2,000 نقطة", labelFr: "Anniversaire", labelAr: "عيد الميلاد" },
-  { icon: Gift, pointsFr: "+100 pts", pointsAr: "+100 نقطة", labelFr: "Inscription", labelAr: "التسجيل" },
+  {
+    icon: ShoppingBag,
+    pointsFr: "1 pt / DZD",
+    pointsAr: "1 نقطة / دج",
+    labelFr: "Achats",
+    labelAr: "المشتريات",
+  },
+  {
+    icon: Heart,
+    pointsFr: "+10 pts",
+    pointsAr: "+10 نقاط",
+    labelFr: "Ajout wishlist",
+    labelAr: "إضافة للمفضلة",
+  },
+  {
+    icon: ShoppingBag,
+    pointsFr: "+50 pts",
+    pointsAr: "+50 نقطة",
+    labelFr: "Achat wishlist",
+    labelAr: "شراء من المفضلة",
+  },
+  {
+    icon: MessageCircle,
+    pointsFr: "+20 pts",
+    pointsAr: "+20 نقطة",
+    labelFr: "Partage WhatsApp",
+    labelAr: "مشاركة واتساب",
+  },
+  {
+    icon: Camera,
+    pointsFr: "+150 pts",
+    pointsAr: "+150 نقطة",
+    labelFr: "Avis avec photo",
+    labelAr: "تقييم بصورة",
+  },
+  {
+    icon: Mail,
+    pointsFr: "+50 pts",
+    pointsAr: "+50 نقطة",
+    labelFr: "Newsletter",
+    labelAr: "النشرة البريدية",
+  },
+  {
+    icon: Cake,
+    pointsFr: "+2 000 pts",
+    pointsAr: "+2,000 نقطة",
+    labelFr: "Anniversaire",
+    labelAr: "عيد الميلاد",
+  },
+  {
+    icon: Gift,
+    pointsFr: "+100 pts",
+    pointsAr: "+100 نقطة",
+    labelFr: "Inscription",
+    labelAr: "التسجيل",
+  },
 ];
 
 const VIP_TIERS = [
@@ -35,7 +94,11 @@ const VIP_TIERS = [
     color: "from-amber-300 to-amber-500",
     textColor: "text-amber-800",
     borderColor: "border-amber-400",
-    benefitsFr: ["Multiplicateur x1.2", "Livraison gratuite > 5 000 DA", "Accès ventes privées"],
+    benefitsFr: [
+      "Multiplicateur x1.2",
+      "Livraison gratuite > 5 000 DA",
+      "Accès ventes privées",
+    ],
     benefitsAr: ["مضاعف x1.2", "توصيل مجاني > 5,000 دج", "وصول للعروض الخاصة"],
   },
   {
@@ -46,7 +109,11 @@ const VIP_TIERS = [
     color: "from-gray-800 to-gray-950",
     textColor: "text-white",
     borderColor: "border-gray-700",
-    benefitsFr: ["Multiplicateur x1.5", "Livraison gratuite illimitée", "Cadeau surprise"],
+    benefitsFr: [
+      "Multiplicateur x1.5",
+      "Livraison gratuite illimitée",
+      "Cadeau surprise",
+    ],
     benefitsAr: ["مضاعف x1.5", "توصيل مجاني بدون حد أدنى", "هدية مفاجئة"],
   },
 ];
@@ -56,7 +123,10 @@ export function LoyaltySection() {
   const isAr = language === "ar";
 
   return (
-    <section className="py-24 bg-gradient-to-b from-harp-cream to-white" dir={isAr ? "rtl" : "ltr"}>
+    <section
+      className="py-24 bg-gradient-to-b from-harp-cream to-white"
+      dir={isAr ? "rtl" : "ltr"}
+    >
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-16">
@@ -113,9 +183,16 @@ export function LoyaltySection() {
                   key={tier.name}
                   className={`rounded-2xl overflow-hidden border ${tier.borderColor}`}
                 >
-                  <div className={`bg-gradient-to-br ${tier.color} p-5 text-center`}>
-                    <Icon size={28} className={`mx-auto mb-2 ${tier.textColor}`} />
-                    <h4 className={`text-xl font-serif font-bold ${tier.textColor}`}>
+                  <div
+                    className={`bg-gradient-to-br ${tier.color} p-5 text-center`}
+                  >
+                    <Icon
+                      size={28}
+                      className={`mx-auto mb-2 ${tier.textColor}`}
+                    />
+                    <h4
+                      className={`text-xl font-serif font-bold ${tier.textColor}`}
+                    >
                       {tier.name}
                     </h4>
                     <p className={`text-sm mt-1 ${tier.textColor} opacity-80`}>
@@ -125,8 +202,13 @@ export function LoyaltySection() {
                   <div className="bg-white p-5">
                     <ul className="space-y-2">
                       {benefits.map((b, j) => (
-                        <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
-                          <span className="text-harp-caramel mt-0.5 shrink-0">&#10003;</span>
+                        <li
+                          key={j}
+                          className="flex items-start gap-2 text-sm text-gray-600"
+                        >
+                          <span className="text-harp-caramel mt-0.5 shrink-0">
+                            &#10003;
+                          </span>
                           {b}
                         </li>
                       ))}

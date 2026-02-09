@@ -13,7 +13,9 @@ export async function sendShippingNotificationEmail(
   data: ShippingNotificationData,
 ) {
   if (!process.env.RESEND_API_KEY) {
-    console.warn("[Shipping Notification] RESEND_API_KEY not configured — skipping email");
+    console.warn(
+      "[Shipping Notification] RESEND_API_KEY not configured — skipping email",
+    );
     return;
   }
 
@@ -105,11 +107,16 @@ Harp — Une élégance qui résonne`;
     });
 
     if (error) {
-      console.error("[Shipping Notification] Resend error:", JSON.stringify(error));
+      console.error(
+        "[Shipping Notification] Resend error:",
+        JSON.stringify(error),
+      );
       throw new Error(`Email send failed: ${error.message}`);
     }
 
-    console.log(`[Shipping Notification] Email sent to ${data.customerEmail} (id: ${result?.id})`);
+    console.log(
+      `[Shipping Notification] Email sent to ${data.customerEmail} (id: ${result?.id})`,
+    );
   } catch (err) {
     console.error("[Shipping Notification] Failed to send email:", err);
     throw err;

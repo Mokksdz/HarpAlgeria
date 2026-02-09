@@ -172,15 +172,24 @@ export default function AdminProductsPage() {
                                   alt={product.nameFr}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = "none";
-                                    (e.target as HTMLImageElement).parentElement!.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+                                    (
+                                      e.target as HTMLImageElement
+                                    ).style.display = "none";
+                                    (
+                                      e.target as HTMLImageElement
+                                    ).parentElement!.innerHTML =
+                                      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
                                   }}
                                 />
                               );
                             }
-                            return <Package size={20} className="text-gray-300" />;
+                            return (
+                              <Package size={20} className="text-gray-300" />
+                            );
                           } catch {
-                            return <Package size={20} className="text-gray-300" />;
+                            return (
+                              <Package size={20} className="text-gray-300" />
+                            );
                           }
                         })()}
                       </div>

@@ -119,7 +119,9 @@ export default function AdminFeaturedEditor({
                 <ImageIcon size={24} className="mx-auto mb-3 text-gray-400" />
               )}
               <p className="text-gray-600 text-sm">
-                {uploading ? "Upload en cours..." : "Cliquez pour uploader une image"}
+                {uploading
+                  ? "Upload en cours..."
+                  : "Cliquez pour uploader une image"}
               </p>
             </div>
           </button>

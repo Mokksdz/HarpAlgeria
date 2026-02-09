@@ -111,13 +111,13 @@ function OrderProgressBar({ status }: { status: string }) {
               className={cn(
                 "h-1.5 w-full rounded-full transition-colors",
                 done ? "bg-[#5D4E37]" : "bg-gray-200",
-                active && status === "SHIPPED" && "animate-pulse"
+                active && status === "SHIPPED" && "animate-pulse",
               )}
             />
             <span
               className={cn(
                 "text-[10px] leading-tight hidden sm:block",
-                done ? "text-[#5D4E37] font-medium" : "text-gray-400"
+                done ? "text-[#5D4E37] font-medium" : "text-gray-400",
               )}
             >
               {STATUS_MAP[step]?.label}
@@ -159,7 +159,7 @@ function OrderCard({ order }: { order: Order }) {
           className={cn(
             "inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border",
             info.bg,
-            info.color
+            info.color,
           )}
         >
           <StatusIcon className="w-3.5 h-3.5" />
@@ -325,9 +325,7 @@ export default function AccountPage() {
 
           {/* ---- Order History ---- */}
           <div className="mt-12 border-t border-gray-100 pt-8">
-            <h2 className="text-lg font-medium mb-6">
-              Mes commandes récentes
-            </h2>
+            <h2 className="text-lg font-medium mb-6">Mes commandes récentes</h2>
 
             {ordersLoading ? (
               <OrdersSkeleton />

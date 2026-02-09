@@ -208,7 +208,8 @@ export async function POST(request: NextRequest) {
           select: { email: true, name: true },
         });
         if (userForEmail?.email) {
-          const { sendOrderConfirmationEmail } = await import("@/lib/email/order-confirmation");
+          const { sendOrderConfirmationEmail } =
+            await import("@/lib/email/order-confirmation");
           sendOrderConfirmationEmail({
             customerName: body.customerName,
             customerEmail: userForEmail.email,
@@ -228,7 +229,9 @@ export async function POST(request: NextRequest) {
             customerAddress: body.customerAddress,
             customerCity: body.customerCity,
             customerWilaya: body.customerWilaya,
-          }).catch((e: any) => console.error("Order confirmation email failed:", e));
+          }).catch((e: any) =>
+            console.error("Order confirmation email failed:", e),
+          );
         }
       } catch (e) {
         console.error("Email setup error:", e);
@@ -243,12 +246,18 @@ export async function POST(request: NextRequest) {
         for (const item of body.items) {
           if (!item.productId) {
             // No product ID — count full amount
-            eligibleAmount += parseInt(String(item.quantity)) * parseFloat(String(item.price));
+            eligibleAmount +=
+              parseInt(String(item.quantity)) * parseFloat(String(item.price));
             continue;
           }
           const prod = await prisma.product.findUnique({
             where: { id: item.productId },
-            select: { price: true, promoPrice: true, promoStart: true, promoEnd: true },
+            select: {
+              price: true,
+              promoPrice: true,
+              promoStart: true,
+              promoEnd: true,
+            },
           });
           if (prod) {
             const { isPromo } = getActivePrice({
@@ -258,11 +267,15 @@ export async function POST(request: NextRequest) {
               promoEnd: prod.promoEnd,
             });
             if (!isPromo) {
-              eligibleAmount += parseInt(String(item.quantity)) * parseFloat(String(item.price));
+              eligibleAmount +=
+                parseInt(String(item.quantity)) *
+                parseFloat(String(item.price));
             }
           }
         }
-        const points = Math.floor(eligibleAmount * LOYALTY_RULES.POINTS_PER_DZD);
+        const points = Math.floor(
+          eligibleAmount * LOYALTY_RULES.POINTS_PER_DZD,
+        );
         if (points > 0) {
           await earnPoints(userId, points, "PURCHASE", order.id);
         }
@@ -277,11 +290,11 @@ export async function POST(request: NextRequest) {
     console.error("Order creation error:", error);
 
     // Handle stock insufficiency errors
-    if (error instanceof Error && error.message.startsWith("Stock insuffisant")) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 },
-      );
+    if (
+      error instanceof Error &&
+      error.message.startsWith("Stock insuffisant")
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     // Handle specific Prisma errors
