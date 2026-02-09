@@ -10,6 +10,11 @@ import { getActivePrice } from "@/lib/product-utils";
 
 export const dynamic = "force-dynamic";
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+function isRecentProduct(createdAt: Date | string): boolean {
+  return new Date(createdAt) > new Date(Date.now() - SEVEN_DAYS_MS);
+}
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
@@ -76,9 +81,6 @@ export default async function CollectionPage({ params }: Props) {
     }
     return { ...product, parsedImages: images };
   });
-
-  // eslint-disable-next-line react-compiler/react-compiler -- server component, Date.now() is safe
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   // Prepare data for CollectionJsonLd
   const jsonLdProducts = productsWithImages.map((p) => ({
@@ -188,7 +190,7 @@ export default async function CollectionPage({ params }: Props) {
                 promoStart: product.promoStart,
                 promoEnd: product.promoEnd,
               });
-              const isNew = new Date(product.createdAt) > sevenDaysAgo;
+              const isNew = isRecentProduct(product.createdAt);
               return (
                 <div
                   key={product.id}
