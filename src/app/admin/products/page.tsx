@@ -126,45 +126,121 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/50 text-xs uppercase tracking-widest text-gray-500">
-              <th className="py-4 px-6 font-medium">Produit</th>
-              <th className="py-4 px-6 font-medium">Collection</th>
-              <th className="py-4 px-6 font-medium">Prix</th>
-              <th className="py-4 px-6 font-medium">Stock</th>
-              <th className="py-4 px-6 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50 text-sm">
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="py-16 text-center text-gray-400">
-                  Chargement...
-                </td>
-              </tr>
-            ) : filteredProducts.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="py-16 text-center text-gray-400">
-                  Aucun produit trouvé.
-                </td>
-              </tr>
-            ) : (
-              filteredProducts.map((product) => (
-                <tr
+      {/* Products List */}
+      {loading ? (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm py-16 text-center text-gray-400">
+          Chargement...
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm py-16 text-center text-gray-400">
+          Aucun produit trouvé.
+        </div>
+      ) : (
+        <>
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {filteredProducts.map((product) => {
+              const imgs = safeParseImages(product.images);
+              const src = imgs[0];
+              return (
+                <div
                   key={product.id}
-                  className="hover:bg-gray-50/50 transition-colors group"
+                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-4"
                 >
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center">
-                        {(() => {
-                          const imgs = safeParseImages(product.images);
-                          const src = imgs[0];
-                          if (src) {
-                            return (
+                  <div className="flex gap-4">
+                    <div className="w-20 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center">
+                      {src ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={src}
+                          alt={product.nameFr}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
+                            (
+                              e.target as HTMLImageElement
+                            ).parentElement!.innerHTML =
+                              '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+                          }}
+                        />
+                      ) : (
+                        <Package size={20} className="text-gray-300" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm truncate">
+                        {product.nameFr}
+                      </p>
+                      {product.collection && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-50 text-gray-500 text-[10px] font-medium border border-gray-100 mt-1">
+                          <Tag size={10} />
+                          {product.collection.nameFr}
+                        </span>
+                      )}
+                      <p className="text-sm font-semibold text-gray-900 mt-2">
+                        {product.price?.toLocaleString()} DZD
+                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span
+                          className={cn(
+                            "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border",
+                            (product.stock || 0) === 0
+                              ? "bg-red-50 text-red-700 border-red-100"
+                              : (product.stock || 0) < 5
+                                ? "bg-amber-50 text-amber-700 border-amber-100"
+                                : "bg-emerald-50 text-emerald-700 border-emerald-100",
+                          )}
+                        >
+                          {product.stock || 0} en stock
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Link
+                            href={`/admin/products/${product.id}/edit`}
+                            className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            <Edit size={16} />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50 text-xs uppercase tracking-widest text-gray-500">
+                  <th className="py-4 px-6 font-medium">Produit</th>
+                  <th className="py-4 px-6 font-medium">Collection</th>
+                  <th className="py-4 px-6 font-medium">Prix</th>
+                  <th className="py-4 px-6 font-medium">Stock</th>
+                  <th className="py-4 px-6 font-medium text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 text-sm">
+                {filteredProducts.map((product) => {
+                  const imgs = safeParseImages(product.images);
+                  const src = imgs[0];
+                  return (
+                    <tr
+                      key={product.id}
+                      className="hover:bg-gray-50/50 transition-colors group"
+                    >
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center">
+                            {src ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={src}
@@ -179,72 +255,71 @@ export default function AdminProductsPage() {
                                     '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
                                 }}
                               />
-                            );
-                          }
-                          return (
-                            <Package size={20} className="text-gray-300" />
-                          );
-                        })()}
-                      </div>
-                      <span className="font-medium text-gray-900">
-                        {product.nameFr}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6">
-                    {product.collection ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 text-gray-600 text-xs font-medium border border-gray-100">
-                        <Tag size={12} />
-                        {product.collection.nameFr}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="py-4 px-6 font-medium text-gray-900">
-                    {product.price?.toLocaleString()} DZD
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border",
-                          (product.stock || 0) === 0
-                            ? "bg-red-50 text-red-700 border-red-100"
-                            : (product.stock || 0) < 5
-                              ? "bg-amber-50 text-amber-700 border-amber-100"
-                              : "bg-emerald-50 text-emerald-700 border-emerald-100",
+                            ) : (
+                              <Package size={20} className="text-gray-300" />
+                            )}
+                          </div>
+                          <span className="font-medium text-gray-900">
+                            {product.nameFr}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        {product.collection ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 text-gray-600 text-xs font-medium border border-gray-100">
+                            <Tag size={12} />
+                            {product.collection.nameFr}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
                         )}
-                      >
-                        {product.stock || 0} en stock
-                      </span>
-                      {(product.stock || 0) < 5 && (
-                        <AlertCircle size={14} className="text-amber-500" />
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-right">
-                    <div className="flex justify-end items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all md:translate-x-2 md:group-hover:translate-x-0">
-                      <Link
-                        href={`/admin/products/${product.id}/edit`}
-                        className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        <Edit size={16} />
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                      </td>
+                      <td className="py-4 px-6 font-medium text-gray-900">
+                        {product.price?.toLocaleString()} DZD
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border",
+                              (product.stock || 0) === 0
+                                ? "bg-red-50 text-red-700 border-red-100"
+                                : (product.stock || 0) < 5
+                                  ? "bg-amber-50 text-amber-700 border-amber-100"
+                                  : "bg-emerald-50 text-emerald-700 border-emerald-100",
+                            )}
+                          >
+                            {product.stock || 0} en stock
+                          </span>
+                          {(product.stock || 0) < 5 && (
+                            <AlertCircle size={14} className="text-amber-500" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex justify-end items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                          <Link
+                            href={`/admin/products/${product.id}/edit`}
+                            className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            <Edit size={16} />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }
