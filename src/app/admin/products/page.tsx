@@ -12,7 +12,7 @@ import {
   Tag,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn, safeParseImages } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -31,7 +31,7 @@ export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch("/api/products?pageSize=100")
+    fetch("/api/products?pageSize=100&include=collection")
       .then((res) => res.json())
       .then((data) => {
         const productsList = Array.isArray(data) ? data : data.items || [];
@@ -161,36 +161,29 @@ export default function AdminProductsPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center">
                         {(() => {
-                          try {
-                            const imgs = JSON.parse(product.images || "[]");
-                            const src = Array.isArray(imgs) ? imgs[0] : null;
-                            if (src) {
-                              return (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={src}
-                                  alt={product.nameFr}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    (
-                                      e.target as HTMLImageElement
-                                    ).style.display = "none";
-                                    (
-                                      e.target as HTMLImageElement
-                                    ).parentElement!.innerHTML =
-                                      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
-                                  }}
-                                />
-                              );
-                            }
+                          const imgs = safeParseImages(product.images);
+                          const src = imgs[0];
+                          if (src) {
                             return (
-                              <Package size={20} className="text-gray-300" />
-                            );
-                          } catch {
-                            return (
-                              <Package size={20} className="text-gray-300" />
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={src}
+                                alt={product.nameFr}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display =
+                                    "none";
+                                  (
+                                    e.target as HTMLImageElement
+                                  ).parentElement!.innerHTML =
+                                    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+                                }}
+                              />
                             );
                           }
+                          return (
+                            <Package size={20} className="text-gray-300" />
+                          );
                         })()}
                       </div>
                       <span className="font-medium text-gray-900">

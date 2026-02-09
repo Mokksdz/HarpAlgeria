@@ -195,7 +195,7 @@ export default function CheckoutPage() {
   // Update step based on form completion
   useEffect(() => {
     if (formData.firstName && formData.lastName && formData.phone) {
-      if (formData.city && formData.wilaya) {
+      if (formData.wilaya) {
         setCurrentStep(3);
       } else {
         setCurrentStep(2);
@@ -235,7 +235,8 @@ export default function CheckoutPage() {
     if (formData.phone && !formData.phone.startsWith("0"))
       errors.phone = "Le numéro doit commencer par 0";
     if (!formData.wilaya) errors.wilaya = "Sélectionnez une wilaya";
-    if (!formData.city) errors.city = "Sélectionnez une commune";
+    if (deliveryType === "HOME" && !formData.city)
+      errors.city = "Sélectionnez une commune";
     if (deliveryType === "DESK" && !selectedStopDesk)
       errors.stopDesk = "Sélectionnez un point de retrait";
     setFormErrors(errors);
@@ -501,73 +502,34 @@ export default function CheckoutPage() {
                   Livraison
                 </h2>
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Wilaya <span className="text-red-400">*</span>
-                      </label>
-                      <select
-                        required
-                        name="wilaya"
-                        value={formData.wilaya}
-                        onChange={handleChange}
-                        className={cn(
-                          "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer",
-                          formErrors.wilaya
-                            ? "border-red-400"
-                            : "border-gray-200",
-                        )}
-                      >
-                        <option value="">Sélectionner</option>
-                        {deliveryRates.map((rate) => (
-                          <option key={rate.wilayaCode} value={rate.wilayaCode}>
-                            {rate.wilayaCode} - {rate.wilayaName}
-                          </option>
-                        ))}
-                      </select>
-                      {formErrors.wilaya && (
-                        <p className="text-xs text-red-500">
-                          {formErrors.wilaya}
-                        </p>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                      Wilaya <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      required
+                      name="wilaya"
+                      value={formData.wilaya}
+                      onChange={handleChange}
+                      className={cn(
+                        "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer",
+                        formErrors.wilaya
+                          ? "border-red-400"
+                          : "border-gray-200",
                       )}
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Commune <span className="text-red-400">*</span>
-                      </label>
-                      {loadingCommunes ? (
-                        <div className="flex items-center gap-2 py-3 text-sm text-gray-500">
-                          <Loader2 size={16} className="animate-spin" />
-                          Chargement des communes...
-                        </div>
-                      ) : (
-                        <select
-                          required
-                          name="city"
-                          value={formData.city}
-                          onChange={handleChange}
-                          disabled={!formData.wilaya}
-                          className={cn(
-                            "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer disabled:opacity-50",
-                            formErrors.city
-                              ? "border-red-400"
-                              : "border-gray-200",
-                          )}
-                        >
-                          <option value="">Sélectionner</option>
-                          {communes.map((commune) => (
-                            <option key={commune.id} value={commune.name}>
-                              {commune.name}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      {formErrors.city && (
-                        <p className="text-xs text-red-500">
-                          {formErrors.city}
-                        </p>
-                      )}
-                    </div>
+                    >
+                      <option value="">Sélectionner</option>
+                      {deliveryRates.map((rate) => (
+                        <option key={rate.wilayaCode} value={rate.wilayaCode}>
+                          {rate.wilayaCode} - {rate.wilayaName}
+                        </option>
+                      ))}
+                    </select>
+                    {formErrors.wilaya && (
+                      <p className="text-xs text-red-500">
+                        {formErrors.wilaya}
+                      </p>
+                    )}
                   </div>
 
                   {/* Delivery Provider Selection */}
@@ -722,6 +684,47 @@ export default function CheckoutPage() {
                         <p className="text-sm text-red-500 py-2">
                           Aucun point de retrait disponible. Veuillez choisir la
                           livraison à domicile.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Commune - only shown for HOME delivery, required */}
+                  {deliveryType === "HOME" && formData.wilaya && (
+                    <div className="space-y-2 animate-fade-in">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                        Commune <span className="text-red-400">*</span>
+                      </label>
+                      {loadingCommunes ? (
+                        <div className="flex items-center gap-2 py-3 text-sm text-gray-500">
+                          <Loader2 size={16} className="animate-spin" />
+                          Chargement des communes...
+                        </div>
+                      ) : (
+                        <select
+                          required
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          disabled={!formData.wilaya}
+                          className={cn(
+                            "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer disabled:opacity-50",
+                            formErrors.city
+                              ? "border-red-400"
+                              : "border-gray-200",
+                          )}
+                        >
+                          <option value="">Sélectionner</option>
+                          {communes.map((commune) => (
+                            <option key={commune.id} value={commune.name}>
+                              {commune.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {formErrors.city && (
+                        <p className="text-xs text-red-500">
+                          {formErrors.city}
                         </p>
                       )}
                     </div>
