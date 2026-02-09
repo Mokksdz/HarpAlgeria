@@ -77,6 +77,8 @@ export default async function CollectionPage({ params }: Props) {
     return { ...product, parsedImages: images };
   });
 
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   // Prepare data for CollectionJsonLd
   const jsonLdProducts = productsWithImages.map((p) => ({
     name: p.nameFr,
@@ -185,7 +187,6 @@ export default async function CollectionPage({ params }: Props) {
                 promoStart: product.promoStart,
                 promoEnd: product.promoEnd,
               });
-              const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
               const isNew = new Date(product.createdAt) > sevenDaysAgo;
               return (
                 <div

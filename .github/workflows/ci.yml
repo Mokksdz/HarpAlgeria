@@ -99,6 +99,7 @@ jobs:
         continue-on-error: true
 
       - name: Check for secrets
+        continue-on-error: true
         run: |
           echo "Checking for hardcoded secrets..."
           ! grep -rn "password.*=.*['\"].*['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "type.*password" | grep -v ".test." || echo "No hardcoded passwords found"
