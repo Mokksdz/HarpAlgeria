@@ -1,5 +1,5 @@
 // Harp Service Worker — Offline support & caching
-const CACHE_NAME = "harp-v1";
+const CACHE_NAME = "harp-v2";
 const OFFLINE_URL = "/offline";
 
 // Assets to pre-cache on install
@@ -11,7 +11,7 @@ const PRECACHE_ASSETS = [
   "/manifest.json",
 ];
 
-// Install: pre-cache critical assets
+// Install: pre-cache critical assets & force activate
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
@@ -21,7 +21,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activate: clean old caches
+// Activate: clean ALL old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -34,7 +34,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch: Network-first for pages, Cache-first for static assets
+// Fetch: Network-first for everything, cache as fallback
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -42,15 +42,11 @@ self.addEventListener("fetch", (event) => {
   // Skip non-GET and API requests
   if (request.method !== "GET") return;
   if (url.pathname.startsWith("/api/")) return;
-  if (url.pathname.startsWith("/admin/")) return;
 
-  // Static assets (images, fonts, CSS, JS) → Cache-first
+  // Static assets (fonts, images) → Cache-first
   if (
-    request.destination === "image" ||
     request.destination === "font" ||
-    request.destination === "style" ||
-    request.destination === "script" ||
-    url.pathname.startsWith("/_next/static/")
+    request.destination === "image"
   ) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -67,8 +63,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages → Network-first with offline fallback
-  if (request.destination === "document" || request.headers.get("accept")?.includes("text/html")) {
+  // JS, CSS, Pages → Network-first (always get fresh content)
+  if (
+    request.destination === "script" ||
+    request.destination === "style" ||
+    request.destination === "document" ||
+    url.pathname.startsWith("/_next/") ||
+    request.headers.get("accept")?.includes("text/html")
+  ) {
     event.respondWith(
       fetch(request)
         .then((response) => {
