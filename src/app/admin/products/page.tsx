@@ -138,7 +138,7 @@ export default function AdminProductsPage() {
       ) : (
         <>
           {/* Mobile Cards */}
-          <div className="md:hidden space-y-3">
+          <div className="lg:hidden space-y-3">
             {filteredProducts.map((product) => {
               const imgs = safeParseImages(product.images);
               const src = imgs[0];
@@ -217,7 +217,7 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="hidden lg:block bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50 text-xs uppercase tracking-widest text-gray-500">
