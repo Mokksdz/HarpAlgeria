@@ -185,6 +185,8 @@ export default async function CollectionPage({ params }: Props) {
                 promoStart: product.promoStart,
                 promoEnd: product.promoEnd,
               });
+              const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+              const isNew = new Date(product.createdAt) > sevenDaysAgo;
               return (
                 <div
                   key={product.id}
@@ -200,10 +202,7 @@ export default async function CollectionPage({ params }: Props) {
                     originalPrice={originalPrice ?? undefined}
                     image={product.parsedImages[0] || ""}
                     category={collection.nameFr}
-                    isNew={
-                      new Date(product.createdAt) >
-                      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                    }
+                    isNew={isNew}
                   />
                 </div>
               );

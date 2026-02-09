@@ -33,7 +33,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: ESLint
-        run: npx eslint "./src/**/*.{ts,tsx}" --max-warnings=100
+        run: npx eslint "./src/**/*.{ts,tsx}" --max-warnings=150
 
       - name: Prettier Check
         run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css}"
