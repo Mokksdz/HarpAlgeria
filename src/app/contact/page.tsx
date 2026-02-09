@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
 import {
   Mail,
-  MapPin,
   Instagram,
   MessageCircle,
   CheckCircle,
@@ -59,13 +58,6 @@ export default function ContactPage() {
       value: "@harp_algeria",
       link: "https://instagram.com/harp_algeria",
       description: "Suivez nos nouveautés",
-    },
-    {
-      icon: MapPin,
-      title: "Atelier",
-      value: "Alger, Algérie",
-      link: null,
-      description: "Siège social",
     },
   ];
 

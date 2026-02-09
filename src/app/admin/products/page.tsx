@@ -222,7 +222,7 @@ export default function AdminProductsPage() {
                     </div>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <div className="flex justify-end items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                    <div className="flex justify-end items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all md:translate-x-2 md:group-hover:translate-x-0">
                       <Link
                         href={`/admin/products/${product.id}/edit`}
                         className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"

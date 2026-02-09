@@ -6,7 +6,6 @@ import {
   Instagram,
   Phone,
   Mail,
-  MapPin,
   ArrowRight,
   Facebook,
 } from "lucide-react";
@@ -169,10 +168,6 @@ export function Footer() {
                   icon={Mail}
                   text="contact@harpalgeria.com"
                   href="mailto:contact@harpalgeria.com"
-                />
-                <ContactItem
-                  icon={MapPin}
-                  text={t("footer.contact.location")}
                 />
               </ul>
             </div>

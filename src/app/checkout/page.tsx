@@ -184,7 +184,7 @@ export default function CheckoutPage() {
   // Update step based on form completion
   useEffect(() => {
     if (formData.firstName && formData.lastName && formData.phone) {
-      if (formData.address && formData.city && formData.wilaya) {
+      if (formData.city && formData.wilaya) {
         setCurrentStep(3);
       } else {
         setCurrentStep(2);
@@ -225,7 +225,6 @@ export default function CheckoutPage() {
       errors.phone = "Le numéro doit commencer par 0";
     if (!formData.wilaya) errors.wilaya = "Sélectionnez une wilaya";
     if (!formData.city) errors.city = "Sélectionnez une commune";
-    if (!formData.address.trim()) errors.address = "Adresse requise";
     if (deliveryType === "DESK" && !selectedStopDesk)
       errors.stopDesk = "Sélectionnez un point de retrait";
     setFormErrors(errors);
@@ -428,7 +427,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Address */}
+              {/* Delivery */}
               <div>
                 <h2 className="text-lg font-serif font-medium text-gray-900 mb-6 flex items-center gap-3">
                   <span className="w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-sans">
@@ -505,42 +504,7 @@ export default function CheckoutPage() {
                       )}
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Adresse <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      required
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className={cn(
-                        "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
-                        formErrors.address
-                          ? "border-red-400"
-                          : "border-gray-200",
-                      )}
-                      placeholder="Cité, rue, n°..."
-                    />
-                    {formErrors.address && (
-                      <p className="text-xs text-red-500">
-                        {formErrors.address}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
 
-              {/* Delivery Options */}
-              <div>
-                <h2 className="text-lg font-serif font-medium text-gray-900 mb-6 flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-sans">
-                    3
-                  </span>
-                  Mode de livraison
-                </h2>
-
-                <div className="space-y-6">
                   {/* Delivery Provider Selection */}
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 block">
@@ -693,6 +657,32 @@ export default function CheckoutPage() {
                         <p className="text-sm text-red-500 py-2">
                           Aucun point de retrait disponible. Veuillez choisir la
                           livraison à domicile.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Address - only shown for HOME delivery, optional */}
+                  {deliveryType === "HOME" && (
+                    <div className="space-y-2 animate-fade-in">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                        Adresse <span className="text-gray-400 normal-case tracking-normal font-normal">(optionnel)</span>
+                      </label>
+                      <input
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className={cn(
+                          "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
+                          formErrors.address
+                            ? "border-red-400"
+                            : "border-gray-200",
+                        )}
+                        placeholder="Cité, rue, n°..."
+                      />
+                      {formErrors.address && (
+                        <p className="text-xs text-red-500">
+                          {formErrors.address}
                         </p>
                       )}
                     </div>

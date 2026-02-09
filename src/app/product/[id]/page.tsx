@@ -30,7 +30,6 @@ import { cn } from "@/lib/utils";
 import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/JsonLd";
 import { getActivePrice } from "@/lib/product-utils";
 import { PromoCountdown } from "@/components/PromoCountdown";
-import { InstallmentBadge } from "@/components/InstallmentBadge";
 import { BackInStockAlert } from "@/components/BackInStockAlert";
 
 export default function ProductPage({
@@ -605,12 +604,6 @@ export default function ProductPage({
               <PromoCountdown endDate={product.promoEnd} />
             )}
 
-            {/* Installment Payment */}
-            {(() => {
-              const { price: activePrice } = getActivePrice(product);
-              return <InstallmentBadge price={activePrice} />;
-            })()}
-
             {/* Delivery Estimate Badge */}
             <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
               <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
@@ -831,7 +824,7 @@ export default function ProductPage({
                     Qualité Garantie
                   </p>
                   <p className="text-xs text-gray-500">
-                    Satisfait ou remboursé
+                    Contrôle qualité rigoureux
                   </p>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM_EMAIL = process.env.RESEND_FROM || "Harp <noreply@harpalgeria.com>";
 
 /**
@@ -14,6 +14,8 @@ export async function sendReviewRequestEmail(params: {
   productId: string;
 }) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://harp-dz.com";
+
+  if (!resend) return { success: false, error: "Resend not configured" };
 
   try {
     await resend.emails.send({
@@ -72,6 +74,8 @@ export async function sendComebackEmail(params: {
   loyaltyPoints?: number;
 }) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://harp-dz.com";
+
+  if (!resend) return { success: false, error: "Resend not configured" };
 
   try {
     await resend.emails.send({

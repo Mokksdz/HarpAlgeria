@@ -6,7 +6,6 @@ import {
   Quote,
   Truck,
   MapPin,
-  CheckCircle,
   Star,
   Package,
 } from "lucide-react";
@@ -262,7 +261,7 @@ export default async function AboutPage() {
             Service Premium
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               {
                 icon: MapPin,
@@ -275,7 +274,6 @@ export default async function AboutPage() {
                 label: "Suivi Live",
                 sub: "Via nos partenaires",
               },
-              { icon: CheckCircle, label: "Satisfait", sub: "Ou remboursé" },
             ].map((item, i) => (
               <div key={i} className="group p-6">
                 <item.icon
