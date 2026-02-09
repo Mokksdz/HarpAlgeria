@@ -74,19 +74,19 @@ export function ProductCard({
           </div>
 
           {/* Badges */}
-          <div className="absolute top-4 left-4 flex flex-col gap-2">
+          <div className="absolute top-2 left-2 md:top-4 md:left-4 flex flex-col gap-1 md:gap-2">
             {stock !== undefined && stock <= 0 && (
-              <span className="bg-red-500 text-white text-[10px] uppercase tracking-widest px-3 py-1.5 font-semibold rounded-full shadow-sm">
+              <span className="bg-red-500/90 text-white text-[7px] md:text-[9px] uppercase tracking-wider px-1.5 py-0.5 md:px-2.5 md:py-1 font-semibold rounded-full shadow-sm">
                 Rupture de stock
               </span>
             )}
             {isNew && (
-              <span className="glass text-harp-brown text-[10px] uppercase tracking-widest px-3 py-1.5 font-semibold rounded-full shadow-sm">
+              <span className="glass text-harp-brown text-[7px] md:text-[9px] uppercase tracking-wider px-1.5 py-0.5 md:px-2.5 md:py-1 font-semibold rounded-full shadow-sm">
                 ✨ {t("shop.badge.new")}
               </span>
             )}
             {discount > 0 && (
-              <span className="bg-gradient-to-r from-harp-brown to-harp-caramel text-white text-[10px] uppercase tracking-widest px-3 py-1.5 font-semibold rounded-full shadow-sm">
+              <span className="bg-gradient-to-r from-harp-brown to-harp-caramel text-white text-[7px] md:text-[9px] uppercase tracking-wider px-1.5 py-0.5 md:px-2.5 md:py-1 font-semibold rounded-full shadow-sm">
                 -{discount}%
               </span>
             )}
