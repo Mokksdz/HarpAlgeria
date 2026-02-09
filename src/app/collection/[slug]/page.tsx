@@ -77,6 +77,7 @@ export default async function CollectionPage({ params }: Props) {
     return { ...product, parsedImages: images };
   });
 
+  // eslint-disable-next-line react-compiler/react-compiler -- server component, Date.now() is safe
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   // Prepare data for CollectionJsonLd
