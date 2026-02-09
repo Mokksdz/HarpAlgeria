@@ -479,19 +479,20 @@ export default function AdminDashboard() {
                         href={`/admin/products/${product.id}/edit`}
                         className="flex items-center gap-4 group"
                       >
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
                           {images[0] ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={images[0]}
                               alt=""
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display =
+                                  "none";
+                              }}
                             />
                           ) : (
-                            <Package
-                              size={20}
-                              className="m-auto text-gray-300"
-                            />
+                            <Package size={20} className="text-gray-300" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">

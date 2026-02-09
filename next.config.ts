@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
       },
     ],
     dangerouslyAllowSVG: true,
-    formats: ['image/avif', 'image/webp'],
+    formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days cache
@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true,
   },
-  
+
   // Security Headers
   async headers() {
     return [
@@ -59,7 +59,8 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+            value:
+              "camera=(), microphone=(), geolocation=(), interest-cohort=()",
           },
           {
             key: "Content-Security-Policy",
@@ -68,7 +69,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://placehold.co https://*.unsplash.com https://res.cloudinary.com https://*.public.blob.vercel-storage.com",
+              "img-src 'self' data: blob: https: http:",
               "connect-src 'self' https://api.yalidine.app https://api.zrexpress.com https://api.resend.com",
               "frame-ancestors 'none'",
             ].join("; "),
