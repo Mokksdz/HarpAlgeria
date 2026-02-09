@@ -14,6 +14,7 @@ import {
   Save,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import StockMatrix from "@/components/admin/StockMatrix";
 
@@ -560,12 +561,20 @@ export default function EditProductPage({
                       className="w-full h-full object-cover"
                       muted
                     />
-                  ) : (
+                  ) : media.url.startsWith("blob:") ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={media.url}
                       alt=""
                       className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={media.url}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 50vw, 25vw"
                     />
                   )}
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ShoppingBag,
   Package,
@@ -479,17 +480,14 @@ export default function AdminDashboard() {
                         href={`/admin/products/${product.id}/edit`}
                         className="flex items-center gap-4 group"
                       >
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center relative">
                           {images[0] ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <Image
                               src={images[0]}
                               alt=""
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display =
-                                  "none";
-                              }}
+                              fill
+                              className="object-cover"
+                              sizes="48px"
                             />
                           ) : (
                             <Package size={20} className="text-gray-300" />

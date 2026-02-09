@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Plus,
   Edit,
@@ -148,21 +149,14 @@ export default function AdminProductsPage() {
                   className="bg-white rounded-xl border border-gray-100 shadow-sm p-4"
                 >
                   <div className="flex gap-4">
-                    <div className="w-20 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center">
+                    <div className="w-20 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center relative">
                       {src ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           src={src}
                           alt={product.nameFr}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display =
-                              "none";
-                            (
-                              e.target as HTMLImageElement
-                            ).parentElement!.innerHTML =
-                              '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
-                          }}
+                          fill
+                          className="object-cover"
+                          sizes="80px"
                         />
                       ) : (
                         <Package size={20} className="text-gray-300" />
@@ -239,21 +233,14 @@ export default function AdminProductsPage() {
                     >
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-4">
-                          <div className="w-16 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center">
+                          <div className="w-16 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center relative">
                             {src ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
+                              <Image
                                 src={src}
                                 alt={product.nameFr}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display =
-                                    "none";
-                                  (
-                                    e.target as HTMLImageElement
-                                  ).parentElement!.innerHTML =
-                                    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
-                                }}
+                                fill
+                                className="object-cover"
+                                sizes="64px"
                               />
                             ) : (
                               <Package size={20} className="text-gray-300" />
