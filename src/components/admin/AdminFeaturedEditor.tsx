@@ -24,6 +24,7 @@ export default function AdminFeaturedEditor({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     featuredImageUrl: initial?.featuredImageUrl || "",
     featuredBadgeFr: initial?.featuredBadgeFr || "",
@@ -41,6 +42,7 @@ export default function AdminFeaturedEditor({
     if (!file.type.startsWith("image/")) return;
 
     setUploading(true);
+    setError(null);
     try {
       const fd = new FormData();
       fd.append("file", file);
@@ -48,9 +50,13 @@ export default function AdminFeaturedEditor({
       if (res.ok) {
         const data = await res.json();
         setFormData((prev) => ({ ...prev, featuredImageUrl: data.url }));
+      } else {
+        const errData = await res.json();
+        setError(errData.error || "Erreur lors de l'upload");
       }
-    } catch (error) {
-      console.error("Upload error:", error);
+    } catch (err) {
+      console.error("Upload error:", err);
+      setError("Erreur lors de l'upload de l'image");
     } finally {
       setUploading(false);
     }
@@ -81,6 +87,14 @@ export default function AdminFeaturedEditor({
 
   return (
     <div className="space-y-6">
+      {/* Error Message */}
+      {error && (
+        <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
+
       {/* Image Upload */}
       <div className="space-y-3">
         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">

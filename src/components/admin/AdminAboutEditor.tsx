@@ -55,6 +55,7 @@ export default function AdminAboutEditor({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/v3/site/settings/about")
@@ -79,6 +80,7 @@ export default function AdminAboutEditor({
       if (!file) return;
 
       setUploading(field);
+      setError(null);
       const formData = new FormData();
       formData.append("file", file);
 
@@ -88,11 +90,14 @@ export default function AdminAboutEditor({
           body: formData,
         });
         const data = await res.json();
-        if (data.url) {
+        if (res.ok && data.url) {
           setForm((prev) => ({ ...prev, [field]: data.url }));
+        } else {
+          setError(data.error || "Erreur lors de l'upload");
         }
       } catch (err) {
         console.error("Upload failed:", err);
+        setError("Erreur lors de l'upload de l'image");
       } finally {
         setUploading(null);
       }
@@ -102,16 +107,22 @@ export default function AdminAboutEditor({
 
   const handleSave = async () => {
     setSaving(true);
+    setError(null);
     try {
-      await fetch("/api/v3/site/settings/about", {
+      const res = await fetch("/api/v3/site/settings/about", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        setError("Erreur lors de la sauvegarde");
+      }
     } catch (err) {
       console.error("Save failed:", err);
+      setError("Erreur lors de la sauvegarde");
     } finally {
       setSaving(false);
     }
@@ -183,6 +194,14 @@ export default function AdminAboutEditor({
 
   return (
     <div className="space-y-8">
+      {/* Error Message */}
+      {error && (
+        <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
+
       {/* Images */}
       <div>
         <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-4">

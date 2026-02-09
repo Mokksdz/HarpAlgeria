@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import StockMatrix from "@/components/admin/StockMatrix";
+import PromoCountdownToggle from "@/components/admin/PromoCountdownToggle";
 
 interface Collection {
   id: string;
@@ -397,6 +398,9 @@ export default function NewProductPage() {
                 />
               </div>
             </div>
+
+            {/* Promo Countdown Toggle */}
+            <PromoCountdownToggle />
           </div>
         </div>
 

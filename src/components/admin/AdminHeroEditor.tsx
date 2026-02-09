@@ -76,45 +76,38 @@ export default function AdminHeroEditor({ initial }: Props) {
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
 
-  // Upload image to Cloudinary via signed upload
+  // Upload image via Vercel Blob
   async function handleUpload(file: File, type: "desktop" | "mobile") {
     setUploading(type);
     setMessage(null);
 
     try {
-      // Get signed upload credentials
-      const signRes = await fetch("/api/v3/site/upload-signed");
-      if (!signRes.ok) throw new Error("Failed to get upload signature");
-      const sign = await signRes.json();
+      const formData = new FormData();
+      formData.append("file", file);
 
-      // Upload directly to Cloudinary
-      const form = new FormData();
-      form.append("file", file);
-      form.append("api_key", sign.apiKey);
-      form.append("timestamp", sign.timestamp.toString());
-      form.append("signature", sign.signature);
-      form.append("folder", sign.folder);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-      const uploadRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${sign.cloudName}/auto/upload`,
-        { method: "POST", body: form },
-      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Upload failed");
+      }
 
-      if (!uploadRes.ok) throw new Error("Upload failed");
-      const result = await uploadRes.json();
+      const result = await res.json();
 
-      // Update settings
       if (type === "desktop") {
         setSettings((prev) => ({
           ...prev,
-          heroImageUrl: result.secure_url,
-          heroImagePublicId: result.public_id,
+          heroImageUrl: result.url,
+          heroImagePublicId: null,
         }));
       } else {
         setSettings((prev) => ({
           ...prev,
-          heroMobileImageUrl: result.secure_url,
-          heroMobilePublicId: result.public_id,
+          heroMobileImageUrl: result.url,
+          heroMobilePublicId: null,
         }));
       }
 

@@ -2,7 +2,6 @@ import { getSiteSettings } from "@/lib/site/settings.service";
 import AdminHeroEditor from "@/components/admin/AdminHeroEditor";
 import AdminFeaturedEditor from "@/components/admin/AdminFeaturedEditor";
 import AdminAboutEditor from "@/components/admin/AdminAboutEditor";
-import PromoCountdownToggle from "@/components/admin/PromoCountdownToggle";
 import { Palette } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -55,13 +54,6 @@ export default async function CustomizationPage() {
         <AdminAboutEditor initialSettings={settings} />
       </div>
 
-      {/* Promo Countdown Toggle */}
-      <div className="bg-gray-50 rounded-2xl p-6">
-        <h2 className="text-lg font-semibold text-harp-brown mb-4">
-          Promotions
-        </h2>
-        <PromoCountdownToggle />
-      </div>
     </div>
   );
 }
