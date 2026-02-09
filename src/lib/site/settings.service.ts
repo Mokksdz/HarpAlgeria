@@ -46,6 +46,18 @@ export async function getSiteSettings() {
 }
 
 /**
+ * Resolve userId: only use it as FK if it exists in the User table
+ */
+async function resolveUserId(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  userId?: string,
+): Promise<string | null> {
+  if (!userId) return null;
+  const user = await tx.user.findUnique({ where: { id: userId }, select: { id: true } });
+  return user ? userId : null;
+}
+
+/**
  * Update hero settings with audit trail
  */
 export async function updateHeroSettings(data: HeroSettings, userId?: string) {
@@ -60,13 +72,16 @@ export async function updateHeroSettings(data: HeroSettings, userId?: string) {
       });
     }
 
+    // Resolve userId for FK safety
+    const safeUserId = await resolveUserId(tx, userId);
+
     // Create history snapshot before update
     if (prev) {
       await tx.siteSettingHistory.create({
         data: {
           settingId: "default",
           snapshot: JSON.stringify(prev),
-          userId,
+          userId: userId || null,
         },
       });
     }
@@ -76,7 +91,7 @@ export async function updateHeroSettings(data: HeroSettings, userId?: string) {
       where: { id: "default" },
       data: {
         ...data,
-        lastUpdatedById: userId || null,
+        lastUpdatedById: safeUserId,
       },
     });
 
@@ -124,12 +139,14 @@ export async function updateFeaturedSettings(
       await tx.siteSetting.create({ data: { id: "default" } });
     }
 
+    const safeUserId = await resolveUserId(tx, userId);
+
     if (prev) {
       await tx.siteSettingHistory.create({
         data: {
           settingId: "default",
           snapshot: JSON.stringify(prev),
-          userId,
+          userId: userId || null,
         },
       });
     }
@@ -138,7 +155,7 @@ export async function updateFeaturedSettings(
       where: { id: "default" },
       data: {
         ...data,
-        lastUpdatedById: userId || null,
+        lastUpdatedById: safeUserId,
       },
     });
 
@@ -187,12 +204,14 @@ export async function updateAboutSettings(
       await tx.siteSetting.create({ data: { id: "default" } });
     }
 
+    const safeUserId = await resolveUserId(tx, userId);
+
     if (prev) {
       await tx.siteSettingHistory.create({
         data: {
           settingId: "default",
           snapshot: JSON.stringify(prev),
-          userId,
+          userId: userId || null,
         },
       });
     }
@@ -201,7 +220,7 @@ export async function updateAboutSettings(
       where: { id: "default" },
       data: {
         ...data,
-        lastUpdatedById: userId || null,
+        lastUpdatedById: safeUserId,
       },
     });
 
