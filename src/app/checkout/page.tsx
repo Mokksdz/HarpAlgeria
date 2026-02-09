@@ -23,6 +23,8 @@ import {
   CheckCircle2,
   Loader2,
   Lock,
+  Tag,
+  X,
 } from "lucide-react";
 import { trackEvent } from "@/components/Analytics";
 
@@ -53,6 +55,13 @@ export default function CheckoutPage() {
   const [selectedStopDesk, setSelectedStopDesk] = useState<string>("");
   const [loadingStopDesks, setLoadingStopDesks] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [promoInput, setPromoInput] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0); // percentage (e.g. 5 for 5%)
+  const [promoError, setPromoError] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
 
   // Track begin_checkout on page load
   useEffect(() => {
@@ -231,6 +240,55 @@ export default function CheckoutPage() {
     return Object.keys(errors).length === 0;
   };
 
+  const discountAmount = Math.round(total * promoDiscount / 100);
+  const discountedTotal = total - discountAmount;
+  const finalTotal = discountedTotal + shippingPrice;
+
+  const applyPromoCode = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+
+    setPromoError("");
+    setPromoLoading(true);
+
+    try {
+      // Check hardcoded newsletter code BIENVENUE5
+      if (code === "BIENVENUE5") {
+        setPromoCode(code);
+        setPromoDiscount(5);
+        setPromoInput("");
+        setPromoLoading(false);
+        return;
+      }
+
+      // Check referral codes via API
+      const res = await fetch("/api/v3/referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.valid) {
+        setPromoCode(code);
+        setPromoDiscount(data.discountPercent || 10);
+        setPromoInput("");
+      } else {
+        setPromoError("Code invalide ou expiré");
+      }
+    } catch {
+      setPromoError("Erreur de vérification");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const removePromoCode = () => {
+    setPromoCode("");
+    setPromoDiscount(0);
+    setPromoError("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -254,7 +312,9 @@ export default function CheckoutPage() {
         deliveryType,
         shippingPrice,
         stopDeskId: selectedStopDesk ? parseInt(selectedStopDesk) : null,
-        total: total + shippingPrice,
+        total: finalTotal,
+        promoCode: promoCode || undefined,
+        promoDiscount: promoDiscount || undefined,
         items: items.map((item) => ({
           productId: item.productId,
           productName: item.name,
@@ -267,11 +327,11 @@ export default function CheckoutPage() {
 
       // Track shipping & payment info
       trackEvent.ga.addShippingInfo(
-        total + shippingPrice,
+        finalTotal,
         `${deliveryProvider}-${deliveryType}`,
       );
-      trackEvent.ga.addPaymentInfo(total + shippingPrice, "COD");
-      trackEvent.fb.addPaymentInfo(total + shippingPrice);
+      trackEvent.ga.addPaymentInfo(finalTotal, "COD");
+      trackEvent.fb.addPaymentInfo(finalTotal);
 
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -284,12 +344,14 @@ export default function CheckoutPage() {
         clearCart();
         const params = new URLSearchParams({
           id: order.id || "",
-          total: String(total + shippingPrice),
+          total: String(finalTotal),
           wilaya: formData.wilaya,
         });
         router.push(`/order-confirmation?${params.toString()}`);
       } else {
-        alert("Une erreur est survenue. Veuillez réessayer.");
+        const errorData = await response.json().catch(() => null);
+        const errorMsg = errorData?.error || "Une erreur est survenue. Veuillez réessayer.";
+        alert(errorMsg);
       }
     } catch (error) {
       console.error("Error submitting order:", error);
@@ -733,6 +795,60 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              {/* Promo Code */}
+              <div className="border-t border-gray-200 pt-4 mb-4">
+                {promoCode ? (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Tag size={14} className="text-green-600" />
+                      <span className="text-sm font-medium text-green-700">{promoCode}</span>
+                      <span className="text-xs text-green-600">-{promoDiscount}%</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removePromoCode}
+                      className="p-1 hover:bg-green-100 rounded transition-colors"
+                    >
+                      <X size={14} className="text-green-600" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={promoInput}
+                      onChange={(e) => {
+                        setPromoInput(e.target.value.toUpperCase());
+                        setPromoError("");
+                      }}
+                      placeholder="Code promo"
+                      className="flex-1 bg-transparent border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-harp-brown focus:outline-none transition-colors"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          applyPromoCode();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={applyPromoCode}
+                      disabled={promoLoading || !promoInput.trim()}
+                      className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-harp-brown transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {promoLoading ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        "Appliquer"
+                      )}
+                    </button>
+                  </div>
+                )}
+                {promoError && (
+                  <p className="text-xs text-red-500 mt-1">{promoError}</p>
+                )}
+              </div>
+
               {/* Price Breakdown */}
               <div className="border-t border-gray-200 pt-4 mb-6 space-y-3">
                 <div className="flex justify-between text-sm">
@@ -741,6 +857,17 @@ export default function CheckoutPage() {
                     {total.toLocaleString()} DZD
                   </span>
                 </div>
+                {promoCode && discountAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-600 flex items-center gap-1">
+                      <Tag size={12} />
+                      Réduction ({promoCode})
+                    </span>
+                    <span className="text-green-600 font-medium">
+                      -{discountAmount.toLocaleString()} DZD
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500 flex items-center gap-2">
                     Livraison
@@ -759,7 +886,7 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-base font-semibold pt-2 border-t border-gray-200">
                   <span className="text-gray-900">Total</span>
                   <span className="text-harp-brown">
-                    {(total + shippingPrice).toLocaleString()} DZD
+                    {finalTotal.toLocaleString()} DZD
                   </span>
                 </div>
               </div>

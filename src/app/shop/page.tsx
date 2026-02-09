@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductGridSkeleton } from "@/components/Skeleton";
 import { useLanguage } from "@/components/LanguageProvider";
 import { ChevronDown, Package, ChevronRight, Search, Filter } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, safeParseImages } from "@/lib/utils";
 import { trackEvent } from "@/components/Analytics";
 import { getActivePrice } from "@/lib/product-utils";
 
@@ -404,7 +404,7 @@ export default function ShopPage() {
         ) : sortedProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
             {sortedProducts.map((product, index) => {
-              const images = JSON.parse(product.images);
+              const images = safeParseImages(product.images);
               const collection = collections.find(
                 (c) => c.id === product.collectionId,
               );

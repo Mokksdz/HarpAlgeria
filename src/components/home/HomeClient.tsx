@@ -7,6 +7,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { ProductCard } from "@/components/ProductCard";
 import { Star, ArrowRight } from "lucide-react";
 import { getActivePrice } from "@/lib/product-utils";
+import { safeParseImages } from "@/lib/utils";
 import { LoyaltySection } from "@/components/home/LoyaltySection";
 import { InstagramFeed } from "@/components/home/InstagramFeed";
 
@@ -215,7 +216,7 @@ export function HomeClient({
           {initialProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
               {initialProducts.map((product, index) => {
-                const images = JSON.parse(product.images);
+                const images = safeParseImages(product.images);
                 const { price, originalPrice } = getActivePrice(product);
                 return (
                   <div

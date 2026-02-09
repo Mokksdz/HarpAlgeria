@@ -25,6 +25,10 @@ export function NewsletterPopup() {
         const daysSince = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
         if (daysSince < COOLDOWN_DAYS) return;
       }
+
+      // Don't show if user already subscribed
+      const existingEmail = localStorage.getItem(EMAIL_KEY);
+      if (existingEmail) return;
     } catch {
       // localStorage not available
       return;

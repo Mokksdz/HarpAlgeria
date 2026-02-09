@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCart } from "./CartProvider";
 import { useLanguage } from "./LanguageProvider";
+import { safeParseImages } from "@/lib/utils";
 import { cn, formatPrice } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -68,7 +69,7 @@ export function CartDrawer() {
               id: p.id,
               name: p.nameFr,
               price: p.price,
-              image: JSON.parse(p.images)[0],
+              image: safeParseImages(p.images)[0] || "",
             }));
           setSuggestions(filtered);
         })

@@ -184,6 +184,32 @@ export async function PATCH(
       include: { items: true },
     });
 
+    // Send shipping notification email if tracking was just created
+    if (shipmentResult?.success && shipmentResult.tracking) {
+      try {
+        // Get email from linked user
+        if (updatedOrder.userId) {
+          const userForEmail = await prisma.user.findUnique({
+            where: { id: updatedOrder.userId },
+            select: { email: true },
+          });
+          if (userForEmail?.email) {
+            const { sendShippingNotificationEmail } = await import("@/lib/email/shipping-notification");
+            sendShippingNotificationEmail({
+              customerName: updatedOrder.customerName,
+              customerEmail: userForEmail.email,
+              orderNumber: updatedOrder.id.slice(0, 8).toUpperCase(),
+              trackingNumber: shipmentResult.tracking,
+              deliveryProvider: updatedOrder.deliveryProvider || "Standard",
+              estimatedDelivery: "24-72h",
+            }).catch((e: any) => console.error("Shipping notification email failed:", e));
+          }
+        }
+      } catch (e) {
+        console.error("Shipping email setup error:", e);
+      }
+    }
+
     return NextResponse.json({
       ...updatedOrder,
       shipmentCreated: shipmentResult?.success || false,

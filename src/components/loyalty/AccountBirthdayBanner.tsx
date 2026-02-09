@@ -78,18 +78,18 @@ export function AccountBirthdayBanner({
             <p className="text-sm text-gray-600 mt-1">
               {daysUntil === 0 ? (
                 <span className="font-semibold text-amber-600">
-                  🎉 C'est votre anniversaire ! Vos 5 000 points ont été
+                  🎉 C'est votre anniversaire ! Vos 2 000 points ont été
                   ajoutés.
                 </span>
               ) : daysUntil === 1 ? (
                 <>
                   Demain c'est votre anniversaire ! Vous recevrez{" "}
-                  <strong>5 000 points</strong>.
+                  <strong>2 000 points</strong>.
                 </>
               ) : (
                 <>
                   Votre anniversaire est dans <strong>{daysUntil} jours</strong>
-                  . Vous recevrez <strong>5 000 points</strong> automatiquement.
+                  . Vous recevrez <strong>2 000 points</strong> automatiquement.
                 </>
               )}
             </p>
@@ -108,11 +108,11 @@ export function AccountBirthdayBanner({
         </div>
         <div className="flex-1">
           <h3 className="font-serif font-semibold text-harp-brown text-lg">
-            Gagnez 5 000 points !
+            Gagnez 2 000 points !
           </h3>
           <p className="text-sm text-gray-600 mt-1 mb-4">
             Renseignez votre date de naissance et recevez{" "}
-            <strong>5 000 points</strong> le jour de votre anniversaire.
+            <strong>2 000 points</strong> le jour de votre anniversaire.
           </p>
 
           <div className="flex flex-wrap gap-3 items-center">

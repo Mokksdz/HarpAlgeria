@@ -112,18 +112,18 @@ export function ProfileCompletionBanner({
             <p className="text-sm text-gray-600 mt-1">
               {daysUntil === 0 ? (
                 <span className="font-semibold text-amber-600">
-                  🎉 C'est votre anniversaire ! Vos 5 000 points ont été
+                  🎉 C'est votre anniversaire ! Vos 2 000 points ont été
                   ajoutés.
                 </span>
               ) : daysUntil === 1 ? (
                 <>
                   Demain c'est votre anniversaire ! Vous recevrez{" "}
-                  <strong>5 000 points</strong>.
+                  <strong>2 000 points</strong>.
                 </>
               ) : (
                 <>
                   Votre anniversaire est dans <strong>{daysUntil} jours</strong>
-                  . Vous recevrez <strong>5 000 points</strong> automatiquement.
+                  . Vous recevrez <strong>2 000 points</strong> automatiquement.
                 </>
               )}
             </p>
@@ -142,11 +142,11 @@ export function ProfileCompletionBanner({
         </div>
         <div className="flex-1">
           <h3 className="font-serif font-semibold text-harp-brown text-lg">
-            🎁 Complétez votre profil — Gagnez 5 000 points !
+            🎁 Complétez votre profil — Gagnez 1 000 points !
           </h3>
           <p className="text-sm text-gray-600 mt-1 mb-4">
-            Renseignez vos informations et recevez <strong>5 000 points</strong>{" "}
-            le jour de votre anniversaire.
+            Renseignez vos informations et recevez <strong>1 000 points</strong>{" "}
+            de fidélité + 2 000 pts le jour de votre anniversaire.
           </p>
 
           <div className="grid sm:grid-cols-3 gap-3">

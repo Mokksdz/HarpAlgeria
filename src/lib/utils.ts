@@ -6,6 +6,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Safely parse a product images field (JSON string or array) into a string[].
+ * Handles null, undefined, already-array, malformed JSON, and non-array results.
+ */
+export function safeParseImages(images: unknown): string[] {
+  if (!images) return [];
+  if (Array.isArray(images)) return images;
+  if (typeof images === "string") {
+    try {
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/**
  * Formats a price value (number, string, or Decimal) into a DZD currency string.
  * Handles Prisma Decimal types which might be passed as objects or strings.
  */

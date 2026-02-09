@@ -18,12 +18,14 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, safeParseImages } from "@/lib/utils";
 
 interface Order {
   id: string;
   status: string;
-  total: number;
+  total: number | string;
+  subtotal?: number | string;
+  shippingPrice?: number | string;
   customerName?: string;
   createdAt?: string;
 }
@@ -101,7 +103,7 @@ export default function AdminDashboard() {
       ).length;
       const totalRevenue = ordersArray
         .filter((o: Order) => o.status !== "CANCELLED")
-        .reduce((acc: number, o: Order) => acc + (o.total || 0), 0);
+        .reduce((acc: number, o: Order) => acc + (Number(o.total) - Number((o as any).shippingPrice || 0)), 0);
 
       setStats({
         totalOrders: ordersArray.length,
@@ -373,7 +375,7 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                       <td className="py-4 px-6 text-sm font-medium text-gray-900">
-                        {order.total?.toLocaleString()} DZD
+                        {Number(order.total || 0).toLocaleString()} DZD
                       </td>
                       <td className="py-4 px-6">
                         {getStatusBadge(order.status)}
@@ -466,7 +468,7 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-4">
                   {stats.topProducts.map((product: Product) => {
-                    const images = JSON.parse(product.images || "[]");
+                    const images = safeParseImages(product.images);
                     return (
                       <Link
                         key={product.id}
@@ -493,7 +495,7 @@ export default function AdminDashboard() {
                             {product.nameFr}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {product.price?.toLocaleString()} DZD
+                            {Number(product.price || 0).toLocaleString()} DZD
                           </p>
                         </div>
                         <MoreHorizontal

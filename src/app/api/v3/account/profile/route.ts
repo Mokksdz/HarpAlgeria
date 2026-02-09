@@ -33,6 +33,37 @@ export async function GET(_req: NextRequest) {
       },
     });
 
+    // Award profile completion points if profile is complete but points
+    // were never granted (catches users who completed profile before this feature)
+    if (user.name && user.phone && user.birthDate) {
+      try {
+        const { earnPoints, LOYALTY_RULES } = await import("@/lib/loyalty/services/loyalty.service");
+        await earnPoints(
+          user.id,
+          LOYALTY_RULES.PROFILE_COMPLETE_BONUS,
+          "PROFILE_COMPLETE",
+          `profile-complete-${user.id}`,
+        );
+        // Re-fetch to include newly awarded points
+        const freshUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            birthDate: true,
+            loyaltyPoints: true,
+            vipLevel: true,
+            createdAt: true,
+          },
+        });
+        return NextResponse.json(freshUser || user);
+      } catch {
+        // Points already awarded (idempotent) — just return user as-is
+      }
+    }
+
     return NextResponse.json(user);
   } catch (error: unknown) {
     console.error("Profile GET error:", error);
@@ -92,7 +123,38 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, user: updated });
+    // Award profile completion points if profile is now complete
+    // and user hasn't already received them (idempotent via referenceId)
+    if (updated.name && updated.phone && updated.birthDate) {
+      try {
+        const { earnPoints, LOYALTY_RULES } = await import("@/lib/loyalty/services/loyalty.service");
+        await earnPoints(
+          updated.id,
+          LOYALTY_RULES.PROFILE_COMPLETE_BONUS,
+          "PROFILE_COMPLETE",
+          `profile-complete-${updated.id}`,
+        );
+      } catch (e) {
+        // Points already awarded (idempotent) or error — don't fail the request
+        console.log("Profile completion points:", e);
+      }
+    }
+
+    // Re-fetch user to include any points just awarded
+    const freshUser = await prisma.user.findUnique({
+      where: { id: updated.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        birthDate: true,
+        loyaltyPoints: true,
+        vipLevel: true,
+      },
+    });
+
+    return NextResponse.json({ success: true, user: freshUser || updated });
   } catch (error: unknown) {
     console.error("Profile PATCH error:", error);
 
