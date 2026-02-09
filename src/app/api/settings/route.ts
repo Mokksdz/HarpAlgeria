@@ -1,31 +1,77 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 // GET site settings
 export async function GET() {
-  // Return default settings - can be extended to use database
-  const settings = {
-    promoBanner: {
-      enabled: true,
-      message: "Livraison gratuite à partir de 5000 DZD",
-      link: "/shop",
-      backgroundColor: "#000000",
-      textColor: "#ffffff",
-    },
-    site: {
-      name: "HARP",
-      tagline: "Mode Algérienne Contemporaine",
-      currency: "DZD",
-      locale: "fr-DZ",
-    },
-    shipping: {
-      freeShippingThreshold: 5000,
-      defaultProvider: "yalidine",
-    },
-    social: {
-      instagram: "https://instagram.com/harp.dz",
-      facebook: "https://facebook.com/harp.dz",
-    },
-  };
+  try {
+    let settings = await prisma.siteSetting.findUnique({
+      where: { id: "default" },
+    });
 
-  return NextResponse.json(settings);
+    if (!settings) {
+      settings = await prisma.siteSetting.create({
+        data: { id: "default" },
+      });
+    }
+
+    return NextResponse.json(settings);
+  } catch {
+    // Fallback to static defaults if DB fails
+    return NextResponse.json({
+      id: "default",
+      freeShippingPromoEnabled: false,
+      promoCountdownEnabled: true,
+    });
+  }
+}
+
+// PATCH site settings
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+
+    // Only allow updating specific fields
+    const allowedFields: Record<string, boolean> = {
+      freeShippingPromoEnabled: true,
+      promoCountdownEnabled: true,
+    };
+
+    const data: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(body)) {
+      if (allowedFields[key]) {
+        data[key] = value;
+      }
+    }
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json(
+        { error: "No valid fields to update" },
+        { status: 400 },
+      );
+    }
+
+    // Ensure settings exist
+    const existing = await prisma.siteSetting.findUnique({
+      where: { id: "default" },
+    });
+
+    if (!existing) {
+      await prisma.siteSetting.create({
+        data: { id: "default" },
+      });
+    }
+
+    const updated = await prisma.siteSetting.update({
+      where: { id: "default" },
+      data,
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("Settings PATCH error:", error);
+    return NextResponse.json(
+      { error: "Failed to update settings" },
+      { status: 500 },
+    );
+  }
 }

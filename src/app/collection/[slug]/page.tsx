@@ -64,7 +64,7 @@ export default async function CollectionPage({ params }: Props) {
       collectionId: collection.id,
       isActive: true,
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { stock: "desc" },
   });
 
   // Parse images safely for each product
@@ -209,6 +209,7 @@ export default async function CollectionPage({ params }: Props) {
                     image={product.parsedImages[0] || ""}
                     category={collection.nameFr}
                     isNew={isNew}
+                    stock={product.stock}
                   />
                 </div>
               );

@@ -81,6 +81,17 @@ export default function ProductPage({
   const [relatedProducts, setRelatedProducts] = useState<
     { id: string; nameFr: string; price: number; images: string[] }[]
   >([]);
+  const [promoCountdownEnabled, setPromoCountdownEnabled] = useState(true);
+
+  // Fetch promo countdown setting
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        setPromoCountdownEnabled(data.promoCountdownEnabled ?? true);
+      })
+      .catch(() => {});
+  }, []);
 
   // Real customer reviews
   const allReviews = [
@@ -623,7 +634,7 @@ export default function ProductPage({
             </div>
 
             {/* Promo Countdown */}
-            {product.promoEnd && new Date(product.promoEnd) > new Date() && (
+            {promoCountdownEnabled && product.promoEnd && new Date(product.promoEnd) > new Date() && (
               <PromoCountdown endDate={product.promoEnd} />
             )}
 

@@ -824,6 +824,10 @@ model SiteSetting {
   aboutQuote            String?
   aboutQuoteAuthor      String?
 
+  // Promo Settings
+  freeShippingPromoEnabled Boolean @default(false)
+  promoCountdownEnabled    Boolean @default(true)
+
   // Audit
   lastUpdatedById     String?
   lastUpdatedBy       User?     @relation("SiteSettingsUpdater", fields: [lastUpdatedById], references: [id])

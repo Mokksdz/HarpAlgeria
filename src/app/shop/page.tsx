@@ -508,6 +508,7 @@ export default function ShopPage() {
                           new Date(product.createdAt) >
                           new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                         }
+                        stock={product.stock}
                       />
                     );
                   })()}

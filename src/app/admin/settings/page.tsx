@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Truck, Loader2, Zap } from "lucide-react";
+import { Truck, Loader2, Zap, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SiteSettings {
   id: string;
   freeShippingPromoEnabled: boolean;
+  promoCountdownEnabled: boolean;
 }
 
 export default function SettingsPage() {
@@ -28,7 +29,7 @@ export default function SettingsPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const handleToggle = async (enabled: boolean) => {
+  const handleToggle = async (field: keyof SiteSettings, enabled: boolean) => {
     if (!settings) return;
 
     setSaving(true);
@@ -38,7 +39,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ freeShippingPromoEnabled: enabled }),
+        body: JSON.stringify({ [field]: enabled }),
       });
 
       if (res.ok) {
@@ -47,8 +48,8 @@ export default function SettingsPage() {
         setMessage({
           type: "success",
           text: enabled
-            ? "Promo activée ! La bannière est maintenant visible."
-            : "Promo désactivée.",
+            ? "Paramètre activé !"
+            : "Paramètre désactivé.",
         });
       } else {
         throw new Error();
@@ -131,7 +132,7 @@ export default function SettingsPage() {
               <input
                 type="checkbox"
                 checked={settings?.freeShippingPromoEnabled ?? false}
-                onChange={(e) => handleToggle(e.target.checked)}
+                onChange={(e) => handleToggle("freeShippingPromoEnabled", e.target.checked)}
                 disabled={saving}
                 className="sr-only peer"
               />
@@ -182,6 +183,65 @@ export default function SettingsPage() {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Promo Countdown Toggle */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-8 border-b border-gray-50">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+              <Clock size={24} />
+            </div>
+            <div>
+              <h2 className="text-lg font-medium text-gray-900">
+                Compte à rebours promo
+              </h2>
+              <p className="text-sm text-gray-500">
+                Affiche &quot;Offre expire dans 02j 5h 40m&quot; sur les produits en promotion
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium text-gray-900">
+                Activer le compte à rebours
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Affiche un compteur sur les produits ayant une date de fin de promo
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings?.promoCountdownEnabled ?? true}
+                onChange={(e) => handleToggle("promoCountdownEnabled", e.target.checked)}
+                disabled={saving}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </label>
+          </div>
+
+          {settings?.promoCountdownEnabled && (
+            <div className="mt-6 bg-gray-50/50 rounded-xl p-6 border border-gray-100 animate-in fade-in duration-300">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 text-center">
+                Prévisualisation
+              </p>
+              <div className="flex justify-center">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-harp-sand/40 text-harp-caramel">
+                  <Clock size={14} className="text-harp-caramel" />
+                  <span>Offre expire dans 02j 5h 40m</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-4 text-center">
+                Ce compteur apparaîtra sur chaque produit ayant une promo avec date de fin
+              </p>
             </div>
           )}
         </div>

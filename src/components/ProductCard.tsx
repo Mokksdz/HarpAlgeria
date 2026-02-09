@@ -15,6 +15,7 @@ interface ProductCardProps {
   category?: string;
   isNew?: boolean;
   originalPrice?: number | string | any;
+  stock?: number;
 }
 
 export function ProductCard({
@@ -25,6 +26,7 @@ export function ProductCard({
   category,
   isNew,
   originalPrice,
+  stock,
 }: ProductCardProps) {
   const { t } = useLanguage();
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -73,6 +75,11 @@ export function ProductCard({
 
           {/* Badges */}
           <div className="absolute top-4 left-4 flex flex-col gap-2">
+            {stock !== undefined && stock <= 0 && (
+              <span className="bg-red-500 text-white text-[10px] uppercase tracking-widest px-3 py-1.5 font-semibold rounded-full shadow-sm">
+                Rupture de stock
+              </span>
+            )}
             {isNew && (
               <span className="glass text-harp-brown text-[10px] uppercase tracking-widest px-3 py-1.5 font-semibold rounded-full shadow-sm">
                 ✨ {t("shop.badge.new")}
@@ -106,11 +113,6 @@ export function ProductCard({
               </p>
             )}
           </div>
-          {numericPrice >= 3000 && (
-            <p className="text-[10px] text-gray-400 mt-1">
-              ou 3x {Math.ceil(numericPrice / 3).toLocaleString()} DZD
-            </p>
-          )}
         </div>
       </Link>
 
