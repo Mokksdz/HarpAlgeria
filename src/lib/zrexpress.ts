@@ -80,11 +80,19 @@ class ZRExpressClient {
     };
 
     try {
+      console.log(`ZR Express API ${method} ${endpoint}`, body ? JSON.stringify(body).slice(0, 500) : "");
+
       const response = await fetch(url, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(`ZR Express API HTTP ${response.status}:`, text.slice(0, 500));
+        throw new Error(`ZR Express API HTTP ${response.status}: ${text.slice(0, 200)}`);
+      }
 
       const data = await response.json();
       return data;
@@ -127,48 +135,82 @@ class ZRExpressClient {
     try {
       const result = await this.addColis([colis]);
 
-      // Handle different response formats
-      // Format 1: { success: true, tracking: "xxx" }
-      if (result?.success && result?.tracking) {
-        return result;
+      console.log(
+        "ZR Express addColis response:",
+        JSON.stringify(result, null, 2),
+      );
+
+      // Primary format: { Colis: [{ Tracking: "xxx", MessageRetour: "Good" }] }
+      if (result?.Colis && Array.isArray(result.Colis) && result.Colis[0]) {
+        const colisResult = result.Colis[0];
+
+        // Check for error in MessageRetour
+        if (
+          colisResult.MessageRetour &&
+          colisResult.MessageRetour !== "Good"
+        ) {
+          return {
+            success: false,
+            message: colisResult.MessageRetour,
+            data: colisResult,
+          };
+        }
+
+        if (colisResult.Tracking) {
+          return {
+            success: true,
+            tracking: colisResult.Tracking,
+            message: "Colis créé",
+            data: colisResult,
+          };
+        }
       }
 
-      // Format 2: { Colis: [{ Tracking: "xxx" }] }
-      if (
-        result?.Colis &&
-        Array.isArray(result.Colis) &&
-        result.Colis[0]?.Tracking
-      ) {
-        return {
-          success: true,
-          tracking: result.Colis[0].Tracking,
-          message: "Colis créé",
-        };
-      }
-
-      // Format 3: Array response [{ Tracking: "xxx" }]
+      // Format 2: Array response [{ Tracking: "xxx" }]
       if (Array.isArray(result) && result[0]?.Tracking) {
+        if (result[0].MessageRetour && result[0].MessageRetour !== "Good") {
+          return {
+            success: false,
+            message: result[0].MessageRetour,
+            data: result[0],
+          };
+        }
         return {
           success: true,
           tracking: result[0].Tracking,
           message: "Colis créé",
+          data: result[0],
         };
       }
 
-      // Format 4: Direct tracking in response
+      // Format 3: Direct tracking in response
       if (result?.Tracking) {
         return {
           success: true,
           tracking: result.Tracking,
           message: "Colis créé",
+          data: result,
         };
       }
 
+      // Format 4: { success: true, tracking: "xxx" }
+      if (result?.success && result?.tracking) {
+        return result;
+      }
+
       // Error response
+      console.error(
+        "ZR Express unrecognized response:",
+        JSON.stringify(result),
+      );
       return {
         success: false,
         message:
-          result?.message || result?.error || "Format de réponse non reconnu",
+          result?.message ||
+          result?.error ||
+          result?.MessageRetour ||
+          "Format de réponse non reconnu",
+        data: result,
       };
     } catch (error: any) {
       console.error("ZR Express createShipment error:", error);
@@ -242,7 +284,7 @@ export function orderToZRColis(order: {
   return {
     TypeLivraison: order.deliveryType === "STOP_DESK" ? "1" : "0",
     TypeColis: "0",
-    Confrimee: "1", // Prêt à expédier
+    Confrimee: "", // Empty = "En préparation" (visible on dashboard)
     Client: order.customerName,
     MobileA: order.customerPhone.replace(/\s/g, ""),
     Adresse: order.address,
@@ -252,6 +294,7 @@ export function orderToZRColis(order: {
     Note: order.notes || "",
     TProduit: productDescription,
     id_Externe: order.id,
+    Source: "Harp",
   };
 }
 

@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
           ? ("1" as const)
           : ("0" as const),
       TypeColis: "0" as const,
-      Confrimee: "1" as const,
+      Confrimee: "" as const, // Empty = "En préparation" (visible on dashboard)
       Client: orderData.customerName,
       MobileA: orderData.customerPhone.replace(/\s/g, ""),
       MobileB: orderData.customerPhoneB || "",
@@ -84,9 +84,17 @@ export async function POST(request: NextRequest) {
       Note: orderData.notes || "",
       TProduit: orderData.products || "Articles Harp",
       id_Externe: orderId,
+      Source: "Harp",
     };
 
     const result = await client.createShipment(colis);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.message || "Échec création colis ZR Express", data: result.data },
+        { status: 400 },
+      );
+    }
 
     return NextResponse.json({
       success: true,

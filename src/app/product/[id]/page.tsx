@@ -1004,7 +1004,7 @@ export default function ProductPage({
                     />
                   ))}
                 </div>
-                <p className="text-gray-700 mb-4 leading-relaxed">
+                <p className="text-gray-700 mb-4 leading-relaxed line-clamp-4">
                   <Quote size={14} className="inline text-gray-300 mr-1" />
                   {review.text}
                 </p>

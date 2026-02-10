@@ -79,6 +79,11 @@ export default async function CollectionPage({ params }: Props) {
     return { ...product, parsedImages: images };
   });
 
+  // Use first product image as collection cover fallback
+  const collectionCover = collection.image
+    || (productsWithImages.length > 0 && productsWithImages[0].parsedImages[0])
+    || null;
+
   // Prepare data for CollectionJsonLd
   const jsonLdProducts = productsWithImages.map((p) => ({
     name: p.nameFr,
@@ -108,7 +113,7 @@ export default async function CollectionPage({ params }: Props) {
           name: collection.nameFr,
           description: collection.description || undefined,
           slug: collection.slug,
-          image: collection.image || undefined,
+          image: collectionCover || undefined,
         }}
         products={jsonLdProducts}
       />
@@ -132,10 +137,10 @@ export default async function CollectionPage({ params }: Props) {
       {/* Collection Hero Banner */}
       <section className="mb-16">
         <div className="container mx-auto px-4">
-          {collection.image && (
+          {collectionCover && (
             <div className="relative w-full h-[240px] md:h-[360px] rounded-2xl overflow-hidden mb-8">
               <Image
-                src={collection.image}
+                src={collectionCover}
                 alt={collection.nameFr}
                 fill
                 sizes="100vw"
@@ -160,7 +165,7 @@ export default async function CollectionPage({ params }: Props) {
             </div>
           )}
 
-          {!collection.image && (
+          {!collectionCover && (
             <div className="max-w-3xl">
               <h1 className="text-4xl md:text-6xl font-serif font-medium text-gray-900 mb-6">
                 {collection.nameFr}

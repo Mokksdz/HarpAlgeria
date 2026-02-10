@@ -65,6 +65,12 @@ async function HomeContent() {
         nameFr: true,
         nameAr: true,
         image: true,
+        products: {
+          where: { isActive: true },
+          take: 1,
+          orderBy: { createdAt: "desc" },
+          select: { images: true },
+        },
       },
     }),
     getSiteSettings(),
@@ -79,10 +85,31 @@ async function HomeContent() {
     promoEnd: p.promoEnd ? p.promoEnd.toISOString() : null,
   }));
 
+  // Build collection covers: use collection image or first product image as fallback
+  const serializedCollections = collections.map((c) => {
+    let coverImage = c.image;
+    if (!coverImage && c.products && c.products.length > 0) {
+      try {
+        const imgs = typeof c.products[0].images === "string"
+          ? JSON.parse(c.products[0].images)
+          : c.products[0].images;
+        if (Array.isArray(imgs) && imgs.length > 0) {
+          coverImage = imgs[0];
+        }
+      } catch { /* skip */ }
+    }
+    return {
+      id: c.id,
+      nameFr: c.nameFr,
+      nameAr: c.nameAr,
+      image: coverImage,
+    };
+  });
+
   return (
     <HomeClient
       initialProducts={serializedProducts}
-      initialCollections={collections}
+      initialCollections={serializedCollections}
       siteSettings={
         siteSettings
           ? {

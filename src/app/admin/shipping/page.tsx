@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   Wifi,
   WifiOff,
-  ChevronDown,
   Box,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -56,7 +55,6 @@ export default function ShippingPage() {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [creating, setCreating] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "shipped">("all");
-  const [showProviderMenu, setShowProviderMenu] = useState<string | null>(null);
 
   // Vérifier la connexion aux deux services
   const checkConnections = async () => {
@@ -123,7 +121,6 @@ export default function ShippingPage() {
   // Créer une expédition avec le provider sélectionné
   const createShipment = async (order: Order, provider: DeliveryProvider) => {
     setCreating(order.id);
-    setShowProviderMenu(null);
 
     try {
       const productsList = order.items
@@ -521,6 +518,11 @@ export default function ShippingPage() {
                           <p className="text-xs text-gray-500 truncate max-w-[180px]">
                             {order.customerAddress}
                           </p>
+                          {order.deliveryType && (
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+                              {order.deliveryType === "DESK" || order.deliveryType === "STOP_DESK" ? "Point relais" : "Domicile"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -566,15 +568,28 @@ export default function ShippingPage() {
                       <div className="flex items-center justify-end gap-2">
                         {!order.trackingNumber &&
                         order.status !== "CANCELLED" ? (
-                          <div className="relative">
+                          <div className="flex items-center gap-2">
+                            {/* Show customer's chosen provider */}
+                            {order.deliveryProvider && (
+                              <span
+                                className={cn(
+                                  "text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border",
+                                  order.deliveryProvider === "Yalidine"
+                                    ? "bg-blue-50 text-blue-700 border-blue-100"
+                                    : "bg-orange-50 text-orange-700 border-orange-100",
+                                )}
+                              >
+                                {order.deliveryProvider}
+                              </span>
+                            )}
                             <button
-                              onClick={() =>
-                                setShowProviderMenu(
-                                  showProviderMenu === order.id
-                                    ? null
-                                    : order.id,
-                                )
-                              }
+                              onClick={() => {
+                                const provider: DeliveryProvider =
+                                  order.deliveryProvider === "ZR Express" || order.deliveryProvider === "zrexpress"
+                                    ? "zrexpress"
+                                    : "yalidine";
+                                createShipment(order, provider);
+                              }}
                               disabled={creating === order.id}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-all shadow-sm"
                             >
@@ -584,52 +599,7 @@ export default function ShippingPage() {
                                 <Send size={14} />
                               )}
                               Expédier
-                              <ChevronDown
-                                size={14}
-                                className={
-                                  showProviderMenu === order.id
-                                    ? "rotate-180"
-                                    : ""
-                                }
-                              />
                             </button>
-
-                            {/* Provider Selection Dropdown */}
-                            {showProviderMenu === order.id && (
-                              <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20 min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-right">
-                                <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                  Choisir le transporteur
-                                </p>
-                                <button
-                                  onClick={() =>
-                                    createShipment(order, "yalidine")
-                                  }
-                                  disabled={!providerStatus.yalidine}
-                                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 transition-colors"
-                                >
-                                  <div
-                                    className={`w-2 h-2 rounded-full ring-2 ring-offset-1 ${providerStatus.yalidine ? "bg-emerald-500 ring-emerald-100" : "bg-red-500 ring-red-100"}`}
-                                  />
-                                  <span className="font-medium text-gray-700">
-                                    Yalidine
-                                  </span>
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    createShipment(order, "zrexpress")
-                                  }
-                                  disabled={!providerStatus.zrexpress}
-                                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 transition-colors"
-                                >
-                                  <div
-                                    className={`w-2 h-2 rounded-full ring-2 ring-offset-1 ${providerStatus.zrexpress ? "bg-emerald-500 ring-emerald-100" : "bg-red-500 ring-red-100"}`}
-                                  />
-                                  <span className="font-medium text-gray-700">
-                                    ZR Express
-                                  </span>
-                                </button>
-                              </div>
-                            )}
                           </div>
                         ) : order.trackingNumber ? (
                           <div className="flex items-center justify-end gap-1">

@@ -49,8 +49,10 @@ export function ProductCard({
     ? Math.round((1 - numericPrice / numericOriginalPrice) * 100)
     : 0;
 
+  const isOutOfStock = stock !== undefined && stock <= 0;
+
   return (
-    <div className="group relative card-hover rounded-2xl overflow-hidden bg-white">
+    <div className={`group relative card-hover rounded-2xl overflow-hidden bg-white ${isOutOfStock ? "opacity-70" : ""}`}>
       <Link href={`/product/${id}`} className="block h-full">
         {/* Image Container */}
         <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
@@ -59,7 +61,7 @@ export function ProductCard({
             alt={name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover img-zoom"
+            className={`object-cover ${isOutOfStock ? "grayscale-[30%]" : "img-zoom"}`}
             onError={() => setImageError(true)}
           />
 
@@ -68,8 +70,8 @@ export function ProductCard({
 
           {/* Quick View Button */}
           <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-            <span className="glass block text-harp-brown px-6 py-3 text-xs uppercase tracking-widest font-medium text-center rounded-xl hover:bg-harp-brown hover:text-white transition-all duration-300">
-              {t("product.card.view")}
+            <span className={`block px-6 py-3 text-xs uppercase tracking-widest font-medium text-center rounded-xl transition-all duration-300 ${isOutOfStock ? "bg-gray-800/80 text-white" : "glass text-harp-brown hover:bg-harp-brown hover:text-white"}`}>
+              {isOutOfStock ? "Rupture de stock" : t("product.card.view")}
             </span>
           </div>
 

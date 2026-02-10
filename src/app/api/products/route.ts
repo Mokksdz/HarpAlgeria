@@ -55,7 +55,10 @@ export async function GET(request: NextRequest) {
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        ...(includeCollection ? { include: { collection: true } } : {}),
+        include: {
+          ...(includeCollection ? { collection: true } : {}),
+          variants: { select: { id: true, size: true, color: true, stock: true } },
+        },
         orderBy: { createdAt: "desc" },
         skip,
         take: pageSize,
@@ -63,9 +66,18 @@ export async function GET(request: NextRequest) {
       prisma.product.count({ where }),
     ]);
 
+    // Compute real stock from variants when available
+    const productsWithRealStock = products.map((p) => {
+      if (p.variants && p.variants.length > 0) {
+        const variantStock = p.variants.reduce((sum: number, v: { stock: number }) => sum + (v.stock || 0), 0);
+        return { ...p, stock: variantStock };
+      }
+      return p;
+    });
+
     // Add cache headers for public product listing
     const response = NextResponse.json(
-      paginatedResponse(products, page, pageSize, total),
+      paginatedResponse(productsWithRealStock, page, pageSize, total),
     );
     response.headers.set(
       "Cache-Control",

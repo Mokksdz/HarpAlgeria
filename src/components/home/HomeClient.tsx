@@ -389,7 +389,7 @@ export function HomeClient({
                     <Star key={j} size={14} fill="currentColor" />
                   ))}
                 </div>
-                <p className="text-gray-600 italic mb-6 font-light leading-relaxed">
+                <p className="text-gray-600 italic mb-6 font-light leading-relaxed line-clamp-4">
                   &quot;{review.text}&quot;
                 </p>
                 <p className="text-xs font-bold uppercase tracking-widest text-harp-brown">
