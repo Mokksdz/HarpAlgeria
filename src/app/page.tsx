@@ -45,7 +45,7 @@ async function HomeContent() {
     prisma.product.findMany({
       where: { isActive: true },
       take: 4,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
       select: {
         id: true,
         nameFr: true,
@@ -59,7 +59,7 @@ async function HomeContent() {
     }),
     prisma.collection.findMany({
       take: 3,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
       select: {
         id: true,
         nameFr: true,
