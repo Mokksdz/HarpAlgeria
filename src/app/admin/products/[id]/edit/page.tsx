@@ -114,6 +114,19 @@ export default function EditProductPage({
               stock: v.stock,
             })),
           );
+        } else {
+          // No variants in DB: initialize from sizes × colors with stock 0
+          const sizes: string[] = JSON.parse(data.sizes);
+          const colors: string[] = JSON.parse(data.colors);
+          if (sizes.length > 0 && colors.length > 0) {
+            const initialVariants: { size: string; color: string; stock: number }[] = [];
+            for (const size of sizes) {
+              for (const color of colors) {
+                initialVariants.push({ size, color, stock: 0 });
+              }
+            }
+            setVariants(initialVariants);
+          }
         }
       } catch (error) {
         console.error("Error fetching product:", error);

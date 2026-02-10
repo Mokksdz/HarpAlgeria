@@ -97,31 +97,29 @@ export async function GET(request: NextRequest) {
     ) {
       try {
         const zrClient = getZRClient();
-        const zrResult = await zrClient.getTrackingInfo([tracking]);
+        const parcel = await zrClient.getParcel(tracking);
 
-        if (zrResult && zrResult.length > 0) {
-          const parcel = zrResult[0];
-
+        if (parcel) {
           result = {
             found: true,
             provider: "ZR Express",
-            tracking: parcel.Tracking,
-            status: parcel.Situation || "En cours",
-            customerName: parcel.Client,
-            destination: `${parcel.Commune}, ${parcel.Wilaya}`,
+            tracking: parcel.tracking || parcel.id || tracking,
+            status: parcel.status || parcel.lastStatus || "En cours",
+            customerName: parcel.customer?.name || "",
+            destination: parcel.deliveryAddress?.street || "",
             history: [
               {
-                status: parcel.Situation || "En cours",
-                date: parcel.DateMAJ
-                  ? new Date(parcel.DateMAJ).toLocaleString("fr-FR")
+                status: parcel.status || parcel.lastStatus || "En cours",
+                date: parcel.updatedAt
+                  ? new Date(parcel.updatedAt).toLocaleString("fr-FR")
                   : "Maintenant",
                 completed: true,
                 current: true,
               },
               {
                 status: "Colis créé",
-                date: parcel.DateCreation
-                  ? new Date(parcel.DateCreation).toLocaleString("fr-FR")
+                date: parcel.createdAt
+                  ? new Date(parcel.createdAt).toLocaleString("fr-FR")
                   : "",
                 completed: true,
                 current: false,
@@ -218,11 +216,11 @@ export async function POST(request: NextRequest) {
     } else if (order.deliveryProvider === "ZR Express") {
       try {
         const zrClient = getZRClient();
-        const result = await zrClient.getTrackingInfo([order.trackingNumber]);
+        const parcel = await zrClient.getParcel(order.trackingNumber);
 
-        if (result && result.length > 0) {
-          newStatus = result[0].Situation;
-          updated = true;
+        if (parcel) {
+          newStatus = parcel.status || parcel.lastStatus || null;
+          updated = !!newStatus;
         }
       } catch (e) {
         console.error("ZR Express sync error:", e);

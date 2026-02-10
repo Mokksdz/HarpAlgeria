@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer les tarifs
-    const tarifs = await client.getTarification();
+    const tarifs = await client.getRates();
 
     return NextResponse.json({
       connected: true,
@@ -66,28 +66,20 @@ export async function POST(request: NextRequest) {
 
     const client = getZRClient();
 
-    // Créer le colis ZR Express
-    const colis = {
-      TypeLivraison:
-        orderData.deliveryType === "STOP_DESK"
-          ? ("1" as const)
-          : ("0" as const),
-      TypeColis: "0" as const,
-      Confrimee: "" as const, // Empty = "En préparation" (visible on dashboard)
-      Client: orderData.customerName,
-      MobileA: orderData.customerPhone.replace(/\s/g, ""),
-      MobileB: orderData.customerPhoneB || "",
-      Adresse: orderData.address,
-      IDWilaya: orderData.wilayaId || "16",
-      Commune: orderData.commune,
-      Total: orderData.total.toString(),
-      Note: orderData.notes || "",
-      TProduit: orderData.products || "Articles Harp",
-      id_Externe: orderId,
-      Source: "Harp",
-    };
-
-    const result = await client.createShipment(colis);
+    // Créer le colis ZR Express (nouvelle API)
+    const result = await client.createShipment({
+      customerName: orderData.customerName,
+      customerPhone: orderData.customerPhone,
+      customerPhoneB: orderData.customerPhoneB || "",
+      address: orderData.address,
+      wilayaId: orderData.wilayaId || "16",
+      commune: orderData.commune,
+      total: parseFloat(orderData.total) || 0,
+      products: orderData.products || "Articles Harp",
+      deliveryType: orderData.deliveryType || "HOME",
+      externalId: orderId,
+      notes: orderData.notes || "",
+    });
 
     if (!result.success) {
       return NextResponse.json(

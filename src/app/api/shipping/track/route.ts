@@ -22,11 +22,22 @@ export async function POST(request: NextRequest) {
     }
 
     const client = getZRClient();
-    const trackingInfo = await client.getTrackingInfo(trackingNumbers);
+
+    // Fetch each parcel individually using the new API
+    const results = await Promise.all(
+      trackingNumbers.map(async (tn: string) => {
+        try {
+          const parcel = await client.getParcel(tn);
+          return parcel ? { tracking: tn, found: true, ...parcel } : { tracking: tn, found: false };
+        } catch {
+          return { tracking: tn, found: false };
+        }
+      }),
+    );
 
     return NextResponse.json({
       success: true,
-      data: trackingInfo,
+      data: results,
     });
   } catch (error) {
     return handleApiError(error);

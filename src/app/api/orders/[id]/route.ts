@@ -56,44 +56,17 @@ async function createZRExpressShipment(order: any) {
         ?.map((item: any) => `${item.quantity}x ${item.productName}`)
         .join(", ") || "Commande Harp";
 
-    // Map wilaya name to ID
-    const wilayaMap: Record<string, string> = {
-      alger: "16",
-      oran: "31",
-      constantine: "25",
-      blida: "9",
-      sétif: "19",
-      annaba: "23",
-      batna: "5",
-      "tizi ouzou": "15",
-      bejaia: "6",
-      tlemcen: "13",
-      djelfa: "17",
-      biskra: "7",
-      msila: "28",
-      chlef: "2",
-      medea: "26",
-      mostaganem: "27",
-    };
-    const wilayaId =
-      wilayaMap[order.customerWilaya?.toLowerCase()] ||
-      order.customerWilaya ||
-      "16";
-
     const result = await client.createShipment({
-      id_Externe: order.id,
-      Client: order.customerName,
-      MobileA: order.customerPhone,
-      Adresse: order.customerAddress,
-      Commune: order.customerCity,
-      IDWilaya: wilayaId,
-      Total: String(order.total - (order.shippingPrice || 0)),
-      TypeLivraison: order.deliveryType === "DESK" ? "1" : "0",
-      TypeColis: "0",
-      Confrimee: "", // Empty = "En préparation" (visible on dashboard)
-      TProduit: productsList,
-      Note: `Commande Harp #${order.id.slice(-8).toUpperCase()}`,
-      Source: "Harp",
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      address: order.customerAddress,
+      wilayaId: order.customerWilaya || "16",
+      commune: order.customerCity,
+      total: Number(order.total) - Number(order.shippingPrice || 0),
+      products: productsList,
+      deliveryType: order.deliveryType || "HOME",
+      externalId: order.id,
+      notes: `Commande Harp #${order.id.slice(-8).toUpperCase()}`,
     });
 
     if (result.success && result.tracking) {

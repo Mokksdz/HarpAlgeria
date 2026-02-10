@@ -1,82 +1,100 @@
 /**
- * ZR Express (Procolis) API Integration
- * API Base URL: https://procolis.com/api_v1
+ * ZR Express API Integration (New Platform)
+ * API Base URL: https://api.zrexpress.app/api/v1
+ * Docs: https://docs.zrexpress.app/reference
+ * Auth: X-Tenant + X-Api-Key headers
  */
 
-// Types
-export interface ZRColis {
-  Tracking?: string;
-  TypeLivraison: "0" | "1"; // 0 = Domicile, 1 = Stop Desk
-  TypeColis: "0" | "1"; // 0 = Normal, 1 = Échange
-  Confrimee?: "1" | ""; // 1 = Prêt à expédier directement
-  Client: string;
-  MobileA: string;
-  MobileB?: string;
-  Adresse: string;
-  IDWilaya: string;
-  Commune: string;
-  Total: string;
-  Note?: string;
-  TProduit: string;
-  id_Externe?: string;
-  Source?: string;
+// ── Types ──────────────────────────────────────────────────────────────
+
+export interface ZRCreateParcel {
+  customer: {
+    name: string;
+    phone: { number1: string; number2?: string };
+  };
+  deliveryAddress: {
+    cityTerritoryId: string;      // UUID wilaya
+    districtTerritoryId?: string;  // UUID commune
+    street: string;
+  };
+  orderedProducts: {
+    productName: string;
+    unitPrice: number;
+    quantity: number;
+  }[];
+  deliveryType: "home" | "pickup-point";
+  description?: string;
+  amount: number;
+  externalId?: string;
 }
 
 export interface ZRColisResponse {
   success: boolean;
   tracking?: string;
+  parcelId?: string;
   message?: string;
   data?: any;
 }
 
-export interface ZRTarif {
-  wilaya_id: string;
-  wilaya_name: string;
-  tarif_domicile: number;
-  tarif_stopdesk: number;
+export interface ZRTerritory {
+  id: string;
+  code: number;
+  name: string;
+  postalCode?: string;
+  level: "city" | "district";
+  parentId?: string;
+  delivery?: {
+    hasHomeDelivery: boolean;
+    hasPickupPoint: boolean;
+  };
 }
 
-export interface ZRTrackingInfo {
-  Tracking: string;
-  Situation: string;
-  Client: string;
-  Wilaya: string;
-  Commune: string;
-  Total: string;
-  DateCreation: string;
-  DateMAJ: string;
+export interface ZRRate {
+  toTerritoryId: string;
+  toTerritoryCode: number;
+  toTerritoryName: string;
+  deliveryPrices: { deliveryType: string; price: number }[];
 }
 
-// Configuration
+// ── Configuration ──────────────────────────────────────────────────────
+
 const ZR_CONFIG = {
-  baseUrl: process.env.ZR_EXPRESS_API_URL || "https://procolis.com/api_v1",
-  token: process.env.ZR_EXPRESS_TOKEN || "",
-  key: process.env.ZR_EXPRESS_KEY || "",
+  baseUrl: process.env.ZR_EXPRESS_API_URL || "https://api.zrexpress.app/api/v1",
+  tenantId: process.env.ZR_EXPRESS_TENANT_ID || "",
+  apiKey: process.env.ZR_EXPRESS_API_KEY || "",
+  // Legacy fallback (old procolis.com credentials)
+  legacyToken: process.env.ZR_EXPRESS_TOKEN || "",
+  legacyKey: process.env.ZR_EXPRESS_KEY || "",
 };
 
-// Client API
+// ── Territory cache (wilaya name → UUID) ───────────────────────────────
+
+const territoryCache = new Map<string, string>();
+
+// ── Client API ─────────────────────────────────────────────────────────
+
 class ZRExpressClient {
-  private token: string;
-  private key: string;
+  private tenantId: string;
+  private apiKey: string;
   private baseUrl: string;
 
-  constructor(token?: string, key?: string) {
-    this.token = token || ZR_CONFIG.token;
-    this.key = key || ZR_CONFIG.key;
+  constructor() {
+    this.tenantId = ZR_CONFIG.tenantId;
+    this.apiKey = ZR_CONFIG.apiKey;
     this.baseUrl = ZR_CONFIG.baseUrl;
   }
 
   private async request<T>(
     endpoint: string,
-    method: "GET" | "POST" = "GET",
+    method: "GET" | "POST" | "PATCH" | "DELETE" = "GET",
     body?: any,
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      token: this.token,
-      key: this.key,
+      "X-Tenant": this.tenantId,
+      "X-Api-Key": this.apiKey,
     };
 
     try {
@@ -88,130 +106,220 @@ class ZRExpressClient {
         body: body ? JSON.stringify(body) : undefined,
       });
 
+      // Handle empty responses (204, etc.)
+      const text = await response.text();
+
       if (!response.ok) {
-        const text = await response.text();
         console.error(`ZR Express API HTTP ${response.status}:`, text.slice(0, 500));
-        throw new Error(`ZR Express API HTTP ${response.status}: ${text.slice(0, 200)}`);
+        // Try to parse error JSON
+        try {
+          const errorJson = JSON.parse(text);
+          throw new Error(errorJson.detail || errorJson.title || errorJson.message || `HTTP ${response.status}`);
+        } catch (e) {
+          if (e instanceof Error && e.message !== `HTTP ${response.status}`) throw e;
+          throw new Error(`ZR Express API HTTP ${response.status}: ${text.slice(0, 200)}`);
+        }
       }
 
-      const data = await response.json();
-      return data;
+      if (!text) return {} as T;
+      return JSON.parse(text);
     } catch (error) {
       console.error("ZR Express API Error:", error);
       throw error;
     }
   }
 
-  /**
-   * Tester la connexion API
-   */
+  // ── Connection Test ──────────────────────────────────────────────────
+
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      await this.request("/token", "GET");
+      await this.request("/users/profile", "GET");
       return { success: true, message: "Connexion réussie" };
-    } catch (error) {
-      return { success: false, message: "Échec de connexion" };
+    } catch (error: any) {
+      return { success: false, message: error?.message || "Échec de connexion" };
+    }
+  }
+
+  // ── Territories (Wilayas & Communes) ─────────────────────────────────
+
+  async searchTerritories(keyword: string): Promise<ZRTerritory[]> {
+    try {
+      const result = await this.request<{ items: ZRTerritory[] }>(
+        "/territories/search",
+        "POST",
+        { keyword, pageSize: 50, pageNumber: 1, includeUnavailable: false },
+      );
+      return result.items || [];
+    } catch {
+      return [];
     }
   }
 
   /**
-   * Récupérer les tarifs par wilaya
+   * Resolve a wilaya name or numeric ID to a territory UUID.
+   * Searches the API and caches results.
    */
-  async getTarification(): Promise<ZRTarif[]> {
-    return this.request<ZRTarif[]>("/tarification", "POST");
+  async resolveWilayaId(wilayaNameOrCode: string): Promise<string | null> {
+    // Check cache
+    const cacheKey = wilayaNameOrCode.toLowerCase().trim();
+    if (territoryCache.has(cacheKey)) {
+      return territoryCache.get(cacheKey)!;
+    }
+
+    // Try searching by name first
+    const searchTerm = WILAYAS.find(
+      (w) =>
+        w.id === wilayaNameOrCode ||
+        w.name.toLowerCase() === cacheKey ||
+        w.name_ar === wilayaNameOrCode,
+    )?.name || wilayaNameOrCode;
+
+    const results = await this.searchTerritories(searchTerm);
+
+    // Find a city-level territory (wilaya)
+    const city = results.find(
+      (t) =>
+        t.level === "city" &&
+        (t.name.toLowerCase() === searchTerm.toLowerCase() ||
+          t.code === parseInt(wilayaNameOrCode)),
+    ) || results.find((t) => t.level === "city");
+
+    if (city) {
+      territoryCache.set(cacheKey, city.id);
+      return city.id;
+    }
+
+    return null;
   }
 
   /**
-   * Ajouter un ou plusieurs colis
+   * Resolve a commune name within a wilaya to a territory UUID.
    */
-  async addColis(colis: ZRColis[]): Promise<any> {
-    return this.request<any>("/add_colis", "POST", { Colis: colis });
+  async resolveCommuneId(communeName: string, wilayaName?: string): Promise<string | null> {
+    const cacheKey = `commune:${communeName}:${wilayaName || ""}`.toLowerCase();
+    if (territoryCache.has(cacheKey)) {
+      return territoryCache.get(cacheKey)!;
+    }
+
+    const results = await this.searchTerritories(communeName);
+    const district = results.find((t) => t.level === "district");
+
+    if (district) {
+      territoryCache.set(cacheKey, district.id);
+      return district.id;
+    }
+
+    return null;
   }
 
-  /**
-   * Ajouter un seul colis (helper)
-   */
-  async createShipment(colis: ZRColis): Promise<ZRColisResponse> {
+  // ── Delivery Rates ───────────────────────────────────────────────────
+
+  async getRates(): Promise<ZRRate[]> {
     try {
-      const result = await this.addColis([colis]);
+      const result = await this.request<{ rates: ZRRate[] }>("/delivery-pricing/rates", "GET");
+      return result.rates || [];
+    } catch {
+      return [];
+    }
+  }
 
-      console.log(
-        "ZR Express addColis response:",
-        JSON.stringify(result, null, 2),
+  // ── Parcel Creation ──────────────────────────────────────────────────
+
+  async createParcel(parcel: ZRCreateParcel): Promise<ZRColisResponse> {
+    try {
+      const result = await this.request<{ id: string }>(
+        "/parcels",
+        "POST",
+        parcel,
       );
 
-      // Primary format: { Colis: [{ Tracking: "xxx", MessageRetour: "Good" }] }
-      if (result?.Colis && Array.isArray(result.Colis) && result.Colis[0]) {
-        const colisResult = result.Colis[0];
+      console.log("ZR Express createParcel response:", JSON.stringify(result));
 
-        // Check for error in MessageRetour
-        if (
-          colisResult.MessageRetour &&
-          colisResult.MessageRetour !== "Good"
-        ) {
-          return {
-            success: false,
-            message: colisResult.MessageRetour,
-            data: colisResult,
-          };
-        }
-
-        if (colisResult.Tracking) {
-          return {
-            success: true,
-            tracking: colisResult.Tracking,
-            message: "Colis créé",
-            data: colisResult,
-          };
-        }
-      }
-
-      // Format 2: Array response [{ Tracking: "xxx" }]
-      if (Array.isArray(result) && result[0]?.Tracking) {
-        if (result[0].MessageRetour && result[0].MessageRetour !== "Good") {
-          return {
-            success: false,
-            message: result[0].MessageRetour,
-            data: result[0],
-          };
-        }
+      if (result?.id) {
         return {
           success: true,
-          tracking: result[0].Tracking,
-          message: "Colis créé",
-          data: result[0],
-        };
-      }
-
-      // Format 3: Direct tracking in response
-      if (result?.Tracking) {
-        return {
-          success: true,
-          tracking: result.Tracking,
+          parcelId: result.id,
+          tracking: result.id, // parcelId serves as reference until tracking is assigned
           message: "Colis créé",
           data: result,
         };
       }
 
-      // Format 4: { success: true, tracking: "xxx" }
-      if (result?.success && result?.tracking) {
-        return result;
-      }
-
-      // Error response
-      console.error(
-        "ZR Express unrecognized response:",
-        JSON.stringify(result),
-      );
       return {
         success: false,
-        message:
-          result?.message ||
-          result?.error ||
-          result?.MessageRetour ||
-          "Format de réponse non reconnu",
+        message: "Réponse inattendue de ZR Express",
         data: result,
       };
+    } catch (error: any) {
+      console.error("ZR Express createParcel error:", error);
+      return {
+        success: false,
+        message: error?.message || "Erreur création colis ZR Express",
+      };
+    }
+  }
+
+  // ── High-level: Create Shipment from order data ──────────────────────
+
+  async createShipment(orderData: {
+    customerName: string;
+    customerPhone: string;
+    customerPhoneB?: string;
+    address: string;
+    wilayaId: string;      // Numeric code or name
+    commune: string;
+    total: number;
+    products: string;
+    deliveryType: string;  // "HOME", "DOMICILE", "STOP_DESK", "DESK"
+    externalId?: string;
+    notes?: string;
+  }): Promise<ZRColisResponse> {
+    try {
+      // Resolve territory UUIDs
+      const cityId = await this.resolveWilayaId(orderData.wilayaId);
+      if (!cityId) {
+        return {
+          success: false,
+          message: `Wilaya non trouvée: ${orderData.wilayaId}`,
+        };
+      }
+
+      const districtId = await this.resolveCommuneId(orderData.commune, orderData.wilayaId);
+
+      const deliveryType: "home" | "pickup-point" =
+        orderData.deliveryType === "STOP_DESK" ||
+        orderData.deliveryType === "DESK" ||
+        orderData.deliveryType === "pickup-point"
+          ? "pickup-point"
+          : "home";
+
+      const parcel: ZRCreateParcel = {
+        customer: {
+          name: orderData.customerName,
+          phone: {
+            number1: orderData.customerPhone.replace(/\s/g, ""),
+            number2: orderData.customerPhoneB || undefined,
+          },
+        },
+        deliveryAddress: {
+          cityTerritoryId: cityId,
+          districtTerritoryId: districtId || undefined,
+          street: orderData.address,
+        },
+        orderedProducts: [
+          {
+            productName: orderData.products || "Articles Harp",
+            unitPrice: orderData.total,
+            quantity: 1,
+          },
+        ],
+        deliveryType,
+        description: orderData.notes || undefined,
+        amount: orderData.total,
+        externalId: orderData.externalId,
+      };
+
+      return await this.createParcel(parcel);
     } catch (error: any) {
       console.error("ZR Express createShipment error:", error);
       return {
@@ -221,31 +329,29 @@ class ZRExpressClient {
     }
   }
 
-  /**
-   * Lire les informations de tracking
-   */
-  async getTrackingInfo(trackingNumbers: string[]): Promise<ZRTrackingInfo[]> {
-    const colis = trackingNumbers.map((t) => ({ Tracking: t }));
-    return this.request<ZRTrackingInfo[]>("/lire", "POST", { Colis: colis });
+  // ── Get Parcel (Tracking) ────────────────────────────────────────────
+
+  async getParcel(parcelIdOrTracking: string): Promise<any> {
+    try {
+      return await this.request(`/parcels/${parcelIdOrTracking}`, "GET");
+    } catch {
+      return null;
+    }
   }
 
-  /**
-   * Marquer comme prêt à expédier
-   */
-  async markReadyToShip(trackingNumbers: string[]): Promise<any> {
-    const colis = trackingNumbers.map((t) => ({ Tracking: t }));
-    return this.request("/pret", "POST", { Colis: colis });
-  }
+  // ── Search Parcels ───────────────────────────────────────────────────
 
-  /**
-   * Récupérer les derniers colis mis à jour
-   */
-  async getLastUpdated(): Promise<ZRTrackingInfo[]> {
-    return this.request<ZRTrackingInfo[]>("/tarification", "GET");
+  async searchParcels(query: string): Promise<any> {
+    return this.request("/parcels/search", "POST", {
+      keyword: query,
+      pageSize: 20,
+      pageNumber: 1,
+    });
   }
 }
 
-// Singleton instance
+// ── Singleton ──────────────────────────────────────────────────────────
+
 let zrClient: ZRExpressClient | null = null;
 
 export function getZRClient(): ZRExpressClient {
@@ -255,50 +361,8 @@ export function getZRClient(): ZRExpressClient {
   return zrClient;
 }
 
-// Helper: Convertir une commande Harp en colis ZR Express
-export function orderToZRColis(order: {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  address: string;
-  wilaya: string;
-  commune: string;
-  total: number;
-  items: any[];
-  deliveryType?: "DOMICILE" | "STOP_DESK";
-  notes?: string;
-}): ZRColis {
-  // Extraire le numéro de wilaya (ex: "16" pour Alger)
-  const wilayaId =
-    WILAYAS.find(
-      (w) =>
-        w.name.toLowerCase() === order.wilaya.toLowerCase() ||
-        w.name_ar === order.wilaya,
-    )?.id || "16";
+// ── Mapper le statut ZR Express vers statut Harp ───────────────────────
 
-  // Description des produits
-  const productDescription = order.items
-    .map((item: any) => `${item.quantity}x ${item.nameFr || item.name}`)
-    .join(", ");
-
-  return {
-    TypeLivraison: order.deliveryType === "STOP_DESK" ? "1" : "0",
-    TypeColis: "0",
-    Confrimee: "", // Empty = "En préparation" (visible on dashboard)
-    Client: order.customerName,
-    MobileA: order.customerPhone.replace(/\s/g, ""),
-    Adresse: order.address,
-    IDWilaya: wilayaId,
-    Commune: order.commune,
-    Total: order.total.toString(),
-    Note: order.notes || "",
-    TProduit: productDescription,
-    id_Externe: order.id,
-    Source: "Harp",
-  };
-}
-
-// Mapper le statut ZR Express vers statut Harp
 export function mapZRStatusToHarpStatus(zrStatus: string): string {
   const statusMap: Record<string, string> = {
     "En préparation": "CONFIRMED",
@@ -317,7 +381,8 @@ export function mapZRStatusToHarpStatus(zrStatus: string): string {
   return statusMap[zrStatus] || "PENDING";
 }
 
-// Liste des 69 wilayas d'Algérie
+// ── Liste des 69 wilayas d'Algérie ────────────────────────────────────
+
 export const WILAYAS = [
   { id: "1", name: "Adrar", name_ar: "أدرار" },
   { id: "2", name: "Chlef", name_ar: "الشلف" },

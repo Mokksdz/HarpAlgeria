@@ -70,7 +70,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: http:",
-              "connect-src 'self' https://api.yalidine.app https://api.zrexpress.com https://api.resend.com",
+              "connect-src 'self' https://api.yalidine.app https://api.zrexpress.app https://api.resend.com",
               "frame-ancestors 'none'",
             ].join("; "),
           },

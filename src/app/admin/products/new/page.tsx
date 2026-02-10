@@ -49,7 +49,7 @@ export default function NewProductPage() {
     promoPrice: "",
     promoStart: "",
     promoEnd: "",
-    stock: "10",
+    stock: "0",
     sizes: "S, M, L, XL",
     colors: "Beige, Noir, Kaki",
     collectionId: "",
