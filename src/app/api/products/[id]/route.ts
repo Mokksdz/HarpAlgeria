@@ -30,6 +30,23 @@ export async function GET(
       return NextResponse.json({ ...product, stock: realStock });
     }
 
+    // Product has sizes/colors but NO variants in DB → stock = 0
+    try {
+      const sizes = typeof product.sizes === "string" ? JSON.parse(product.sizes) : product.sizes;
+      const colors = typeof product.colors === "string" ? JSON.parse(product.colors) : product.colors;
+      if (
+        Array.isArray(sizes) && sizes.length > 0 &&
+        Array.isArray(colors) && colors.length > 0
+      ) {
+        if (product.stock !== 0) {
+          await prisma.product.update({ where: { id }, data: { stock: 0 } });
+        }
+        return NextResponse.json({ ...product, stock: 0 });
+      }
+    } catch {
+      // ignore parse errors
+    }
+
     return NextResponse.json(product);
   } catch (error) {
     return NextResponse.json(

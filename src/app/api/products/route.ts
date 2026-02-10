@@ -69,9 +69,26 @@ export async function GET(request: NextRequest) {
     // Compute real stock from variants when available
     const productsWithRealStock = products.map((p) => {
       if (p.variants && p.variants.length > 0) {
+        // Has variants in DB → stock = sum of variant stocks
         const variantStock = p.variants.reduce((sum: number, v: { stock: number }) => sum + (v.stock || 0), 0);
         return { ...p, stock: variantStock };
       }
+
+      // Product has sizes/colors but NO variants in DB → stock should be 0
+      // (variants haven't been initialized yet)
+      try {
+        const sizes = typeof p.sizes === "string" ? JSON.parse(p.sizes) : p.sizes;
+        const colors = typeof p.colors === "string" ? JSON.parse(p.colors) : p.colors;
+        if (
+          Array.isArray(sizes) && sizes.length > 0 &&
+          Array.isArray(colors) && colors.length > 0
+        ) {
+          return { ...p, stock: 0 };
+        }
+      } catch {
+        // ignore parse errors
+      }
+
       return p;
     });
 

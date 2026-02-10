@@ -382,14 +382,14 @@ export function HomeClient({
             {reviews.map((review, index) => (
               <div
                 key={index}
-                className="bg-white p-8 shadow-[0_2px_20px_-5px_rgba(61,35,20,0.05)] text-center min-w-[300px] md:min-w-[340px] snap-center flex-shrink-0"
+                className="bg-white p-8 shadow-[0_2px_20px_-5px_rgba(61,35,20,0.05)] text-center min-w-[300px] max-w-[300px] md:min-w-[340px] md:max-w-[340px] snap-center flex-shrink-0"
               >
                 <div className="flex justify-center gap-1 text-harp-caramel mb-6">
                   {[...Array(review.rating)].map((_, j) => (
                     <Star key={j} size={14} fill="currentColor" />
                   ))}
                 </div>
-                <p className="text-gray-600 italic mb-6 font-light leading-relaxed line-clamp-4">
+                <p className="text-gray-600 italic mb-6 font-light leading-relaxed line-clamp-4 overflow-hidden break-words">
                   &quot;{review.text}&quot;
                 </p>
                 <p className="text-xs font-bold uppercase tracking-widest text-harp-brown">
