@@ -17,6 +17,19 @@ export async function GET(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
+    // Compute real stock from variants
+    if (product.variants && product.variants.length > 0) {
+      const realStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+      // Sync product-level stock if out of date
+      if (product.stock !== realStock) {
+        await prisma.product.update({
+          where: { id },
+          data: { stock: realStock },
+        });
+      }
+      return NextResponse.json({ ...product, stock: realStock });
+    }
+
     return NextResponse.json(product);
   } catch (error) {
     return NextResponse.json(
@@ -46,55 +59,62 @@ export async function PUT(
       );
     }
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        nameFr: sanitizeString(body.nameFr),
-        nameAr: sanitizeString(body.nameAr),
-        descriptionFr: sanitizeString(body.descriptionFr),
-        descriptionAr: sanitizeString(body.descriptionAr),
-        price: parseFloat(body.price),
-        promoPrice: body.promoPrice ? parseFloat(body.promoPrice) : null,
-        promoStart: body.promoStart ? new Date(body.promoStart) : null,
-        promoEnd: body.promoEnd ? new Date(body.promoEnd) : null,
-        images: JSON.stringify(body.images),
-        sizes: JSON.stringify(body.sizes),
-        colors: JSON.stringify(body.colors),
-        stock: parseInt(body.stock) || 0,
-        isActive: body.isActive !== false,
-        showSizeGuide: body.showSizeGuide !== false,
-        freeShipping: body.freeShipping === true,
-        freeShippingThreshold: parseFloat(body.freeShippingThreshold) || 0,
-        collectionId: body.collectionId || null,
-      },
-    });
-
-    // Handle variants
-    if (body.variants && Array.isArray(body.variants)) {
-      await prisma.productVariant.deleteMany({ where: { productId: id } });
-
-      if (body.variants.length > 0) {
-        await prisma.productVariant.createMany({
-          data: body.variants.map(
-            (v: { size: string; color: string; stock: number }) => ({
-              productId: id,
-              size: v.size,
-              color: v.color,
-              stock: v.stock || 0,
-            }),
-          ),
-        });
-      }
-
-      const totalStock = body.variants.reduce(
+    // Compute real stock from variants if provided
+    let finalStock = parseInt(body.stock) || 0;
+    if (body.variants && Array.isArray(body.variants) && body.variants.length > 0) {
+      finalStock = body.variants.reduce(
         (sum: number, v: { stock: number }) => sum + (v.stock || 0),
         0,
       );
-      await prisma.product.update({
-        where: { id },
-        data: { stock: totalStock },
-      });
     }
+
+    // Single transaction: update product + recreate variants atomically
+    const product = await prisma.$transaction(async (tx) => {
+      // Delete old variants
+      if (body.variants && Array.isArray(body.variants)) {
+        await tx.productVariant.deleteMany({ where: { productId: id } });
+
+        if (body.variants.length > 0) {
+          await tx.productVariant.createMany({
+            data: body.variants.map(
+              (v: { size: string; color: string; stock: number }) => ({
+                productId: id,
+                size: v.size,
+                color: v.color,
+                stock: v.stock || 0,
+              }),
+            ),
+          });
+        }
+      }
+
+      // Update product with correct final stock
+      const updated = await tx.product.update({
+        where: { id },
+        data: {
+          nameFr: sanitizeString(body.nameFr),
+          nameAr: sanitizeString(body.nameAr),
+          descriptionFr: sanitizeString(body.descriptionFr),
+          descriptionAr: sanitizeString(body.descriptionAr),
+          price: parseFloat(body.price),
+          promoPrice: body.promoPrice ? parseFloat(body.promoPrice) : null,
+          promoStart: body.promoStart ? new Date(body.promoStart) : null,
+          promoEnd: body.promoEnd ? new Date(body.promoEnd) : null,
+          images: JSON.stringify(body.images),
+          sizes: JSON.stringify(body.sizes),
+          colors: JSON.stringify(body.colors),
+          stock: finalStock,
+          isActive: body.isActive !== false,
+          showSizeGuide: body.showSizeGuide !== false,
+          freeShipping: body.freeShipping === true,
+          freeShippingThreshold: parseFloat(body.freeShippingThreshold) || 0,
+          collectionId: body.collectionId || null,
+        },
+        include: { variants: true },
+      });
+
+      return updated;
+    });
 
     return NextResponse.json(product);
   } catch (error) {

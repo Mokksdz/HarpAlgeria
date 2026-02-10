@@ -89,9 +89,11 @@ async function createZRExpressShipment(order: any) {
       IDWilaya: wilayaId,
       Total: String(order.total - (order.shippingPrice || 0)),
       TypeLivraison: order.deliveryType === "DESK" ? "1" : "0",
-      TypeColis: "0", // Normal (pas d'échange)
+      TypeColis: "0",
+      Confrimee: "", // Empty = "En préparation" (visible on dashboard)
       TProduit: productsList,
       Note: `Commande Harp #${order.id.slice(-8).toUpperCase()}`,
+      Source: "Harp",
     });
 
     if (result.success && result.tracking) {
@@ -174,6 +176,35 @@ export async function PATCH(
           updateData.trackingNumber = shipmentResult.tracking;
           updateData.trackingStatus = "En préparation";
         }
+      }
+
+      // Restore stock when order is cancelled (only if not already cancelled)
+      if (status === "CANCELLED" && currentOrder.status !== "CANCELLED") {
+        await prisma.$transaction(async (tx) => {
+          for (const item of currentOrder.items) {
+            if (!item.productId) continue;
+            const qty = item.quantity;
+
+            // Try restoring variant stock
+            if (item.size && item.color) {
+              const variant = await tx.productVariant.findFirst({
+                where: { productId: item.productId, size: item.size, color: item.color },
+              });
+              if (variant) {
+                await tx.productVariant.update({
+                  where: { id: variant.id },
+                  data: { stock: { increment: qty } },
+                });
+              }
+            }
+
+            // Always restore product-level stock
+            await tx.product.update({
+              where: { id: item.productId },
+              data: { stock: { increment: qty } },
+            });
+          }
+        });
       }
     }
 
