@@ -13,6 +13,7 @@ import {
   Loader2,
   AlertCircle,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -37,7 +38,8 @@ interface TrackingResult {
 }
 
 function TrackingPageInner() {
-  useLanguage();
+  const { t, language } = useLanguage();
+  const isAr = language === "ar";
   const searchParams = useSearchParams();
   const [trackingNumber, setTrackingNumber] = useState("");
   const [loading, setLoading] = useState(false);
@@ -66,11 +68,12 @@ function TrackingPageInner() {
       } else {
         setResult(data);
       }
-    } catch (err) {
-      setError("Une erreur est survenue. Veuillez réessayer.");
+    } catch {
+      setError(t("tracking.error"));
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Pre-fill and auto-search from URL ?tracking=XXX
@@ -122,20 +125,21 @@ function TrackingPageInner() {
     return <Package className="text-amber-600" size={24} />;
   };
 
+  const ArrowIcon = isAr ? ArrowLeft : ArrowRight;
+
   return (
-    <div className="min-h-screen bg-white pt-32 pb-20">
+    <div className="min-h-screen bg-white pt-32 pb-20" dir={isAr ? "rtl" : "ltr"}>
       <div className="container mx-auto px-4 max-w-2xl">
         {/* Header */}
         <div className="text-center mb-12">
           <span className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-4 block">
-            Suivi de Commande
+            {t("tracking.badge")}
           </span>
           <h1 className="text-3xl md:text-5xl font-serif font-medium text-gray-900 mb-6">
-            Où est mon colis ?
+            {t("tracking.title")}
           </h1>
           <p className="text-gray-500 font-light max-w-md mx-auto">
-            Entrez votre numéro de suivi ci-dessous pour localiser votre
-            commande en temps réel.
+            {t("tracking.desc")}
           </p>
         </div>
 
@@ -144,7 +148,7 @@ function TrackingPageInner() {
           <div className="relative group">
             <div className="absolute inset-0 bg-white rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-shadow group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]" />
             <div className="relative flex items-center p-2">
-              <div className="pl-6">
+              <div className={isAr ? "pr-6" : "pl-6"}>
                 <Search size={20} className="text-gray-400" />
               </div>
               <input
@@ -153,8 +157,9 @@ function TrackingPageInner() {
                 onChange={(e) =>
                   setTrackingNumber(e.target.value.toUpperCase())
                 }
-                placeholder="YAL-XXXXXX ou ZRXXXXXXX"
-                className="w-full pl-4 pr-4 py-4 bg-transparent border-none focus:ring-0 outline-none text-lg placeholder:text-gray-300 text-gray-900 font-medium"
+                placeholder={t("tracking.placeholder")}
+                dir="ltr"
+                className="w-full px-4 py-4 bg-transparent border-none focus:ring-0 outline-none text-lg placeholder:text-gray-300 text-gray-900 font-medium"
               />
               <button
                 type="submit"
@@ -164,7 +169,7 @@ function TrackingPageInner() {
                 {loading ? (
                   <Loader2 size={20} className="animate-spin" />
                 ) : (
-                  <ArrowRight size={20} />
+                  <ArrowIcon size={20} />
                 )}
               </button>
             </div>
@@ -172,9 +177,9 @@ function TrackingPageInner() {
 
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">
-              Formats acceptés
+              {t("tracking.formats")}
             </p>
-            <div className="flex justify-center gap-3 text-sm text-gray-500 font-mono">
+            <div className="flex justify-center gap-3 text-sm text-gray-500 font-mono" dir="ltr">
               <span className="bg-gray-50 px-3 py-1 rounded-md border border-gray-100">
                 YAL-XXXXXX
               </span>
@@ -202,13 +207,13 @@ function TrackingPageInner() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                      Numéro de suivi
+                      {t("tracking.trackingNumber")}
                     </span>
                     <span className="px-2 py-0.5 bg-white border border-gray-200 text-gray-600 text-[10px] uppercase tracking-wider rounded font-bold">
                       {result.provider}
                     </span>
                   </div>
-                  <p className="text-2xl font-serif font-bold text-gray-900 tracking-wide">
+                  <p className="text-2xl font-serif font-bold text-gray-900 tracking-wide" dir="ltr">
                     {result.tracking}
                   </p>
                 </div>
@@ -220,7 +225,7 @@ function TrackingPageInner() {
               <div className="mt-8 flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-200">
                 <div className="flex flex-col">
                   <span className="text-xs text-gray-400 uppercase tracking-widest mb-1">
-                    Statut
+                    {t("tracking.status")}
                   </span>
                   <span
                     className={`font-medium ${getStatusColor(result.status)}`}
@@ -229,9 +234,9 @@ function TrackingPageInner() {
                   </span>
                 </div>
                 {result.destination && (
-                  <div className="text-right flex flex-col">
+                  <div className={`${isAr ? "text-left" : "text-right"} flex flex-col`}>
                     <span className="text-xs text-gray-400 uppercase tracking-widest mb-1">
-                      Destination
+                      {t("tracking.destination")}
                     </span>
                     <span className="font-medium text-gray-900">
                       {result.destination}
@@ -245,13 +250,13 @@ function TrackingPageInner() {
             {result.history && result.history.length > 0 && (
               <div className="p-8">
                 <h3 className="font-serif font-medium text-gray-900 mb-8">
-                  Historique
+                  {t("tracking.history")}
                 </h3>
-                <div className="relative pl-4 space-y-8 before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
+                <div className={`relative ${isAr ? "pr-4" : "pl-4"} space-y-8 before:absolute ${isAr ? "before:right-[19px]" : "before:left-[19px]"} before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100`}>
                   {result.history.map((step, index) => (
                     <div key={index} className="relative flex gap-6">
                       <div
-                        className={`relative z-10 w-2.5 h-2.5 rounded-full mt-2 ${
+                        className={`relative z-10 w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${
                           step.current
                             ? "bg-gray-900 ring-4 ring-gray-100"
                             : step.completed
@@ -287,13 +292,13 @@ function TrackingPageInner() {
             {/* Contact Support */}
             <div className="p-6 bg-gray-50 border-t border-gray-100 text-center">
               <p className="text-sm text-gray-500 mb-3">
-                Un problème avec votre livraison ?
+                {t("tracking.deliveryIssue")}
               </p>
               <a
                 href="/contact"
                 className="inline-flex items-center gap-2 text-sm font-medium text-gray-900 hover:text-harp-brown transition-colors border-b border-gray-900 pb-0.5 hover:border-harp-brown"
               >
-                Contacter le support
+                {t("tracking.contactSupport")}
               </a>
             </div>
           </div>
@@ -306,17 +311,16 @@ function TrackingPageInner() {
               <Package size={32} className="text-gray-300" />
             </div>
             <h3 className="text-xl font-serif font-medium text-gray-900 mb-3">
-              Introuvable
+              {t("tracking.notFound")}
             </h3>
             <p className="text-gray-500 font-light mb-8">
-              Nous ne trouvons pas ce numéro de suivi. Vérifiez qu'il est
-              correct.
+              {t("tracking.notFoundDesc")}
             </p>
             <Link
               href="/contact"
               className="text-gray-900 font-medium border-b border-gray-900 pb-1 hover:text-harp-brown hover:border-harp-brown transition-colors"
             >
-              Contacter le support
+              {t("tracking.contactSupport")}
             </Link>
           </div>
         )}

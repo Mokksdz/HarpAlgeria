@@ -9,7 +9,8 @@ import { siteConfig } from "@/lib/config";
 import { useState } from "react";
 
 function OrderConfirmationContent() {
-  useLanguage();
+  const { t, language } = useLanguage();
+  const isAr = language === "ar";
   const searchParams = useSearchParams();
   const orderId = searchParams.get("id");
   const totalParam = searchParams.get("total");
@@ -21,13 +22,13 @@ function OrderConfirmationContent() {
 
   // Estimate delivery based on wilaya zone
   const getEstimate = () => {
-    if (!wilaya) return "2-5 jours ouvrés";
+    if (!wilaya) return t("order.estimate2to5");
     const code = parseInt(wilaya);
     // Major cities — faster delivery
-    if ([16, 9, 31, 25, 19, 23, 15, 6, 35, 42].includes(code)) return "24-48h";
+    if ([16, 9, 31, 25, 19, 23, 15, 6, 35, 42].includes(code)) return t("order.estimate24");
     // South / remote wilayas
-    if (code >= 47) return "3-7 jours ouvrés";
-    return "2-4 jours ouvrés";
+    if (code >= 47) return t("order.estimate3to7");
+    return t("order.estimate2to4");
   };
 
   const handleCopy = async () => {
@@ -39,7 +40,7 @@ function OrderConfirmationContent() {
   };
 
   return (
-    <div className="min-h-screen bg-white pt-32 pb-20">
+    <div className="min-h-screen bg-white pt-32 pb-20" dir={isAr ? "rtl" : "ltr"}>
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto text-center">
           {/* Success Animation */}
@@ -48,20 +49,20 @@ function OrderConfirmationContent() {
           </div>
 
           <h1 className="text-3xl md:text-5xl font-serif font-medium text-gray-900 mb-4">
-            Merci pour votre commande
+            {t("order.thankYou")}
           </h1>
 
           {/* Order Reference */}
           {orderRef && (
             <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-5 py-2 mb-4">
-              <span className="text-sm text-gray-500">Réf:</span>
-              <span className="font-mono font-bold text-gray-900 tracking-wider">
+              <span className="text-sm text-gray-500">{t("order.ref")}</span>
+              <span className="font-mono font-bold text-gray-900 tracking-wider" dir="ltr">
                 {orderRef}
               </span>
               <button
                 onClick={handleCopy}
                 className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-                aria-label="Copier la référence"
+                aria-label={t("order.copyRef")}
               >
                 {copied ? (
                   <Check size={14} className="text-green-600" />
@@ -73,34 +74,33 @@ function OrderConfirmationContent() {
           )}
 
           <p className="text-gray-500 text-lg font-light leading-relaxed mb-8">
-            Nous avons bien reçu votre commande. Un membre de notre équipe vous
-            contactera très prochainement pour la confirmer.
+            {t("order.thankYouDesc")}
           </p>
 
           {/* Order Summary Card */}
           {(totalAmount || wilaya) && (
-            <div className="bg-gray-50 rounded-2xl p-6 mb-8 text-left grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="bg-gray-50 rounded-2xl p-6 mb-8 text-start grid grid-cols-2 sm:grid-cols-3 gap-4">
               {totalAmount && (
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                    Total
+                    {t("order.total")}
                   </p>
-                  <p className="text-lg font-bold text-harp-brown">
+                  <p className="text-lg font-bold text-harp-brown" dir="ltr">
                     {totalAmount.toLocaleString()} DZD
                   </p>
                 </div>
               )}
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Paiement
+                  {t("order.payment")}
                 </p>
                 <p className="text-sm font-medium text-gray-900">
-                  À la livraison
+                  {t("order.paymentAtDelivery")}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Livraison estimée
+                  {t("order.estimatedDelivery")}
                 </p>
                 <p className="text-sm font-medium text-gray-900">
                   {getEstimate()}
@@ -110,60 +110,64 @@ function OrderConfirmationContent() {
           )}
 
           {/* Next Steps Timeline */}
-          <div className="bg-gray-50 rounded-3xl p-8 md:p-12 text-left mb-12">
+          <div className="bg-gray-50 rounded-3xl p-8 md:p-12 text-start mb-12">
             <h2 className="text-lg font-serif font-medium text-gray-900 mb-8 text-center">
-              Prochaines étapes
+              {t("order.nextSteps")}
             </h2>
 
-            <div className="space-y-8 relative before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
+            <div className={`space-y-8 relative before:absolute ${isAr ? "before:right-[15px]" : "before:left-[15px]"} before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200`}>
               <div className="relative flex gap-6">
-                <div className="relative z-10 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold">
+                <div className="relative z-10 w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
                   <Check size={14} />
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1">
-                    Commande reçue
+                    {t("order.step1.title")}
                   </h3>
                   <p className="text-sm text-gray-500 font-light">
-                    Votre commande a bien été enregistrée
+                    {t("order.step1.desc")}
                   </p>
                 </div>
               </div>
 
               <div className="relative flex gap-6">
-                <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-amber-400 flex items-center justify-center text-xs font-bold text-amber-500">
+                <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-amber-400 flex items-center justify-center text-xs font-bold text-amber-500 shrink-0">
                   2
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1">
-                    Confirmation
+                    {t("order.step2.title")}
                   </h3>
                   <p className="text-sm text-gray-500 font-light">
-                    Validation téléphonique sous 24h
+                    {t("order.step2.desc")}
                   </p>
                 </div>
               </div>
 
               <div className="relative flex gap-6">
-                <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-xs font-bold text-gray-400">
+                <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">
                   3
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-1">Expédition</h3>
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t("order.step3.title")}
+                  </h3>
                   <p className="text-sm text-gray-500 font-light">
-                    Préparation et remise au transporteur
+                    {t("order.step3.desc")}
                   </p>
                 </div>
               </div>
 
               <div className="relative flex gap-6">
-                <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-xs font-bold text-gray-400">
+                <div className="relative z-10 w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">
                   4
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-1">Livraison</h3>
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t("order.step4.title")}
+                  </h3>
                   <p className="text-sm text-gray-500 font-light">
-                    Réception à domicile ou en point relais
+                    {t("order.step4.desc")}
                   </p>
                 </div>
               </div>
@@ -176,19 +180,19 @@ function OrderConfirmationContent() {
               href="/suivi"
               className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-8 py-4 rounded-full text-sm uppercase tracking-widest hover:bg-gray-800 transition-all"
             >
-              Suivre ma commande
+              {t("order.trackOrder")}
             </Link>
             <Link
               href="/shop"
               className="inline-flex items-center justify-center gap-2 border border-gray-200 text-gray-900 px-8 py-4 rounded-full text-sm uppercase tracking-widest hover:border-gray-900 transition-all"
             >
-              Continuer mes achats
+              {t("order.continueShopping")}
             </Link>
           </div>
 
           {/* Support */}
           <div className="mt-16 pt-8 border-t border-gray-100">
-            <p className="text-sm text-gray-400 mb-4">Une question ?</p>
+            <p className="text-sm text-gray-400 mb-4">{t("order.question")}</p>
             <a
               href={`https://wa.me/${siteConfig.whatsapp.number}`}
               target="_blank"
@@ -197,7 +201,7 @@ function OrderConfirmationContent() {
             >
               <MessageCircle size={18} />
               <span className="border-b border-gray-900 pb-0.5">
-                Contacter le support
+                {t("order.contactSupport")}
               </span>
             </a>
           </div>

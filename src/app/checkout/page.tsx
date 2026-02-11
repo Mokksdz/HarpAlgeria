@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useCart } from "@/components/CartProvider";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -17,6 +18,7 @@ import {
   ShoppingBag,
   CreditCard,
   ChevronRight,
+  ChevronLeft,
   Home,
   Building2,
   Shield,
@@ -31,6 +33,8 @@ import { trackEvent } from "@/components/Analytics";
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
+  const { t, language } = useLanguage();
+  const isAr = language === "ar";
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setCurrentStep] = useState(1);
@@ -236,22 +240,22 @@ export default function CheckoutPage() {
       const errors = { ...formErrors };
       switch (name) {
         case "firstName":
-          if (!value.trim()) errors.firstName = "Prénom requis";
+          if (!value.trim()) errors.firstName = t("checkout.errorFirstName");
           else delete errors.firstName;
           break;
         case "lastName":
-          if (!value.trim()) errors.lastName = "Nom requis";
+          if (!value.trim()) errors.lastName = t("checkout.errorLastName");
           else delete errors.lastName;
           break;
         case "phone":
           if (!formData.phone || formData.phone.length !== 10)
-            errors.phone = "Numéro à 10 chiffres requis (ex: 0550123456)";
+            errors.phone = t("checkout.errorPhone");
           else if (!formData.phone.startsWith("0"))
-            errors.phone = "Le numéro doit commencer par 0";
+            errors.phone = t("checkout.errorPhoneStart");
           else delete errors.phone;
           break;
         case "wilaya":
-          if (!value) errors.wilaya = "Sélectionnez une wilaya";
+          if (!value) errors.wilaya = t("checkout.errorWilaya");
           else delete errors.wilaya;
           break;
         default:
@@ -259,22 +263,23 @@ export default function CheckoutPage() {
       }
       setFormErrors(errors);
     },
-    [formErrors, formData.phone],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [formErrors, formData.phone, language],
   );
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
-    if (!formData.firstName.trim()) errors.firstName = "Prénom requis";
-    if (!formData.lastName.trim()) errors.lastName = "Nom requis";
+    if (!formData.firstName.trim()) errors.firstName = t("checkout.errorFirstName");
+    if (!formData.lastName.trim()) errors.lastName = t("checkout.errorLastName");
     if (!formData.phone || formData.phone.length !== 10)
-      errors.phone = "Numéro à 10 chiffres requis (ex: 0550123456)";
+      errors.phone = t("checkout.errorPhone");
     if (formData.phone && !formData.phone.startsWith("0"))
-      errors.phone = "Le numéro doit commencer par 0";
-    if (!formData.wilaya) errors.wilaya = "Sélectionnez une wilaya";
+      errors.phone = t("checkout.errorPhoneStart");
+    if (!formData.wilaya) errors.wilaya = t("checkout.errorWilaya");
     if (deliveryType === "HOME" && !formData.city)
-      errors.city = "Sélectionnez une commune";
+      errors.city = t("checkout.errorCommune");
     if (deliveryType === "DESK" && !selectedStopDesk)
-      errors.stopDesk = "Sélectionnez un point de retrait";
+      errors.stopDesk = t("checkout.errorStopDesk");
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -313,10 +318,10 @@ export default function CheckoutPage() {
         setPromoDiscount(data.discountPercent || 10);
         setPromoInput("");
       } else {
-        setPromoError("Code invalide ou expiré");
+        setPromoError(t("checkout.promoInvalid"));
       }
     } catch {
-      setPromoError("Erreur de vérification");
+      setPromoError(t("checkout.promoError"));
     } finally {
       setPromoLoading(false);
     }
@@ -390,46 +395,48 @@ export default function CheckoutPage() {
       } else {
         const errorData = await response.json().catch(() => null);
         const errorMsg =
-          errorData?.error || "Une erreur est survenue. Veuillez réessayer.";
+          errorData?.error || t("checkout.errorGeneric");
         toast.error(errorMsg);
       }
     } catch (error) {
       console.error("Error submitting order:", error);
-      toast.error("Une erreur est survenue. Veuillez réessayer.");
+      toast.error(t("checkout.errorGeneric"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const ChevronIcon = isAr ? ChevronLeft : ChevronRight;
+
   if (items.length === 0) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 bg-white">
+      <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 bg-white" dir={isAr ? "rtl" : "ltr"}>
         <ShoppingBag size={40} className="text-gray-300 mb-6" />
         <h1 className="text-2xl font-serif font-medium mb-2 text-gray-900">
-          Votre panier est vide
+          {t("checkout.emptyCart")}
         </h1>
         <Link
           href="/shop"
           className="mt-6 text-sm uppercase tracking-widest border-b border-gray-900 pb-1 hover:text-gray-600 hover:border-gray-600 transition-all"
         >
-          Retourner à la boutique
+          {t("checkout.backToShop")}
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white pt-24 pb-20">
+    <div className="min-h-screen bg-white pt-24 pb-20" dir={isAr ? "rtl" : "ltr"}>
       {/* Minimal Header */}
       <div className="border-b border-gray-100 pb-6 mb-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-serif font-medium text-gray-900">
-              Validation
+              {t("checkout.title")}
             </h1>
             <div className="flex items-center gap-2 text-xs text-gray-500 uppercase tracking-wider">
               <Lock size={14} className="text-green-600" />
-              Paiement sécurisé
+              {t("checkout.securePayment")}
             </div>
           </div>
         </div>
@@ -450,12 +457,12 @@ export default function CheckoutPage() {
                   <span className="w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-sans">
                     1
                   </span>
-                  Informations
+                  {t("checkout.information")}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Prénom <span className="text-red-400">*</span>
+                      {t("checkout.firstName")} <span className="text-red-400">*</span>
                     </label>
                     <input
                       required
@@ -469,7 +476,7 @@ export default function CheckoutPage() {
                           ? "border-red-400"
                           : "border-gray-200",
                       )}
-                      placeholder="Votre prénom"
+                      placeholder={t("checkout.firstNamePlaceholder")}
                     />
                     {formErrors.firstName && (
                       <p className="text-xs text-red-500">
@@ -479,7 +486,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Nom <span className="text-red-400">*</span>
+                      {t("checkout.lastName")} <span className="text-red-400">*</span>
                     </label>
                     <input
                       required
@@ -493,7 +500,7 @@ export default function CheckoutPage() {
                           ? "border-red-400"
                           : "border-gray-200",
                       )}
-                      placeholder="Votre nom"
+                      placeholder={t("checkout.lastNamePlaceholder")}
                     />
                     {formErrors.lastName && (
                       <p className="text-xs text-red-500">
@@ -503,12 +510,13 @@ export default function CheckoutPage() {
                   </div>
                   <div className="sm:col-span-2 space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Téléphone <span className="text-red-400">*</span>
+                      {t("checkout.phone")} <span className="text-red-400">*</span>
                     </label>
                     <input
                       required
                       name="phone"
                       type="tel"
+                      dir="ltr"
                       value={
                         formData.phone
                           ? formData.phone.replace(
@@ -523,7 +531,7 @@ export default function CheckoutPage() {
                         "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
                         formErrors.phone ? "border-red-400" : "border-gray-200",
                       )}
-                      placeholder="05 50 12 34 56"
+                      placeholder={t("checkout.phonePlaceholder")}
                     />
                     {formErrors.phone && (
                       <p className="text-xs text-red-500">{formErrors.phone}</p>
@@ -538,17 +546,17 @@ export default function CheckoutPage() {
                   <span className="w-6 h-6 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-sans">
                     2
                   </span>
-                  Livraison
+                  {t("checkout.delivery")}
                 </h2>
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Wilaya <span className="text-red-400">*</span>
+                      {t("checkout.wilaya")} <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder="Rechercher une wilaya..."
+                        placeholder={t("checkout.wilayaSearch")}
                         value={wilayaSearch}
                         onChange={(e) => {
                           setWilayaSearch(e.target.value);
@@ -578,7 +586,10 @@ export default function CheckoutPage() {
                             setFormData((prev) => ({ ...prev, wilaya: "" }));
                             setWilayaSearch("");
                           }}
-                          className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                          className={cn(
+                            "absolute top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600",
+                            isAr ? "left-0" : "right-0",
+                          )}
                         >
                           <X size={14} />
                         </button>
@@ -634,7 +645,7 @@ export default function CheckoutPage() {
                               String(rate.wilayaCode).includes(wilayaSearch),
                           ).length === 0 && (
                             <p className="px-4 py-3 text-sm text-gray-400">
-                              Aucune wilaya trouvée
+                              {t("checkout.noWilayaFound")}
                             </p>
                           )}
                         </div>
@@ -650,7 +661,7 @@ export default function CheckoutPage() {
                   {/* Delivery Provider Selection */}
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 block">
-                      Transporteur
+                      {t("checkout.carrier")}
                     </label>
                     <div className="grid grid-cols-2 gap-4">
                       <button
@@ -671,7 +682,7 @@ export default function CheckoutPage() {
                             className="object-contain"
                           />
                         </div>
-                        <div className="text-left flex-1">
+                        <div className="text-start flex-1">
                           <span className="block text-sm font-semibold text-gray-900">
                             Yalidine
                           </span>
@@ -698,7 +709,7 @@ export default function CheckoutPage() {
                             className="object-contain"
                           />
                         </div>
-                        <div className="text-left flex-1">
+                        <div className="text-start flex-1">
                           <span className="block text-sm font-semibold text-gray-900">
                             ZR Express
                           </span>
@@ -713,14 +724,14 @@ export default function CheckoutPage() {
                   {/* Delivery Type Selection */}
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 block">
-                      Type de livraison
+                      {t("checkout.deliveryType")}
                     </label>
                     <div className="grid grid-cols-2 gap-4">
                       <button
                         type="button"
                         onClick={() => setDeliveryType("HOME")}
                         className={cn(
-                          "p-5 text-left border transition-all rounded-xl",
+                          "p-5 text-start border transition-all rounded-xl",
                           deliveryType === "HOME"
                             ? "border-harp-brown bg-harp-cream/50 ring-1 ring-harp-brown"
                             : "border-gray-200 hover:border-harp-caramel hover:bg-gray-50",
@@ -736,17 +747,17 @@ export default function CheckoutPage() {
                           )}
                         />
                         <span className="block text-sm font-medium text-gray-900 mb-1">
-                          À Domicile
+                          {t("checkout.home")}
                         </span>
                         <span className="block text-xs text-gray-500">
-                          Livré chez vous
+                          {t("checkout.homeDesc")}
                         </span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setDeliveryType("DESK")}
                         className={cn(
-                          "p-5 text-left border transition-all rounded-xl",
+                          "p-5 text-start border transition-all rounded-xl",
                           deliveryType === "DESK"
                             ? "border-harp-brown bg-harp-cream/50 ring-1 ring-harp-brown"
                             : "border-gray-200 hover:border-harp-caramel hover:bg-gray-50",
@@ -762,10 +773,10 @@ export default function CheckoutPage() {
                           )}
                         />
                         <span className="block text-sm font-medium text-gray-900 mb-1">
-                          Point Relais
+                          {t("checkout.desk")}
                         </span>
                         <span className="block text-xs text-gray-500">
-                          Retrait en bureau
+                          {t("checkout.deskDesc")}
                         </span>
                       </button>
                     </div>
@@ -774,12 +785,12 @@ export default function CheckoutPage() {
                   {deliveryType === "DESK" && formData.wilaya && (
                     <div className="space-y-2 animate-fade-in">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Point de retrait
+                        {t("checkout.pickupPoint")}
                       </label>
                       {loadingStopDesks ? (
                         <div className="flex items-center gap-2 text-sm text-gray-500 py-3">
                           <Loader2 size={16} className="animate-spin" />
-                          Chargement...
+                          {t("checkout.loading")}
                         </div>
                       ) : stopDeskCenters.length > 0 ? (
                         <select
@@ -788,7 +799,7 @@ export default function CheckoutPage() {
                           className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer"
                           required
                         >
-                          <option value="">Choisir un bureau</option>
+                          <option value="">{t("checkout.chooseOffice")}</option>
                           {stopDeskCenters.map((center) => (
                             <option key={center.id} value={center.id}>
                               {center.name} - {center.commune}
@@ -797,8 +808,7 @@ export default function CheckoutPage() {
                         </select>
                       ) : (
                         <p className="text-sm text-red-500 py-2">
-                          Aucun point de retrait disponible. Veuillez choisir la
-                          livraison à domicile.
+                          {t("checkout.noPickupAvailable")}
                         </p>
                       )}
                     </div>
@@ -808,12 +818,12 @@ export default function CheckoutPage() {
                   {deliveryType === "HOME" && formData.wilaya && (
                     <div className="space-y-2 animate-fade-in">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Commune <span className="text-red-400">*</span>
+                        {t("checkout.commune")} <span className="text-red-400">*</span>
                       </label>
                       {loadingCommunes ? (
                         <div className="flex items-center gap-2 py-3 text-sm text-gray-500">
                           <Loader2 size={16} className="animate-spin" />
-                          Chargement des communes...
+                          {t("checkout.loadingCommunes")}
                         </div>
                       ) : (
                         <select
@@ -829,7 +839,7 @@ export default function CheckoutPage() {
                               : "border-gray-200",
                           )}
                         >
-                          <option value="">Sélectionner</option>
+                          <option value="">{t("checkout.communeSelect")}</option>
                           {communes.map((commune) => (
                             <option key={commune.id} value={commune.name}>
                               {commune.name}
@@ -849,9 +859,9 @@ export default function CheckoutPage() {
                   {deliveryType === "HOME" && (
                     <div className="space-y-2 animate-fade-in">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Adresse{" "}
+                        {t("checkout.address")}{" "}
                         <span className="text-gray-400 normal-case tracking-normal font-normal">
-                          (optionnel)
+                          {t("checkout.addressOptional")}
                         </span>
                       </label>
                       <input
@@ -864,7 +874,7 @@ export default function CheckoutPage() {
                             ? "border-red-400"
                             : "border-gray-200",
                         )}
-                        placeholder="Cité, rue, n°..."
+                        placeholder={t("checkout.addressPlaceholder")}
                       />
                       {formErrors.address && (
                         <p className="text-xs text-red-500">
@@ -882,7 +892,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-32 bg-[#F9F9F9] p-8 rounded-sm">
               <h2 className="font-serif font-medium text-gray-900 mb-6">
-                Récapitulatif
+                {t("checkout.summary")}
               </h2>
 
               <div className="space-y-6 mb-8">
@@ -908,9 +918,9 @@ export default function CheckoutPage() {
                       </p>
                       <div className="flex justify-between items-center mt-2">
                         <p className="text-xs text-gray-500">
-                          Qté: {item.quantity}
+                          {t("checkout.qty")}: {item.quantity}
                         </p>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-gray-900" dir="ltr">
                           {item.price.toLocaleString()} DZD
                         </p>
                       </div>
@@ -928,7 +938,7 @@ export default function CheckoutPage() {
                       <span className="text-sm font-medium text-green-700">
                         {promoCode}
                       </span>
-                      <span className="text-xs text-green-600">
+                      <span className="text-xs text-green-600" dir="ltr">
                         -{promoDiscount}%
                       </span>
                     </div>
@@ -949,8 +959,9 @@ export default function CheckoutPage() {
                         setPromoInput(e.target.value.toUpperCase());
                         setPromoError("");
                       }}
-                      placeholder="Code promo"
+                      placeholder={t("checkout.promoCode")}
                       className="flex-1 bg-transparent border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-harp-brown focus:outline-none transition-colors"
+                      dir="ltr"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -967,7 +978,7 @@ export default function CheckoutPage() {
                       {promoLoading ? (
                         <Loader2 size={16} className="animate-spin" />
                       ) : (
-                        "Appliquer"
+                        t("checkout.apply")
                       )}
                     </button>
                   </div>
@@ -980,8 +991,8 @@ export default function CheckoutPage() {
               {/* Price Breakdown */}
               <div className="border-t border-gray-200 pt-4 mb-6 space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Sous-total</span>
-                  <span className="text-gray-900">
+                  <span className="text-gray-500">{t("checkout.subtotal")}</span>
+                  <span className="text-gray-900" dir="ltr">
                     {total.toLocaleString()} DZD
                   </span>
                 </div>
@@ -989,31 +1000,31 @@ export default function CheckoutPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-green-600 flex items-center gap-1">
                       <Tag size={12} />
-                      Réduction ({promoCode})
+                      {t("checkout.reduction")} ({promoCode})
                     </span>
-                    <span className="text-green-600 font-medium">
+                    <span className="text-green-600 font-medium" dir="ltr">
                       -{discountAmount.toLocaleString()} DZD
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500 flex items-center gap-2">
-                    Livraison
+                    {t("checkout.shipping")}
                     {formData.wilaya && (
                       <span className="text-[10px] bg-harp-cream text-harp-brown px-2 py-0.5 rounded-full">
                         {deliveryProvider}
                       </span>
                     )}
                   </span>
-                  <span className="text-gray-900">
+                  <span className="text-gray-900" dir="ltr">
                     {formData.wilaya
                       ? `${shippingPrice.toLocaleString()} DZD`
-                      : "—"}
+                      : "\u2014"}
                   </span>
                 </div>
                 <div className="flex justify-between text-base font-semibold pt-2 border-t border-gray-200">
-                  <span className="text-gray-900">Total</span>
-                  <span className="text-harp-brown">
+                  <span className="text-gray-900">{t("checkout.total")}</span>
+                  <span className="text-harp-brown" dir="ltr">
                     {finalTotal.toLocaleString()} DZD
                   </span>
                 </div>
@@ -1029,42 +1040,42 @@ export default function CheckoutPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 size={20} className="animate-spin" />
-                    Validation en cours...
+                    {t("checkout.confirming")}
                   </>
                 ) : (
                   <>
-                    Confirmer la commande
-                    <ChevronRight size={20} />
+                    {t("checkout.confirm")}
+                    <ChevronIcon size={20} />
                   </>
                 )}
               </button>
 
               {/* Trust Badges */}
-              <div className="bg-gradient-to-r from-harp-cream to-harp-beige rounded-xl p-4 border border-harp-beige">
+              <div className="bg-gradient-to-r from-harp-cream to-harp-beige rounded-xl p-4 border border-harp-beige mt-4">
                 <div className="flex items-center gap-3 text-harp-brown">
                   <CreditCard size={20} />
                   <div>
                     <p className="font-medium text-sm">
-                      Paiement à la livraison
+                      {t("checkout.cod")}
                     </p>
                     <p className="text-xs text-harp-brown">
-                      Cash on Delivery (COD)
+                      {t("checkout.codSub")}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 mt-3">
                 <div className="bg-gray-50 rounded-xl p-3 text-center">
                   <Clock size={18} className="mx-auto text-gray-500 mb-1" />
                   <p className="text-xs font-medium text-gray-700">
-                    Livraison 24-72h
+                    {t("checkout.delivery24")}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3 text-center">
                   <Shield size={18} className="mx-auto text-gray-500 mb-1" />
                   <p className="text-xs font-medium text-gray-700">
-                    Achat sécurisé
+                    {t("checkout.securePurchase")}
                   </p>
                 </div>
               </div>

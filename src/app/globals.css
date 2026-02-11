@@ -302,6 +302,19 @@
   }
 }
 
+/* Arabic / RTL font — Fustat */
+[dir="rtl"] {
+  font-family: var(--font-fustat), var(--font-inter), sans-serif;
+}
+
+[dir="rtl"] .font-serif {
+  font-family: var(--font-fustat), serif;
+}
+
+[dir="rtl"] .font-sans {
+  font-family: var(--font-fustat), sans-serif;
+}
+
 /* Hide scrollbar utility */
 .scrollbar-hide {
   -ms-overflow-style: none;
