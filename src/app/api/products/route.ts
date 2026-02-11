@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
           ...(includeCollection ? { collection: true } : {}),
           variants: { select: { id: true, size: true, color: true, stock: true } },
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" },
         skip,
         take: pageSize,
       }),

@@ -152,6 +152,10 @@ export default function ShopPage() {
     );
   });
 
+  // Build collection order map (collections already sorted by nameFr asc from API)
+  const collectionOrder = new Map<string, number>();
+  collections.forEach((c, i) => collectionOrder.set(c.id, i));
+
   // Sort products
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
@@ -164,10 +168,13 @@ export default function ShopPage() {
           language === "fr" ? b.nameFr : b.nameAr,
         );
       case "newest":
-      default:
-        return (
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
+      default: {
+        // Sort by collection order first (Abaya Kimono first), then by date within
+        const colA = collectionOrder.get(a.collectionId) ?? 999;
+        const colB = collectionOrder.get(b.collectionId) ?? 999;
+        if (colA !== colB) return colA - colB;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
     }
   });
 

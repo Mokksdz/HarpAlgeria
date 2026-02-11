@@ -77,6 +77,11 @@ export function ProductCard({
 
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {isOutOfStock && (
+              <span className="bg-red-500/90 text-white text-[7px] md:text-[8px] uppercase tracking-wider px-1.5 py-0.5 md:px-2 md:py-0.5 font-semibold rounded-full shadow-sm">
+                Rupture de stock
+              </span>
+            )}
             {isNew && (
               <span className="glass text-harp-brown text-[7px] md:text-[8px] uppercase tracking-wider px-1.5 py-0.5 md:px-2 md:py-0.5 font-semibold rounded-full shadow-sm">
                 ✨ {t("shop.badge.new")}
