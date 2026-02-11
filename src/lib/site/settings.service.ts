@@ -240,6 +240,63 @@ export async function updateAboutSettings(
 }
 
 /**
+ * Update homepage collection IDs with audit trail
+ */
+export async function updateHomepageCollections(
+  collectionIds: string[],
+  userId?: string,
+) {
+  return prisma.$transaction(async (tx) => {
+    const prev = await tx.siteSetting.findUnique({
+      where: { id: "default" },
+    });
+
+    if (!prev) {
+      await tx.siteSetting.create({ data: { id: "default" } });
+    }
+
+    const safeUserId = await resolveUserId(tx, userId);
+
+    if (prev) {
+      await tx.siteSettingHistory.create({
+        data: {
+          settingId: "default",
+          snapshot: JSON.stringify(prev),
+          userId: userId || null,
+        },
+      });
+    }
+
+    const updated = await tx.siteSetting.update({
+      where: { id: "default" },
+      data: {
+        homepageCollectionIds: JSON.stringify(collectionIds),
+        lastUpdatedById: safeUserId,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        action: "UPDATE_HOMEPAGE_COLLECTIONS",
+        entity: "SiteSetting",
+        entityId: "default",
+        userId: userId || null,
+        before: prev
+          ? JSON.stringify({
+              homepageCollectionIds: prev.homepageCollectionIds,
+            })
+          : null,
+        after: JSON.stringify({
+          homepageCollectionIds: updated.homepageCollectionIds,
+        }),
+      },
+    });
+
+    return { prev, updated };
+  });
+}
+
+/**
  * Get settings history for rollback
  */
 export async function getSettingsHistory(limit = 10) {

@@ -1,8 +1,3 @@
-// =============================================================================
-// HARP ACCOUNTING SYSTEM v2.0
-// Schéma Prisma optimisé pour comptabilité textile/mode
-// =============================================================================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,49 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// =============================================================================
-// ENUMS (as constants for SQLite compatibility)
-// =============================================================================
-// InventoryType: FABRIC | ACCESSORY | PACKAGING | FINISHED
-// InventoryUnit: METER | ROLL | PIECE | KG | LITER
-// PurchaseStatus: DRAFT | ORDERED | PARTIAL | RECEIVED | CANCELLED
-// AdvanceStatus: PENDING | PARTIAL | APPLIED | REFUNDED
-// ChargeCategory: ATELIER | SHOOTING | ADS | INFLUENCER | TRANSPORT | LABOR | OTHER
-// ChargeScope: GLOBAL | COLLECTION | MODEL
-// TxDirection: IN | OUT
-// TxType: PURCHASE | PRODUCTION | SALE | ADJUSTMENT | RESERVE | RELEASE | INITIAL
-// BatchStatus: PLANNED | IN_PROGRESS | COMPLETED | CANCELLED
-
-// =============================================================================
-// CORE E-COMMERCE (existant, non modifié)
-// =============================================================================
-
 model Product {
-  id            String      @id @default(cuid())
-  slug          String      @unique
-  nameFr        String
-  nameAr        String
-  descriptionFr String
-  descriptionAr String
-  price         Decimal
-  promoPrice    Decimal?
-  promoStart    DateTime?
-  promoEnd      DateTime?
-  images        String
-  sizes         String
-  colors        String
-  stock         Int         @default(0)
-  isActive      Boolean     @default(true)
-  showSizeGuide Boolean     @default(true)
-  freeShipping  Boolean     @default(false)
-  freeShippingThreshold Decimal? @default(0)
-  collectionId  String?
-  collection    Collection? @relation(fields: [collectionId], references: [id])
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  orderItems    OrderItem[]
-  wishlistItems WishlistItem[]
-  variants      ProductVariant[]
+  id                    String           @id @default(cuid())
+  slug                  String           @unique
+  nameFr                String
+  nameAr                String
+  descriptionFr         String
+  descriptionAr         String
+  price                 Decimal
+  images                String
+  sizes                 String
+  colors                String
+  stock                 Int              @default(0)
+  isActive              Boolean          @default(true)
+  showSizeGuide         Boolean          @default(true)
+  freeShipping          Boolean          @default(false)
+  freeShippingThreshold Decimal?         @default(0)
+  collectionId          String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  promoEnd              DateTime?
+  promoPrice            Decimal?
+  promoStart            DateTime?
+  orderItems            OrderItem[]
+  collection            Collection?      @relation(fields: [collectionId], references: [id])
+  variants              ProductVariant[]
+  wishlistItems         WishlistItem[]
 
   @@index([collectionId])
   @@index([slug])
@@ -64,29 +42,29 @@ model Product {
 model ProductVariant {
   id        String  @id @default(cuid())
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   size      String
   color     String
   stock     Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, size, color])
   @@index([productId])
 }
 
 model Collection {
-  id            String      @id @default(cuid())
-  slug          String      @unique
-  nameFr        String
-  nameAr        String
-  description   String?
-  image         String?
-  budget        Decimal     @default(0) 
-  budgetUsed    Decimal     @default(0) 
-  products      Product[]
-  models        Model[]
-  charges       Charge[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  nameFr      String
+  nameAr      String
+  description String?
+  image       String?
+  budget      Decimal   @default(0)
+  budgetUsed  Decimal   @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  charges     Charge[]
+  models      Model[]
+  products    Product[]
 
   @@index([slug])
   @@index([createdAt])
@@ -102,20 +80,18 @@ model Order {
   customerWilaya   String
   deliveryProvider String?
   deliveryType     String?
-  shippingPrice    Decimal     @default(0) 
+  shippingPrice    Decimal     @default(0)
   trackingNumber   String?
   trackingStatus   String?
-  subtotal         Decimal     
-  total            Decimal     
+  subtotal         Decimal
+  total            Decimal
   status           String      @default("PENDING")
-  items            OrderItem[]
   stockReserved    Boolean     @default(false)
-  
   userId           String?
-  user             User?       @relation(fields: [userId], references: [id])
-
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+  user             User?       @relation(fields: [userId], references: [id])
+  items            OrderItem[]
 
   @@index([status])
   @@index([createdAt])
@@ -126,45 +102,41 @@ model Order {
 model OrderItem {
   id          String   @id @default(cuid())
   orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId   String?
-  product     Product? @relation(fields: [productId], references: [id])
-  modelId     String?  // Lien vers Model pour traçabilité coût
+  modelId     String?
   productName String
   size        String
   color       String
   quantity    Int
-  unitPrice   Decimal  
-  totalPrice  Decimal  
+  unitPrice   Decimal
+  totalPrice  Decimal
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
   @@index([modelId])
 }
 
-// =============================================================================
-// FOURNISSEURS & ACHATS
-// =============================================================================
-
 model Supplier {
-  id          String            @id @default(cuid())
-  code        String            @unique  // Code fournisseur (ex: FRN-001)
-  name        String
-  contact     String?           // Nom contact
-  phone       String?
-  email       String?
-  address     String?
-  city        String?
-  country     String            @default("Algérie")
-  taxId       String?           // NIF/RC
-  paymentTerms String?          // Conditions paiement
-  notes       String?
-  isActive    Boolean           @default(true)
-  purchases   Purchase[]
-  advances    SupplierAdvance[]
-  items       InventoryItem[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id           String            @id @default(cuid())
+  code         String            @unique
+  name         String
+  contact      String?
+  phone        String?
+  email        String?
+  address      String?
+  city         String?
+  country      String            @default("Algérie")
+  taxId        String?
+  paymentTerms String?
+  notes        String?
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  items        InventoryItem[]
+  purchases    Purchase[]
+  advances     SupplierAdvance[]
 
   @@index([code])
   @@index([name])
@@ -172,38 +144,29 @@ model Supplier {
 }
 
 model Purchase {
-  id              String         @id @default(cuid())
-  purchaseNumber  String         @unique  // Numéro interne (ACH-2024-001)
-  supplierId      String
-  supplier        Supplier       @relation(fields: [supplierId], references: [id])
-  invoiceNumber   String?        // Numéro facture fournisseur
-  invoiceDate     DateTime?
-  orderDate       DateTime       @default(now())
-  expectedDate    DateTime?      // Date livraison prévue
-  receivedDate    DateTime?      // Date réception effective
-  
-  // Montants
-  subtotal        Decimal        @default(0) 
-  taxAmount       Decimal        @default(0) 
-  shippingCost    Decimal        @default(0) 
-  totalAmount     Decimal        @default(0) 
-  currency        String         @default("DZD")
-  
-  // Avances appliquées
-  advanceApplied  Decimal        @default(0) 
-  amountDue       Decimal        @default(0) 
-  
-  // Status
-  status          String         @default("DRAFT")
-  receivedBy      String?
-  
-  // Relations
-  items           PurchaseItem[]
-  advances        PurchaseAdvance[]
-  
-  notes           String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id             String            @id @default(cuid())
+  purchaseNumber String            @unique
+  supplierId     String
+  invoiceNumber  String?
+  invoiceDate    DateTime?
+  orderDate      DateTime          @default(now())
+  expectedDate   DateTime?
+  receivedDate   DateTime?
+  subtotal       Decimal           @default(0)
+  taxAmount      Decimal           @default(0)
+  shippingCost   Decimal           @default(0)
+  totalAmount    Decimal           @default(0)
+  currency       String            @default("DZD")
+  advanceApplied Decimal           @default(0)
+  amountDue      Decimal           @default(0)
+  status         String            @default("DRAFT")
+  receivedBy     String?
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  supplier       Supplier          @relation(fields: [supplierId], references: [id])
+  advances       PurchaseAdvance[]
+  items          PurchaseItem[]
 
   @@index([supplierId])
   @@index([status])
@@ -213,121 +176,89 @@ model Purchase {
 }
 
 model PurchaseItem {
-  id              String        @id @default(cuid())
-  purchaseId      String
-  purchase        Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  inventoryItemId String
-  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
-  
-  // Quantités
-  quantityOrdered Decimal       
-  quantityReceived Decimal      @default(0) 
-  unit            String        // METER | PIECE | ROLL...
-  
-  // Prix
-  unitPrice       Decimal       
-  totalPrice      Decimal       
-  
-  // Allocation aux modèles (JSON: [{modelId, quantity}])
-  allocations     String?
-  
-  createdAt       DateTime      @default(now())
+  id               String        @id @default(cuid())
+  purchaseId       String
+  inventoryItemId  String
+  quantityOrdered  Decimal
+  quantityReceived Decimal       @default(0)
+  unit             String
+  unitPrice        Decimal
+  totalPrice       Decimal
+  allocations      String?
+  createdAt        DateTime      @default(now())
+  inventoryItem    InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  purchase         Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
 
   @@index([purchaseId])
   @@index([inventoryItemId])
 }
 
-// =============================================================================
-// AVANCES FOURNISSEURS
-// =============================================================================
-
 model SupplierAdvance {
-  id            String            @id @default(cuid())
-  advanceNumber String            @unique  // AVA-2024-001
-  supplierId    String
-  supplier      Supplier          @relation(fields: [supplierId], references: [id])
-  
-  amount        Decimal           
-  amountUsed    Decimal           @default(0) 
-  amountRemaining Decimal         @default(0) 
-  
-  paymentDate   DateTime          @default(now())
-  paymentMethod String?           // CASH | CHECK | TRANSFER | CCP
-  reference     String?           // Référence paiement
-  
-  status        String            @default("PENDING")  // PENDING | PARTIAL | APPLIED | REFUNDED
-  
-  applications  PurchaseAdvance[]
-  
-  notes         String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id              String            @id @default(cuid())
+  advanceNumber   String            @unique
+  supplierId      String
+  amount          Decimal
+  amountUsed      Decimal           @default(0)
+  amountRemaining Decimal           @default(0)
+  paymentDate     DateTime          @default(now())
+  paymentMethod   String?
+  reference       String?
+  status          String            @default("PENDING")
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  applications    PurchaseAdvance[]
+  supplier        Supplier          @relation(fields: [supplierId], references: [id])
 
   @@index([supplierId])
   @@index([status])
   @@index([advanceNumber])
 }
 
-// Table pivot : application avances sur achats
 model PurchaseAdvance {
-  id          String          @id @default(cuid())
-  purchaseId  String
-  purchase    Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  advanceId   String
-  advance     SupplierAdvance @relation(fields: [advanceId], references: [id])
-  amount      Decimal         
-  appliedAt   DateTime        @default(now())
-  appliedBy   String?
+  id         String          @id @default(cuid())
+  purchaseId String
+  advanceId  String
+  amount     Decimal
+  appliedAt  DateTime        @default(now())
+  appliedBy  String?
+  advance    SupplierAdvance @relation(fields: [advanceId], references: [id])
+  purchase   Purchase        @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
 
   @@unique([purchaseId, advanceId])
   @@index([purchaseId])
   @@index([advanceId])
 }
 
-// =============================================================================
-// INVENTAIRE & STOCK
-// =============================================================================
-
 model InventoryItem {
-  id              String                 @id @default(cuid())
-  sku             String                 @unique
-  name            String
-  type            String                 // FABRIC | ACCESSORY | PACKAGING | FINISHED
-  unit            String                 // METER | PIECE | ROLL | KG
-  
-  // Quantités
-  quantity        Decimal                @default(0) 
-  reserved        Decimal                @default(0) 
-  available       Decimal                @default(0) 
-  
-  // Coûts
-  averageCost     Decimal                @default(0) 
-  lastCost        Decimal                @default(0) 
-  totalValue      Decimal                @default(0) 
-  
-  // Métadonnées
-  color           String?
-  width           Decimal?               
-  composition     String?                // 100% coton, etc.
-  location        String?                // MAGASIN | ATELIER | STOCK
-  threshold       Decimal?               
-  
-  // Fournisseur par défaut
-  supplierId      String?
-  supplier        Supplier?              @relation(fields: [supplierId], references: [id])
-  
-  // Relations
-  purchaseItems   PurchaseItem[]
-  bomItems        BomItem[]
-  transactions    InventoryTransaction[]
-  finishedModels  Model[]                @relation("FinishedProduct")
-  consumptions    BatchConsumption[]
-  
-  notes           String?
-  isActive        Boolean                @default(true)
-  lastReceivedAt  DateTime?
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
+  id             String                 @id @default(cuid())
+  sku            String                 @unique
+  name           String
+  type           String
+  unit           String
+  quantity       Decimal                @default(0)
+  reserved       Decimal                @default(0)
+  available      Decimal                @default(0)
+  averageCost    Decimal                @default(0)
+  lastCost       Decimal                @default(0)
+  totalValue     Decimal                @default(0)
+  color          String?
+  width          Decimal?
+  composition    String?
+  location       String?
+  threshold      Decimal?
+  supplierId     String?
+  notes          String?
+  isActive       Boolean                @default(true)
+  lastReceivedAt DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  consumptions   BatchConsumption[]
+  bomItems       BomItem[]
+  supplier       Supplier?              @relation(fields: [supplierId], references: [id])
+  transactions   InventoryTransaction[]
+  finishedModels Model[]                @relation("FinishedProduct")
+  purchaseItems  PurchaseItem[]
 
   @@index([sku])
   @@index([type])
@@ -340,29 +271,23 @@ model InventoryItem {
 model InventoryTransaction {
   id              String        @id @default(cuid())
   inventoryItemId String
-  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
-  
-  direction       String        // IN | OUT
-  type            String        // PURCHASE | PRODUCTION | SALE | ADJUSTMENT | RESERVE | RELEASE
-  quantity        Decimal       
-  unitCost        Decimal?      
-  
-  // Snapshots pour audit
-  balanceBefore   Decimal       
-  balanceAfter    Decimal       
-  valueBefore     Decimal?      
-  valueAfter      Decimal?      
-  avgCostBefore   Decimal?      
-  avgCostAfter    Decimal?      
-  
-  // Références
-  referenceType   String?       // PURCHASE | ORDER | BATCH | ADJUSTMENT
+  direction       String
+  type            String
+  quantity        Decimal
+  unitCost        Decimal?
+  balanceBefore   Decimal
+  balanceAfter    Decimal
+  valueBefore     Decimal?
+  valueAfter      Decimal?
+  avgCostBefore   Decimal?
+  avgCostAfter    Decimal?
+  referenceType   String?
   referenceId     String?
-  
-  reason          String?       // Pour ADJUSTMENT
+  reason          String?
   notes           String?
   createdBy       String?
   createdAt       DateTime      @default(now())
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
 
   @@index([inventoryItemId])
   @@index([direction])
@@ -371,59 +296,38 @@ model InventoryTransaction {
   @@index([createdAt])
 }
 
-// =============================================================================
-// MODÈLES & NOMENCLATURE (BOM)
-// =============================================================================
-
 model Model {
-  id              String              @id @default(cuid())
-  sku             String              @unique
+  id              String            @id @default(cuid())
+  sku             String            @unique
   name            String
   description     String?
   image           String?
-  
-  // Lien produit (optionnel)
   productId       String?
-  
-  // Lien inventaire produit fini (pour stock)
   inventoryItemId String?
-  inventoryItem   InventoryItem?      @relation("FinishedProduct", fields: [inventoryItemId], references: [id])
-  
-  // Collection
   collectionId    String?
-  collection      Collection?         @relation(fields: [collectionId], references: [id])
-  
-  // Prix
-  targetPrice     Decimal?            
-  sellingPrice    Decimal?            
-  
-  // Production
-  estimatedUnits  Int                 @default(100)
-  producedUnits   Int                 @default(0)
-  
-  // Coûts directs (par unité)
-  laborCost       Decimal             @default(0) 
-  packagingCost   Decimal             @default(0) 
-  otherCost       Decimal             @default(0) 
-  returnMargin    Decimal             @default(150) 
-  
-  // Détail packaging
-  packagingBox    Decimal             @default(0) 
-  packagingBag    Decimal             @default(0) 
-  packagingLabel  Decimal             @default(0) 
-  packagingTag    Decimal             @default(0) 
-  packagingCard   Decimal             @default(0) 
-  packagingOther  Decimal             @default(0) 
-  
-  // Relations
+  targetPrice     Decimal?
+  sellingPrice    Decimal?
+  estimatedUnits  Int               @default(100)
+  producedUnits   Int               @default(0)
+  laborCost       Decimal           @default(0)
+  packagingCost   Decimal           @default(0)
+  otherCost       Decimal           @default(0)
+  returnMargin    Decimal           @default(150)
+  packagingBox    Decimal           @default(0)
+  packagingBag    Decimal           @default(0)
+  packagingLabel  Decimal           @default(0)
+  packagingTag    Decimal           @default(0)
+  packagingCard   Decimal           @default(0)
+  packagingOther  Decimal           @default(0)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   bom             BomItem[]
   charges         Charge[]
   snapshots       CostSnapshot[]
+  collection      Collection?       @relation(fields: [collectionId], references: [id])
+  inventoryItem   InventoryItem?    @relation("FinishedProduct", fields: [inventoryItemId], references: [id])
   batches         ProductionBatch[]
-  
-  isActive        Boolean             @default(true)
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
 
   @@index([sku])
   @@index([collectionId])
@@ -434,65 +338,46 @@ model Model {
 model BomItem {
   id              String        @id @default(cuid())
   modelId         String
-  model           Model         @relation(fields: [modelId], references: [id], onDelete: Cascade)
   inventoryItemId String
-  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
-  
-  quantity        Decimal       
-  wasteFactor     Decimal       @default(1.05) 
-  
-  // Coût snapshot (pour calcul)
-  unitCost        Decimal?      
-  totalCost       Decimal?      
-  
+  quantity        Decimal
+  wasteFactor     Decimal       @default(1.05)
+  unitCost        Decimal?
+  totalCost       Decimal?
   notes           String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  model           Model         @relation(fields: [modelId], references: [id], onDelete: Cascade)
 
   @@unique([modelId, inventoryItemId])
   @@index([modelId])
   @@index([inventoryItemId])
 }
 
-// =============================================================================
-// CHARGES & ALLOCATIONS
-// =============================================================================
-
 model Charge {
-  id              String      @id @default(cuid())
-  chargeNumber    String      @unique  // CHG-2024-001
-  
-  category        String      // ATELIER | SHOOTING | ADS | INFLUENCER | TRANSPORT | LABOR | OTHER
-  subcategory     String?     // Sous-catégorie optionnelle
-  description     String
-  
-  amount          Decimal     
-  currency        String      @default("DZD")
-  date            DateTime    @default(now())
-  
-  // Scope d'allocation
-  scope           String      @default("GLOBAL")  // GLOBAL | COLLECTION | MODEL
-  
-  // Allocation spécifique
-  collectionId    String?
-  collection      Collection? @relation(fields: [collectionId], references: [id])
-  modelId         String?
-  model           Model?      @relation(fields: [modelId], references: [id])
-  
-  // Pour les charges globales réparties
-  isAllocated     Boolean     @default(false)
-  allocations     String?     // JSON: [{modelId, amount, percent}]
-  
-  // Métadonnées
-  vendor          String?     // Fournisseur/prestataire
-  invoiceRef      String?
-  campaign        String?     // Nom campagne (pour ADS)
-  platform        String?     // FACEBOOK | INSTAGRAM | TIKTOK
-  
-  notes           String?
-  createdBy       String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id           String      @id @default(cuid())
+  chargeNumber String      @unique
+  category     String
+  subcategory  String?
+  description  String
+  amount       Decimal
+  currency     String      @default("DZD")
+  date         DateTime    @default(now())
+  scope        String      @default("GLOBAL")
+  collectionId String?
+  modelId      String?
+  isAllocated  Boolean     @default(false)
+  allocations  String?
+  vendor       String?
+  invoiceRef   String?
+  campaign     String?
+  platform     String?
+  notes        String?
+  createdBy    String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  collection   Collection? @relation(fields: [collectionId], references: [id])
+  model        Model?      @relation(fields: [modelId], references: [id])
 
   @@index([category])
   @@index([scope])
@@ -501,42 +386,29 @@ model Charge {
   @@index([date])
 }
 
-// =============================================================================
-// PRODUCTION
-// =============================================================================
-
 model ProductionBatch {
-  id              String             @id @default(cuid())
-  batchNumber     String             @unique  // LOT-2024-001
-  
-  modelId         String
-  model           Model              @relation(fields: [modelId], references: [id])
-  
-  plannedQty      Int                // Quantité prévue
-  producedQty     Int                @default(0)  // Quantité produite
-  wasteQty        Int                @default(0)  // Quantité perdue
-  
-  status          String             @default("PLANNED")
-  
-  // Coûts
-  materialsCost   Decimal            @default(0) 
-  laborCost       Decimal            @default(0) 
-  overheadCost    Decimal            @default(0) 
-  totalCost       Decimal            @default(0) 
-  costPerUnit     Decimal            @default(0) 
-  
-  // Dates
-  plannedDate     DateTime?
-  startedAt       DateTime?
-  completedAt     DateTime?
-  
-  consumptions    BatchConsumption[]
-  costSnapshotId  String?            @unique
-  
-  notes           String?
-  createdBy       String?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id             String             @id @default(cuid())
+  batchNumber    String             @unique
+  modelId        String
+  plannedQty     Int
+  producedQty    Int                @default(0)
+  wasteQty       Int                @default(0)
+  status         String             @default("PLANNED")
+  materialsCost  Decimal            @default(0)
+  laborCost      Decimal            @default(0)
+  overheadCost   Decimal            @default(0)
+  totalCost      Decimal            @default(0)
+  costPerUnit    Decimal            @default(0)
+  plannedDate    DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  costSnapshotId String?            @unique
+  notes          String?
+  createdBy      String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  consumptions   BatchConsumption[]
+  model          Model              @relation(fields: [modelId], references: [id])
 
   @@index([modelId])
   @@index([status])
@@ -546,73 +418,51 @@ model ProductionBatch {
 model BatchConsumption {
   id              String          @id @default(cuid())
   batchId         String
-  batch           ProductionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
   inventoryItemId String
-  inventoryItem   InventoryItem   @relation(fields: [inventoryItemId], references: [id])
-  
-  plannedQty      Decimal         
-  actualQty       Decimal         @default(0) 
-  unitCost        Decimal         
-  totalCost       Decimal         
-  
+  plannedQty      Decimal
+  actualQty       Decimal         @default(0)
+  unitCost        Decimal
+  totalCost       Decimal
   createdAt       DateTime        @default(now())
+  batch           ProductionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  inventoryItem   InventoryItem   @relation(fields: [inventoryItemId], references: [id])
 
   @@index([batchId])
   @@index([inventoryItemId])
 }
 
-// =============================================================================
-// SNAPSHOTS & AUDIT
-// =============================================================================
-
 model CostSnapshot {
-  id              String    @id @default(cuid())
-  snapshotNumber  String    @unique  // SNP-2024-001
-  
-  modelId         String
-  model           Model     @relation(fields: [modelId], references: [id])
-  batchId         String?   // Lié à un batch optionnellement
-  
-  // Coûts matières
-  fabricCost      Decimal   @default(0) 
-  accessoryCost   Decimal   @default(0) 
-  packagingCost   Decimal   @default(0) 
-  materialsCost   Decimal   @default(0) 
-  
-  // Coûts production
-  laborCost       Decimal   @default(0) 
-  atelierCost     Decimal   @default(0) 
-  productionCost  Decimal   @default(0) 
-  
-  // Coûts marketing
-  adsCost         Decimal   @default(0) 
-  shootingCost    Decimal   @default(0) 
-  influencerCost  Decimal   @default(0) 
-  marketingCost   Decimal   @default(0) 
-  
-  // Autres
-  transportCost   Decimal   @default(0) 
-  otherCost       Decimal   @default(0) 
-  returnMargin    Decimal   @default(150) 
-  
-  // Totaux
-  totalCost       Decimal   @default(0) 
-  
-  // Prix & marges
-  suggestedPrice30 Decimal? 
-  suggestedPrice40 Decimal? 
-  suggestedPrice50 Decimal? 
-  sellingPrice    Decimal?  
-  margin          Decimal?  
-  marginPercent   Decimal?  
-  
-  // Métadonnées
-  estimatedUnits  Int       @default(1)
-  isLocked        Boolean   @default(true)
-  
-  notes           String?
-  createdBy       String?
-  createdAt       DateTime  @default(now())
+  id               String   @id @default(cuid())
+  snapshotNumber   String   @unique
+  modelId          String
+  batchId          String?
+  fabricCost       Decimal  @default(0)
+  accessoryCost    Decimal  @default(0)
+  packagingCost    Decimal  @default(0)
+  materialsCost    Decimal  @default(0)
+  laborCost        Decimal  @default(0)
+  atelierCost      Decimal  @default(0)
+  productionCost   Decimal  @default(0)
+  adsCost          Decimal  @default(0)
+  shootingCost     Decimal  @default(0)
+  influencerCost   Decimal  @default(0)
+  marketingCost    Decimal  @default(0)
+  transportCost    Decimal  @default(0)
+  otherCost        Decimal  @default(0)
+  returnMargin     Decimal  @default(150)
+  totalCost        Decimal  @default(0)
+  suggestedPrice30 Decimal?
+  suggestedPrice40 Decimal?
+  suggestedPrice50 Decimal?
+  sellingPrice     Decimal?
+  margin           Decimal?
+  marginPercent    Decimal?
+  estimatedUnits   Int      @default(1)
+  isLocked         Boolean  @default(true)
+  notes            String?
+  createdBy        String?
+  createdAt        DateTime @default(now())
+  model            Model    @relation(fields: [modelId], references: [id])
 
   @@index([modelId])
   @@index([batchId])
@@ -620,16 +470,16 @@ model CostSnapshot {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  action      String   // CREATE | UPDATE | DELETE | RECEIVE | ALLOCATE | SNAPSHOT
-  entity      String   // Purchase | Charge | Model | etc.
-  entityId    String
-  userId      String?
-  userEmail   String?
-  before      String?  // JSON
-  after       String?  // JSON
-  metadata    String?  // JSON (IP, user agent, etc.)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  userId    String?
+  userEmail String?
+  before    String?
+  after     String?
+  metadata  String?
+  createdAt DateTime @default(now())
 
   @@index([entity, entityId])
   @@index([action])
@@ -641,16 +491,13 @@ model StockReconciliation {
   id              String    @id @default(cuid())
   reconcileDate   DateTime  @default(now())
   inventoryItemId String
-  
-  expectedQty     Decimal   
-  actualQty       Decimal   
-  variance        Decimal   
-  variancePercent Decimal   
-  varianceValue   Decimal   
-  
-  status          String    @default("PENDING")  // PENDING | REVIEWED | ADJUSTED | IGNORED
-  adjustmentId    String?   // ID transaction si ajusté
-  
+  expectedQty     Decimal
+  actualQty       Decimal
+  variance        Decimal
+  variancePercent Decimal
+  varianceValue   Decimal
+  status          String    @default("PENDING")
+  adjustmentId    String?
   reviewedBy      String?
   reviewedAt      DateTime?
   notes           String?
@@ -661,70 +508,54 @@ model StockReconciliation {
   @@index([reconcileDate])
 }
 
-// =============================================================================
-// PARAMÈTRES
-// =============================================================================
-
 model AccountingSettings {
-  id                    String   @id @default("default")
-  defaultMarginTarget   Decimal  @default(40) 
-  defaultReturnMargin   Decimal  @default(150) 
-  defaultWasteFactor    Decimal  @default(1.05) 
-  lowStockAlertEnabled  Boolean  @default(true)
-  autoReconcileEnabled  Boolean  @default(false)
-  reconcileFrequency    String   @default("DAILY")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                   String   @id @default("default")
+  defaultMarginTarget  Decimal  @default(40)
+  defaultReturnMargin  Decimal  @default(150)
+  defaultWasteFactor   Decimal  @default(1.05)
+  lowStockAlertEnabled Boolean  @default(true)
+  autoReconcileEnabled Boolean  @default(false)
+  reconcileFrequency   String   @default("DAILY")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
-// =============================================================================
-// LOYALTY & WISHLIST
-// =============================================================================
-
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  password      String?
-  phone         String?
-  role          String    @default("USER") // USER | ADMIN
-  birthDate     DateTime?
-  lastBirthdayGrantYear Int? @default(0) // Année de la dernière attribution anniversaire
-
-  // Loyalty
-  loyaltyPoints Int       @default(0)
-  vipLevel      String    @default("SILVER") // SILVER | GOLD | BLACK
-  
-  // Auto-Auth
-  isEmailVerified Boolean @default(false)
-  createdVia      String  @default("MANUAL") // MANUAL | AUTO_EMAIL | OAUTH
-  guestKey        String? // To link previous guest sessions
-  
-  // Relations
-  orders        Order[]
-  wishlist      WishlistItem[]
-  pointHistory  LoyaltyPoint[]
-  magicLinks    MagicLinkToken[]
-  siteSettings  SiteSetting[] @relation("SiteSettingsUpdater")
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                    String           @id @default(cuid())
+  name                  String?
+  email                 String           @unique
+  password              String?
+  phone                 String?
+  role                  String           @default("USER")
+  birthDate             DateTime?
+  lastBirthdayGrantYear Int?             @default(0)
+  loyaltyPoints         Int              @default(0)
+  vipLevel              String           @default("SILVER")
+  isEmailVerified       Boolean          @default(false)
+  createdVia            String           @default("MANUAL")
+  guestKey              String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  pointHistory          LoyaltyPoint[]
+  magicLinks            MagicLinkToken[]
+  orders                Order[]
+  siteSettings          SiteSetting[]    @relation("SiteSettingsUpdater")
+  wishlist              WishlistItem[]
 
   @@index([email])
   @@index([guestKey])
 }
 
 model MagicLinkToken {
-  id          String    @id @default(cuid())
-  tokenHash   String    @unique // Hashed token for security
-  email       String
-  userId      String?
-  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  reference   String?   // Context: "signup", "order_123", "login"
-  expiresAt   DateTime
-  consumedAt  DateTime?
-  createdAt   DateTime  @default(now())
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  email      String
+  userId     String?
+  reference  String?
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([email])
   @@index([tokenHash])
@@ -733,11 +564,11 @@ model MagicLinkToken {
 model LoyaltyPoint {
   id          String   @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount      Int
-  reason      String   // PURCHASE | SIGNUP | BIRTHDAY | REFERRAL | REVIEW | ABANDONED_CART_RECOVERY
+  reason      String
   referenceId String?  @unique
   createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -749,11 +580,10 @@ model LoyaltyReward {
   descriptionFr String?
   descriptionAr String?
   cost          Int
-  type          String   // DISCOUNT_PERCENT | FREE_SHIPPING | FREE_PRODUCT
-  value         Decimal? 
+  type          String
+  value         Decimal?
   productId     String?
   isActive      Boolean  @default(true)
-  
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -761,115 +591,98 @@ model LoyaltyReward {
 model WishlistItem {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@index([userId])
   @@index([productId])
 }
 
-// =============================================================================
-// SITE SETTINGS (Customization)
-// =============================================================================
-
 model SiteSetting {
-  id                  String    @id @default("default")
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  // Hero Section
-  heroImageUrl        String?   // URL hébergée (Cloudinary / CDN)
-  heroImagePublicId   String?   // Pour Cloudinary (delete/rollback)
-  heroMobileImageUrl  String?   // Variante mobile
-  heroMobilePublicId  String?
-  heroAltFr           String?   // Alt FR
-  heroAltAr           String?   // Alt AR
-  heroCaptionFr       String?   // Texte superposé FR
-  heroCaptionAr       String?   // Texte superposé AR
-  heroCtaTextFr       String?   // Bouton CTA FR
-  heroCtaTextAr       String?   // Bouton CTA AR
-  heroCtaUrl          String?   // Lien du bouton
-  heroOverlayOpacity  Float?    @default(0.35) // Overlay 0..1
-  heroPreset          String?   @default("classic") // classic, minimal, glass, centered
-  heroActive          Boolean   @default(true)
-  heroScheduleStart   DateTime? // Programmation début
-  heroScheduleEnd     DateTime? // Programmation fin
-  heroVariant         String?   @default("image") // image, video, carousel
-  heroCarouselItems   String?   // JSON array si carousel
-
-  // Featured Section ("La pièce du moment")
-  featuredImageUrl      String?
-  featuredImagePublicId String?
-  featuredBadgeFr       String?   // Ex: "La Pièce du Moment"
-  featuredBadgeAr       String?
-  featuredTitleFr       String?   // Ex: "L'Ensemble Signature"
-  featuredTitleAr       String?
-  featuredDescFr        String?
-  featuredDescAr        String?
-  featuredCtaUrl        String?
-
-  // About Page
-  aboutImage1Url        String?   // Brand origin section - left image
-  aboutImage2Url        String?   // Brand origin section - right image
-  aboutImage3Url        String?   // Quality section - full image
-  aboutHeroTitle        String?
-  aboutHeroSubtitle     String?
-  aboutStoryTitle       String?
-  aboutStoryP1          String?
-  aboutStoryP2          String?
-  aboutStoryP3          String?
-  aboutQuote            String?
-  aboutQuoteAuthor      String?
-
-  // Promo Settings
-  freeShippingPromoEnabled Boolean @default(false)
-  promoCountdownEnabled    Boolean @default(true)
-
-  // Audit
-  lastUpdatedById     String?
-  lastUpdatedBy       User?     @relation("SiteSettingsUpdater", fields: [lastUpdatedById], references: [id])
+  id                       String    @id @default("default")
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  heroImageUrl             String?
+  heroImagePublicId        String?
+  heroMobileImageUrl       String?
+  heroMobilePublicId       String?
+  heroAltFr                String?
+  heroAltAr                String?
+  heroCaptionFr            String?
+  heroCaptionAr            String?
+  heroCtaTextFr            String?
+  heroCtaTextAr            String?
+  heroCtaUrl               String?
+  heroOverlayOpacity       Float?    @default(0.35)
+  heroPreset               String?   @default("classic")
+  heroActive               Boolean   @default(true)
+  heroScheduleStart        DateTime?
+  heroScheduleEnd          DateTime?
+  heroVariant              String?   @default("image")
+  heroCarouselItems        String?
+  lastUpdatedById          String?
+  featuredBadgeAr          String?
+  featuredBadgeFr          String?
+  featuredCtaUrl           String?
+  featuredDescAr           String?
+  featuredDescFr           String?
+  featuredImagePublicId    String?
+  featuredImageUrl         String?
+  featuredTitleAr          String?
+  featuredTitleFr          String?
+  aboutHeroSubtitle        String?
+  aboutHeroTitle           String?
+  aboutImage1Url           String?
+  aboutImage2Url           String?
+  aboutImage3Url           String?
+  aboutQuote               String?
+  aboutQuoteAuthor         String?
+  aboutStoryP1             String?
+  aboutStoryP2             String?
+  aboutStoryP3             String?
+  aboutStoryTitle          String?
+  homepageCollectionIds    String?   // JSON array of collection IDs for homepage
+  freeShippingPromoEnabled Boolean   @default(false)
+  promoCountdownEnabled    Boolean   @default(true)
+  lastUpdatedBy            User?     @relation("SiteSettingsUpdater", fields: [lastUpdatedById], references: [id])
 }
 
 model SiteSettingHistory {
-  id          String   @id @default(cuid())
-  settingId   String   @default("default")
-  snapshot    String   // JSON snapshot
-  userId      String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  settingId String   @default("default")
+  snapshot  String
+  userId    String?
+  createdAt DateTime @default(now())
 
   @@index([settingId])
   @@index([createdAt])
 }
 
-// =============================================================================
-// BLOG / JOURNAL HARP
-// =============================================================================
-
 model BlogPost {
-  id            String    @id @default(cuid())
-  slug          String    @unique
-  titleFr       String
-  titleAr       String
-  excerptFr     String?
-  excerptAr     String?
-  contentFr     String    // Rich text / HTML
-  contentAr     String
-  coverImage    String?
-  category      String    @default("STYLE") // STYLE | LOOKBOOK | TIPS | NEWS
-  tags          String?   // JSON array
-  authorName    String    @default("L'Équipe Harp")
-  isPublished   Boolean   @default(false)
-  publishedAt   DateTime?
-  seoTitleFr    String?
-  seoTitleAr    String?
-  seoDescFr     String?
-  seoDescAr     String?
-  views         Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  titleFr     String
+  titleAr     String
+  excerptFr   String?
+  excerptAr   String?
+  contentFr   String
+  contentAr   String
+  coverImage  String?
+  category    String    @default("STYLE")
+  tags        String?
+  authorName  String    @default("L'Équipe Harp")
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  seoTitleFr  String?
+  seoTitleAr  String?
+  seoDescFr   String?
+  seoDescAr   String?
+  views       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([slug])
   @@index([isPublished])
@@ -877,15 +690,11 @@ model BlogPost {
   @@index([publishedAt])
 }
 
-// =============================================================================
-// BACK IN STOCK ALERTS
-// =============================================================================
-
 model BackInStockAlert {
   id          String   @id @default(cuid())
   email       String
   productId   String
-  variantInfo String?  // JSON: { size: "M", color: "Noir" }
+  variantInfo String?
   isNotified  Boolean  @default(false)
   createdAt   DateTime @default(now())
 
@@ -894,21 +703,17 @@ model BackInStockAlert {
   @@index([isNotified])
 }
 
-// =============================================================================
-// REFERRAL SYSTEM
-// =============================================================================
-
 model ReferralCode {
-  id              String    @id @default(cuid())
-  code            String    @unique
+  id              String   @id @default(cuid())
+  code            String   @unique
   userId          String
-  discountPercent Int       @default(10)  // -10% for friend
-  rewardPoints    Int       @default(500) // 500 pts for referrer
-  usageCount      Int       @default(0)
-  maxUsage        Int       @default(50)
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  discountPercent Int      @default(10)
+  rewardPoints    Int      @default(500)
+  usageCount      Int      @default(0)
+  maxUsage        Int      @default(50)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([code])
   @@index([userId])

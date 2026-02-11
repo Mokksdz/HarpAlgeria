@@ -40,8 +40,8 @@ function HomeSkeleton() {
 
 // Async data-fetching component
 async function HomeContent() {
-  // Fetch products, collections & site settings in parallel
-  const [products, collections, siteSettings] = await Promise.all([
+  // Fetch products & site settings first
+  const [products, siteSettings] = await Promise.all([
     prisma.product.findMany({
       where: { isActive: true },
       take: 4,
@@ -57,27 +57,51 @@ async function HomeContent() {
         images: true,
       },
     }),
-    prisma.collection.findMany({
-      where: {
-        nameFr: { in: ["Abaya Kimono", "TRENCHS", "Ensembles été"] },
-      },
-      take: 3,
-      orderBy: { nameFr: "asc" },
-      select: {
-        id: true,
-        nameFr: true,
-        nameAr: true,
-        image: true,
-        products: {
-          where: { isActive: true },
-          take: 1,
-          orderBy: { createdAt: "desc" },
-          select: { images: true },
-        },
-      },
-    }),
     getSiteSettings(),
   ]);
+
+  // Parse homepage collection IDs from settings, or fall back to defaults
+  let collectionFilter: Record<string, unknown> = {
+    nameFr: { in: ["Abaya Kimono", "TRENCHS", "Ensembles \u00e9t\u00e9"] },
+  };
+  let savedCollectionIds: string[] = [];
+
+  if (siteSettings?.homepageCollectionIds) {
+    try {
+      savedCollectionIds = JSON.parse(siteSettings.homepageCollectionIds);
+      if (savedCollectionIds.length > 0) {
+        collectionFilter = { id: { in: savedCollectionIds } };
+      }
+    } catch {
+      /* use defaults */
+    }
+  }
+
+  // Fetch collections using dynamic filter
+  const collectionsRaw = await prisma.collection.findMany({
+    where: collectionFilter,
+    take: 6,
+    select: {
+      id: true,
+      nameFr: true,
+      nameAr: true,
+      image: true,
+      products: {
+        where: { isActive: true },
+        take: 1,
+        orderBy: { createdAt: "desc" },
+        select: { images: true },
+      },
+    },
+  });
+
+  // Preserve the order from settings (savedCollectionIds order)
+  const collections =
+    savedCollectionIds.length > 0
+      ? (savedCollectionIds
+          .map((id) => collectionsRaw.find((c) => c.id === id))
+          .filter(Boolean) as typeof collectionsRaw)
+      : collectionsRaw;
 
   // Convert Decimal to number for serialization
   const serializedProducts = products.map((p) => ({
