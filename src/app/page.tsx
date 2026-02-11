@@ -58,6 +58,9 @@ async function HomeContent() {
       },
     }),
     prisma.collection.findMany({
+      where: {
+        nameFr: { in: ["Abaya Kimono", "Blazers", "Trenchs"] },
+      },
       take: 3,
       orderBy: { nameFr: "asc" },
       select: {
