@@ -8,11 +8,13 @@ import {
   MessageCircle,
   CheckCircle,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import { siteConfig, getWhatsAppLink } from "@/lib/config";
 
 export default function ContactPage() {
-  useLanguage();
+  const { t, language } = useLanguage();
+  const isAr = language === "ar";
   const [formState, setFormState] = useState({
     name: "",
     email: "",
@@ -43,39 +45,40 @@ export default function ContactPage() {
       title: "WhatsApp",
       value: siteConfig.whatsapp.display,
       link: getWhatsAppLink(),
-      description: "Réponse rapide",
+      description: t("contact.methods.whatsapp.desc"),
     },
     {
       icon: Mail,
       title: "Email",
       value: "contact@harpalgeria.com",
       link: "mailto:contact@harpalgeria.com",
-      description: "Pour toute question",
+      description: t("contact.methods.email.desc"),
     },
     {
       icon: Instagram,
       title: "Instagram",
       value: "@harp_algeria",
       link: "https://instagram.com/harp_algeria",
-      description: "Suivez nos nouveautés",
+      description: t("contact.methods.instagram.desc"),
     },
   ];
 
+  const ArrowIcon = isAr ? ArrowLeft : ArrowRight;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-harp-cream/30 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-harp-cream/30 to-white" dir={isAr ? "rtl" : "ltr"}>
       {/* Hero Section - Minimalist */}
       <section className="relative pt-32 pb-16 md:pt-40 md:pb-20 bg-harp-sand/30">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-4 block">
-              Contact
+              {t("contact.hero.badge")}
             </span>
             <h1 className="text-4xl md:text-6xl font-serif font-medium text-gray-900 mb-6">
-              Nous sommes à votre écoute.
+              {t("contact.hero.title")}
             </h1>
             <p className="text-lg text-gray-500 leading-relaxed font-light max-w-xl mx-auto">
-              Une question, une suggestion ou simplement envie de dire bonjour ?
-              Notre équipe est là pour vous accompagner.
+              {t("contact.hero.desc")}
             </p>
           </div>
         </div>
@@ -102,11 +105,12 @@ export default function ContactPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-0.5 hover:border-gray-900 transition-colors inline-block mt-2"
+                    dir="ltr"
                   >
                     {method.value}
                   </a>
                 ) : (
-                  <p className="text-sm font-medium text-gray-900 mt-2">
+                  <p className="text-sm font-medium text-gray-900 mt-2" dir="ltr">
                     {method.value}
                   </p>
                 )}
@@ -124,32 +128,30 @@ export default function ContactPage() {
             <div className="lg:col-span-4 lg:col-start-2 space-y-12">
               <div>
                 <h2 className="text-3xl font-serif font-medium text-gray-900 mb-6">
-                  Envoyez-nous un message
+                  {t("contact.form.sendMessage")}
                 </h2>
                 <p className="text-gray-500 font-light leading-relaxed">
-                  Remplissez le formulaire ci-contre et nous vous répondrons
-                  dans les plus brefs délais. Vous pouvez également nous
-                  contacter directement sur WhatsApp pour une réponse immédiate.
+                  {t("contact.form.sendMessageDesc")}
                 </p>
               </div>
 
               <div className="space-y-8">
                 <div>
                   <h4 className="text-sm font-bold uppercase tracking-widest text-gray-900 mb-3">
-                    Horaires Service Client
+                    {t("contact.hours.title")}
                   </h4>
                   <ul className="space-y-2 text-sm text-gray-500 font-light">
-                    <li className="flex justify-between max-w-[200px]">
-                      <span>Dimanche - Jeudi</span>
-                      <span>9h - 18h</span>
+                    <li className="flex justify-between max-w-[240px]">
+                      <span>{t("contact.hours.sunThu")}</span>
+                      <span dir="ltr">9h - 18h</span>
                     </li>
-                    <li className="flex justify-between max-w-[200px]">
-                      <span>Samedi</span>
-                      <span>10h - 16h</span>
+                    <li className="flex justify-between max-w-[240px]">
+                      <span>{t("contact.hours.sat")}</span>
+                      <span dir="ltr">10h - 16h</span>
                     </li>
-                    <li className="flex justify-between max-w-[200px]">
-                      <span>Vendredi</span>
-                      <span>Fermé</span>
+                    <li className="flex justify-between max-w-[240px]">
+                      <span>{t("contact.hours.fri")}</span>
+                      <span>{t("contact.hours.closed")}</span>
                     </li>
                   </ul>
                 </div>
@@ -162,7 +164,7 @@ export default function ContactPage() {
                 >
                   <MessageCircle size={20} />
                   <span className="font-medium text-sm tracking-wide">
-                    Discuter sur WhatsApp
+                    {t("contact.whatsapp.cta")}
                   </span>
                 </a>
               </div>
@@ -176,11 +178,10 @@ export default function ContactPage() {
                     <CheckCircle size={32} />
                   </div>
                   <h4 className="text-2xl font-serif font-medium text-gray-900 mb-2">
-                    Message envoyé !
+                    {t("contact.form.successTitle")}
                   </h4>
                   <p className="text-gray-500 font-light">
-                    Merci de nous avoir contactés. Nous reviendrons vers vous
-                    très vite.
+                    {t("contact.form.successDesc")}
                   </p>
                 </div>
               ) : (
@@ -188,7 +189,7 @@ export default function ContactPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Nom complet
+                        {t("contact.form.nameLabel")}
                       </label>
                       <input
                         type="text"
@@ -198,15 +199,16 @@ export default function ContactPage() {
                           setFormState({ ...formState, name: e.target.value })
                         }
                         className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300"
-                        placeholder="Votre nom"
+                        placeholder={t("contact.form.namePlaceholder")}
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Téléphone
+                        {t("contact.form.phoneLabel")}
                       </label>
                       <input
                         type="tel"
+                        dir="ltr"
                         value={formState.phone}
                         onChange={(e) =>
                           setFormState({ ...formState, phone: e.target.value })
@@ -219,11 +221,12 @@ export default function ContactPage() {
 
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Email
+                      {t("contact.form.emailLabel")}
                     </label>
                     <input
                       type="email"
                       required
+                      dir="ltr"
                       value={formState.email}
                       onChange={(e) =>
                         setFormState({ ...formState, email: e.target.value })
@@ -235,7 +238,7 @@ export default function ContactPage() {
 
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Sujet
+                      {t("contact.form.subjectLabel")}
                     </label>
                     <select
                       value={formState.subject}
@@ -244,18 +247,18 @@ export default function ContactPage() {
                       }
                       className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer"
                     >
-                      <option value="">Sélectionnez un sujet</option>
-                      <option value="question">Question produit</option>
-                      <option value="order">Suivi de commande</option>
-                      <option value="return">Retour & Échange</option>
-                      <option value="collaboration">Partenariat</option>
-                      <option value="other">Autre</option>
+                      <option value="">{t("contact.form.subjectSelect")}</option>
+                      <option value="question">{t("contact.form.subjectProduct")}</option>
+                      <option value="order">{t("contact.form.subjectOrder")}</option>
+                      <option value="return">{t("contact.form.subjectReturn")}</option>
+                      <option value="collaboration">{t("contact.form.subjectPartnership")}</option>
+                      <option value="other">{t("contact.form.subjectOther")}</option>
                     </select>
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Message
+                      {t("contact.form.messageLabel")}
                     </label>
                     <textarea
                       required
@@ -265,7 +268,7 @@ export default function ContactPage() {
                         setFormState({ ...formState, message: e.target.value })
                       }
                       className="w-full bg-transparent border-b border-gray-200 py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors resize-none placeholder:text-gray-300"
-                      placeholder="Comment pouvons-nous vous aider ?"
+                      placeholder={t("contact.form.messagePlaceholder")}
                     />
                   </div>
 
@@ -279,8 +282,8 @@ export default function ContactPage() {
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
                         <>
-                          Envoyer
-                          <ArrowRight size={18} />
+                          {t("contact.form.send")}
+                          <ArrowIcon size={18} />
                         </>
                       )}
                     </button>
