@@ -31,6 +31,10 @@ export const authOptions: NextAuthOptions = {
         const adminPasswordPlain = process.env.ADMIN_PASSWORD;
         const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
+        console.log("[AUTH] email match:", email === adminEmail?.trim().toLowerCase());
+        console.log("[AUTH] has ADMIN_PASSWORD:", !!adminPasswordPlain, "len:", adminPasswordPlain?.length);
+        console.log("[AUTH] has ADMIN_PASSWORD_HASH:", !!adminPasswordHash, "len:", adminPasswordHash?.length);
+
         if (!adminEmail || (!adminPasswordPlain && !adminPasswordHash)) {
           console.error("Admin credentials not configured in environment");
           return null;
@@ -40,12 +44,24 @@ export const authOptions: NextAuthOptions = {
         const isValidEmail = email === adminEmail.trim().toLowerCase();
         if (!isValidEmail) return null;
 
-        // Support both plain text and bcrypt hash
+        // Try all methods: bcrypt hash, plain text, and plain text with backslash cleanup
         let isValidPassword = false;
+
         if (adminPasswordHash) {
-          isValidPassword = await compare(password, adminPasswordHash);
-        } else if (adminPasswordPlain) {
-          isValidPassword = password === adminPasswordPlain.trim();
+          try {
+            const cleanHash = adminPasswordHash.trim();
+            isValidPassword = await compare(password, cleanHash);
+            console.log("[AUTH] bcrypt compare result:", isValidPassword);
+          } catch (e) {
+            console.error("[AUTH] bcrypt compare error:", e);
+          }
+        }
+
+        if (!isValidPassword && adminPasswordPlain) {
+          // Try direct match
+          const cleanPwd = adminPasswordPlain.trim().replace(/\\/g, "");
+          isValidPassword = password === cleanPwd || password === adminPasswordPlain.trim();
+          console.log("[AUTH] plain compare result:", isValidPassword);
         }
 
         if (isValidPassword) {
