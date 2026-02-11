@@ -80,10 +80,14 @@ const VIP_TIERS = [
     icon: Star,
     thresholdFr: "0 pts",
     thresholdAr: "0 نقطة",
-    color: "from-gray-200 to-gray-300",
-    textColor: "text-gray-700",
-    borderColor: "border-gray-300",
-    benefitsFr: ["Accès standard", "Cumul de points sur chaque achat"],
+    headerBg: "bg-gradient-to-br from-[#f5f0eb] to-[#e8e0d8]",
+    headerText: "text-harp-brown",
+    thresholdText: "text-harp-caramel",
+    cardBorder: "border-[#e8e0d8]",
+    iconBg: "bg-harp-brown/10",
+    iconColor: "text-harp-brown",
+    checkColor: "text-harp-caramel",
+    benefitsFr: ["Acc\u00e8s standard", "Cumul de points sur chaque achat"],
     benefitsAr: ["وصول عادي", "تجميع النقاط على كل عملية شراء"],
   },
   {
@@ -91,13 +95,17 @@ const VIP_TIERS = [
     icon: Crown,
     thresholdFr: "50 000 pts",
     thresholdAr: "50,000 نقطة",
-    color: "from-amber-300 to-amber-500",
-    textColor: "text-amber-800",
-    borderColor: "border-amber-400",
+    headerBg: "bg-gradient-to-br from-[#c9a96e] to-[#a07d4a]",
+    headerText: "text-white",
+    thresholdText: "text-white/80",
+    cardBorder: "border-[#c9a96e]/40",
+    iconBg: "bg-white/20",
+    iconColor: "text-white",
+    checkColor: "text-[#a07d4a]",
     benefitsFr: [
       "Multiplicateur x1.2",
       "Livraison gratuite > 5 000 DA",
-      "Accès ventes privées",
+      "Acc\u00e8s ventes priv\u00e9es",
     ],
     benefitsAr: ["مضاعف x1.2", "توصيل مجاني > 5,000 دج", "وصول للعروض الخاصة"],
   },
@@ -106,12 +114,16 @@ const VIP_TIERS = [
     icon: Crown,
     thresholdFr: "150 000 pts",
     thresholdAr: "150,000 نقطة",
-    color: "from-gray-800 to-gray-950",
-    textColor: "text-white",
-    borderColor: "border-gray-700",
+    headerBg: "bg-gradient-to-br from-[#2a2420] to-[#1a1410]",
+    headerText: "text-white",
+    thresholdText: "text-white/70",
+    cardBorder: "border-[#3a3430]",
+    iconBg: "bg-white/10",
+    iconColor: "text-[#c9a96e]",
+    checkColor: "text-harp-brown",
     benefitsFr: [
       "Multiplicateur x1.5",
-      "Livraison gratuite illimitée",
+      "Livraison gratuite illimit\u00e9e",
       "Cadeau surprise",
     ],
     benefitsAr: ["مضاعف x1.5", "توصيل مجاني بدون حد أدنى", "هدية مفاجئة"],
@@ -174,42 +186,47 @@ export function LoyaltySection() {
           <h3 className="text-lg font-semibold text-harp-brown mb-6 text-center">
             {t("home.loyalty.vipTitle")}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {VIP_TIERS.map((tier) => {
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {VIP_TIERS.map((tier, index) => {
               const Icon = tier.icon;
               const benefits = isAr ? tier.benefitsAr : tier.benefitsFr;
               return (
                 <div
                   key={tier.name}
-                  className={`rounded-2xl overflow-hidden border ${tier.borderColor}`}
+                  className={`group relative rounded-2xl overflow-hidden border ${tier.cardBorder} transition-all duration-500 hover:shadow-xl hover:-translate-y-1`}
+                  style={{ animationDelay: `${index * 150}ms` }}
                 >
-                  <div
-                    className={`bg-gradient-to-br ${tier.color} p-5 text-center`}
-                  >
-                    <Icon
-                      size={28}
-                      className={`mx-auto mb-2 ${tier.textColor}`}
-                    />
-                    <h4
-                      className={`text-xl font-serif font-bold ${tier.textColor}`}
-                    >
+                  {/* Header */}
+                  <div className={`${tier.headerBg} px-6 py-8 text-center relative overflow-hidden`}>
+                    {/* Decorative circles */}
+                    <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
+                    <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-white/5" />
+
+                    <div className={`w-12 h-12 mx-auto rounded-full ${tier.iconBg} flex items-center justify-center mb-4 relative`}>
+                      <Icon size={22} className={tier.iconColor} />
+                    </div>
+                    <h4 className={`text-2xl font-serif font-bold ${tier.headerText} tracking-wide`}>
                       {tier.name}
                     </h4>
-                    <p className={`text-sm mt-1 ${tier.textColor} opacity-80`}>
+                    <p className={`text-sm mt-2 ${tier.thresholdText} font-medium tracking-wider uppercase`}>
                       {isAr ? tier.thresholdAr : tier.thresholdFr}
                     </p>
                   </div>
-                  <div className="bg-white p-5">
-                    <ul className="space-y-2">
+
+                  {/* Benefits */}
+                  <div className="bg-white px-6 py-6">
+                    <ul className="space-y-3">
                       {benefits.map((b, j) => (
                         <li
                           key={j}
-                          className="flex items-start gap-2 text-sm text-gray-600"
+                          className="flex items-center gap-3 text-sm text-gray-600"
                         >
-                          <span className="text-harp-caramel mt-0.5 shrink-0">
-                            &#10003;
+                          <span className={`w-5 h-5 rounded-full ${tier.checkColor} bg-current/10 flex items-center justify-center shrink-0`}>
+                            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" className="text-current">
+                              <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
                           </span>
-                          {b}
+                          <span className="font-medium text-gray-700">{b}</span>
                         </li>
                       ))}
                     </ul>
@@ -221,10 +238,10 @@ export function LoyaltySection() {
         </div>
 
         {/* CTA */}
-        <div className="text-center">
+        <div className="text-center mt-12">
           <Link
             href="/loyalty"
-            className="inline-block bg-harp-brown text-white px-8 py-4 text-xs uppercase tracking-[0.2em] hover:bg-harp-caramel transition-colors"
+            className="inline-block bg-harp-brown text-white px-10 py-4 text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-harp-caramel transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
           >
             {t("home.loyalty.cta")}
           </Link>
