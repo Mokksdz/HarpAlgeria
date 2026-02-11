@@ -61,36 +61,22 @@ export function ProductCard({
             alt={name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className={`object-cover ${isOutOfStock ? "opacity-75" : "img-zoom"}`}
+            className="object-cover img-zoom"
             onError={() => setImageError(true)}
           />
-
-          {/* Out of stock badge overlay */}
-          {isOutOfStock && (
-            <div className="absolute inset-0 flex items-center justify-center z-[5]">
-              <span className="bg-gray-900/80 text-white text-xs uppercase tracking-widest px-5 py-2.5 font-bold rounded-full backdrop-blur-sm">
-                Rupture de stock
-              </span>
-            </div>
-          )}
 
           {/* Gradient overlay on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
           {/* Quick View Button */}
           <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-            <span className={`block px-6 py-3 text-xs uppercase tracking-widest font-medium text-center rounded-xl transition-all duration-300 ${isOutOfStock ? "bg-gray-800/80 text-white" : "glass text-harp-brown hover:bg-harp-brown hover:text-white"}`}>
-              {isOutOfStock ? "Rupture de stock" : t("product.card.view")}
+            <span className="block px-6 py-3 text-xs uppercase tracking-widest font-medium text-center rounded-xl transition-all duration-300 glass text-harp-brown hover:bg-harp-brown hover:text-white">
+              {t("product.card.view")}
             </span>
           </div>
 
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {stock !== undefined && stock <= 0 && (
-              <span className="bg-red-500/90 text-white text-[7px] md:text-[8px] uppercase tracking-wider px-1.5 py-0.5 md:px-2 md:py-0.5 font-semibold rounded-full shadow-sm">
-                Rupture de stock
-              </span>
-            )}
             {isNew && (
               <span className="glass text-harp-brown text-[7px] md:text-[8px] uppercase tracking-wider px-1.5 py-0.5 md:px-2 md:py-0.5 font-semibold rounded-full shadow-sm">
                 ✨ {t("shop.badge.new")}

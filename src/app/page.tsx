@@ -59,7 +59,7 @@ async function HomeContent() {
     }),
     prisma.collection.findMany({
       take: 3,
-      orderBy: { createdAt: "desc" },
+      orderBy: { nameFr: "asc" },
       select: {
         id: true,
         nameFr: true,
