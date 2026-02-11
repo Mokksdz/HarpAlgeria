@@ -1,6 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { compare } from "bcryptjs";
 
 // Admin credentials — read lazily at runtime to avoid build-time issues
 function getAdminEmail(): string | undefined {
@@ -28,14 +27,9 @@ export const authOptions: NextAuthOptions = {
 
         // Read env vars at runtime (not build time)
         const adminEmail = getAdminEmail();
-        const adminPasswordPlain = process.env.ADMIN_PASSWORD;
-        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+        const adminPassword = process.env.ADMIN_PASSWORD;
 
-        console.log("[AUTH] email match:", email === adminEmail?.trim().toLowerCase());
-        console.log("[AUTH] has ADMIN_PASSWORD:", !!adminPasswordPlain, "len:", adminPasswordPlain?.length);
-        console.log("[AUTH] has ADMIN_PASSWORD_HASH:", !!adminPasswordHash, "len:", adminPasswordHash?.length);
-
-        if (!adminEmail || (!adminPasswordPlain && !adminPasswordHash)) {
+        if (!adminEmail || !adminPassword) {
           console.error("Admin credentials not configured in environment");
           return null;
         }
@@ -44,25 +38,9 @@ export const authOptions: NextAuthOptions = {
         const isValidEmail = email === adminEmail.trim().toLowerCase();
         if (!isValidEmail) return null;
 
-        // Try all methods: bcrypt hash, plain text, and plain text with backslash cleanup
-        let isValidPassword = false;
-
-        if (adminPasswordHash) {
-          try {
-            const cleanHash = adminPasswordHash.trim();
-            isValidPassword = await compare(password, cleanHash);
-            console.log("[AUTH] bcrypt compare result:", isValidPassword);
-          } catch (e) {
-            console.error("[AUTH] bcrypt compare error:", e);
-          }
-        }
-
-        if (!isValidPassword && adminPasswordPlain) {
-          // Try direct match
-          const cleanPwd = adminPasswordPlain.trim().replace(/\\/g, "");
-          isValidPassword = password === cleanPwd || password === adminPasswordPlain.trim();
-          console.log("[AUTH] plain compare result:", isValidPassword);
-        }
+        // Compare password — strip backslashes that Vercel shell escaping may add
+        const cleanPassword = adminPassword.trim().replace(/\\/g, "");
+        const isValidPassword = password === cleanPassword;
 
         if (isValidPassword) {
           return {
