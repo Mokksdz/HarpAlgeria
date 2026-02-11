@@ -1,12 +1,10 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { compare } from "bcryptjs";
 
 // Admin credentials — read lazily at runtime to avoid build-time issues
 function getAdminEmail(): string | undefined {
   return process.env.ADMIN_EMAIL;
-}
-function getAdminPassword(): string | undefined {
-  return process.env.ADMIN_PASSWORD;
 }
 
 // Validation happens at runtime inside authorize()
@@ -30,18 +28,27 @@ export const authOptions: NextAuthOptions = {
 
         // Read env vars at runtime (not build time)
         const adminEmail = getAdminEmail();
-        const adminPassword = getAdminPassword();
+        const adminPasswordPlain = process.env.ADMIN_PASSWORD;
+        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
-        if (!adminEmail || !adminPassword) {
+        if (!adminEmail || (!adminPasswordPlain && !adminPasswordHash)) {
           console.error("Admin credentials not configured in environment");
           return null;
         }
 
         // Check admin credentials
         const isValidEmail = email === adminEmail.trim().toLowerCase();
-        const isValidPassword = password === adminPassword.trim();
+        if (!isValidEmail) return null;
 
-        if (isValidEmail && isValidPassword) {
+        // Support both plain text and bcrypt hash
+        let isValidPassword = false;
+        if (adminPasswordHash) {
+          isValidPassword = await compare(password, adminPasswordHash);
+        } else if (adminPasswordPlain) {
+          isValidPassword = password === adminPasswordPlain.trim();
+        }
+
+        if (isValidPassword) {
           return {
             id: "admin-1",
             email: email,
