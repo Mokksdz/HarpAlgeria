@@ -32,6 +32,9 @@ const fustat = Fustat({
   display: "swap",
 });
 
+// Meta domain verification (set in .env.local when you configure Meta Business)
+const fbDomainVerification = process.env.NEXT_PUBLIC_FB_DOMAIN_VERIFICATION;
+
 export const metadata: Metadata = {
   title: {
     default: "Harp - Une élégance qui résonne",
@@ -47,14 +50,18 @@ export const metadata: Metadata = {
     "vêtements",
     "harp",
     "algérie",
+    "ملابس نسائية",
+    "أزياء محتشمة",
+    "هارب الجزائر",
   ],
   authors: [{ name: "Harp" }],
   openGraph: {
     title: "Harp - Une élégance qui résonne",
     description: "Prêt-à-porter féminin élégant et modeste.",
-    url: "https://harp-web.com",
+    url: "https://harp-dz.com",
     siteName: "Harp",
     locale: "fr_FR",
+    alternateLocale: "ar_DZ",
     type: "website",
   },
   twitter: {
@@ -72,6 +79,13 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Harp",
   },
+  ...(fbDomainVerification && {
+    verification: {
+      other: {
+        "facebook-domain-verification": fbDomainVerification,
+      },
+    },
+  }),
 };
 
 export default function RootLayout({

@@ -32,6 +32,7 @@ import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/JsonLd";
 import { getActivePrice } from "@/lib/product-utils";
 import { PromoCountdown } from "@/components/PromoCountdown";
 import { BackInStockAlert } from "@/components/BackInStockAlert";
+import { trackEvent } from "@/components/Analytics";
 
 export default function ProductPage({
   params,
@@ -293,6 +294,18 @@ export default function ProductPage({
   const availableStock =
     variantStock !== null ? variantStock : (product?.stock ?? 0);
 
+  // Track ViewContent — fires once when product loads (Meta Pixel + GA4)
+  useEffect(() => {
+    if (!product) return;
+    const { price: activePrice } = getActivePrice(product);
+    trackEvent.fb.viewContent(product.id, product.nameFr, activePrice);
+    trackEvent.ga.viewItem({
+      item_id: product.id,
+      item_name: product.nameFr,
+      price: activePrice,
+    });
+  }, [product]);
+
   // Reset quantity when size/color changes
   useEffect(() => {
     setQuantity(1);
@@ -322,6 +335,11 @@ export default function ProductPage({
       color: selectedColor,
       quantity: quantity,
     });
+
+    // Track AddToCart — Meta Pixel + GA4
+    trackEvent.fb.addToCart(product.id, product.nameFr, activePrice * quantity);
+    trackEvent.ga.addToCart(product.id, product.nameFr, activePrice * quantity);
+
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };

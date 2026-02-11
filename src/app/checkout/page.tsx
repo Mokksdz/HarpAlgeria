@@ -385,6 +385,29 @@ export default function CheckoutPage() {
 
       if (response.ok) {
         const order = await response.json();
+
+        // Track Purchase conversion — CRITICAL for Meta Ads optimization
+        trackEvent.ga.purchase(
+          order.id || "",
+          finalTotal,
+          items.map((item) => ({
+            item_id: item.productId,
+            item_name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+        );
+        trackEvent.fb.purchase(
+          order.id || "",
+          finalTotal,
+          items.map((item) => ({
+            productId: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+        );
+
         clearCart();
         const params = new URLSearchParams({
           id: order.id || "",
