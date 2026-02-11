@@ -18,7 +18,7 @@ export async function GET() {
   try {
     const collections = await prisma.collection.findMany({
       include: { products: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { nameFr: "asc" },
     });
 
     // Add cache headers for public collection listing
