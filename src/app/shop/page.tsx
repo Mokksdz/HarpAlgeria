@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Search,
   Filter,
+  X,
 } from "lucide-react";
 import { cn, safeParseImages } from "@/lib/utils";
 import { trackEvent } from "@/components/Analytics";
@@ -250,8 +251,17 @@ export default function ShopPage() {
                   placeholder="Rechercher..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-[200px] pl-6 pr-0 py-1 bg-transparent border-b border-transparent focus:border-gray-900 text-sm outline-none transition-all placeholder:text-gray-400 text-gray-900"
+                  className="w-[200px] pl-6 pr-6 py-1 bg-transparent border-b border-transparent focus:border-gray-900 text-sm outline-none transition-all placeholder:text-gray-400 text-gray-900"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-900 transition-colors"
+                    aria-label="Effacer la recherche"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
 
               {/* Filters Toggle */}
@@ -313,15 +323,29 @@ export default function ShopPage() {
                 placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-full text-sm outline-none focus:bg-gray-100 transition-colors"
+                className="w-full pl-10 pr-10 py-2 bg-gray-50 rounded-full text-sm outline-none focus:bg-gray-100 transition-colors"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-900 transition-colors"
+                  aria-label="Effacer la recherche"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
           </div>
         </div>
 
         {/* Advanced Filters Panel */}
-        {showFilters && (
-          <div className="bg-white border border-gray-100 rounded-xl p-6 mb-8 animate-fade-in-up">
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out mb-8",
+            showFilters ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0",
+          )}
+        >
+          <div className="bg-white border border-gray-100 rounded-xl p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Size Filter */}
               <div>
@@ -440,7 +464,7 @@ export default function ShopPage() {
               </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* Results Count & Active Filters */}
         <div className="flex items-center justify-between mb-8">

@@ -238,27 +238,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Loyalty: Award points only on non-promo items
+    // Loyalty: Award points only on non-promo items (batch query instead of N+1)
     if (userId) {
       try {
-        // Fetch product details to check promo status
+        const productIds = body.items
+          .map((item: { productId?: string }) => item.productId)
+          .filter(Boolean) as string[];
+
+        // Single batch query for all products
+        const products = productIds.length > 0
+          ? await prisma.product.findMany({
+              where: { id: { in: productIds } },
+              select: { id: true, price: true, promoPrice: true, promoStart: true, promoEnd: true },
+            })
+          : [];
+        const productMap = new Map(products.map((p) => [p.id, p]));
+
         let eligibleAmount = 0;
         for (const item of body.items) {
+          const qty = parseInt(String(item.quantity));
+          const price = parseFloat(String(item.price));
           if (!item.productId) {
-            // No product ID — count full amount
-            eligibleAmount +=
-              parseInt(String(item.quantity)) * parseFloat(String(item.price));
+            eligibleAmount += qty * price;
             continue;
           }
-          const prod = await prisma.product.findUnique({
-            where: { id: item.productId },
-            select: {
-              price: true,
-              promoPrice: true,
-              promoStart: true,
-              promoEnd: true,
-            },
-          });
+          const prod = productMap.get(item.productId);
           if (prod) {
             const { isPromo } = getActivePrice({
               price: Number(prod.price),
@@ -267,9 +271,7 @@ export async function POST(request: NextRequest) {
               promoEnd: prod.promoEnd,
             });
             if (!isPromo) {
-              eligibleAmount +=
-                parseInt(String(item.quantity)) *
-                parseFloat(String(item.price));
+              eligibleAmount += qty * price;
             }
           }
         }

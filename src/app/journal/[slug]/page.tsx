@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
+import DOMPurify from "isomorphic-dompurify";
 import {
   BookOpen,
   Calendar,
@@ -16,7 +17,7 @@ import {
   Twitter,
 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // ISR: revalidate every hour
 
 // =============================================================================
 // Category helpers
@@ -250,7 +251,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 "prose-blockquote:border-harp-caramel prose-blockquote:text-gray-500 prose-blockquote:font-serif prose-blockquote:italic",
                 "prose-strong:text-harp-brown",
               )}
-              dangerouslySetInnerHTML={{ __html: post.contentFr }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.contentFr || "", { ADD_TAGS: ["iframe"], ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling", "target"] }) }}
             />
 
             {/* Tags */}

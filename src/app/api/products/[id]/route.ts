@@ -17,20 +17,13 @@ export async function GET(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // Compute real stock from variants
+    // Compute real stock from variants (read-only — no DB writes on GET)
     if (product.variants && product.variants.length > 0) {
       const realStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-      // Sync product-level stock if out of date
-      if (product.stock !== realStock) {
-        await prisma.product.update({
-          where: { id },
-          data: { stock: realStock },
-        });
-      }
       return NextResponse.json({ ...product, stock: realStock });
     }
 
-    // Product has sizes/colors but NO variants in DB → stock = 0
+    // Product has sizes/colors but NO variants in DB → computed stock = 0
     try {
       const sizes = typeof product.sizes === "string" ? JSON.parse(product.sizes) : product.sizes;
       const colors = typeof product.colors === "string" ? JSON.parse(product.colors) : product.colors;
@@ -38,9 +31,6 @@ export async function GET(
         Array.isArray(sizes) && sizes.length > 0 &&
         Array.isArray(colors) && colors.length > 0
       ) {
-        if (product.stock !== 0) {
-          await prisma.product.update({ where: { id }, data: { stock: 0 } });
-        }
         return NextResponse.json({ ...product, stock: 0 });
       }
     } catch {

@@ -74,8 +74,9 @@ export default withAuth(
                     return !!token;
                 }
                 
-                // Protect order deletion
-                if (path.startsWith("/api/orders") && method === "DELETE") {
+                // Protect order modification and deletion (PATCH, PUT, DELETE = admin only)
+                if (path.startsWith("/api/orders") && (method === "DELETE" || method === "PATCH" || method === "PUT")) {
+                    // Allow POST (order creation) for everyone, protect writes
                     return !!token;
                 }
                 

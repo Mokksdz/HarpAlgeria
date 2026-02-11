@@ -9,6 +9,7 @@ import { Analytics } from "@/components/Analytics";
 import { OrganizationJsonLd } from "@/components/JsonLd";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -81,6 +82,25 @@ export default function RootLayout({
           <ErrorBoundary>
             <LanguageProvider>
               <CartProvider>
+                <Toaster
+                  position="top-center"
+                  toastOptions={{
+                    duration: 3000,
+                    style: {
+                      background: "#1a1a1a",
+                      color: "#fff",
+                      borderRadius: "12px",
+                      fontSize: "14px",
+                      padding: "12px 20px",
+                    },
+                    success: {
+                      iconTheme: { primary: "#22c55e", secondary: "#fff" },
+                    },
+                    error: {
+                      iconTheme: { primary: "#ef4444", secondary: "#fff" },
+                    },
+                  }}
+                />
                 <MainLayout>{children}</MainLayout>
               </CartProvider>
             </LanguageProvider>

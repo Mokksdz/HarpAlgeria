@@ -80,7 +80,15 @@ export function CartDrawer() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end">
+    <div
+      className="fixed inset-0 z-[100] flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("cart.title")}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setIsOpen(false);
+      }}
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/20 backdrop-blur-sm"
@@ -191,6 +199,7 @@ export function CartDrawer() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg">
                         <button
+                          aria-label="Diminuer la quantité"
                           onClick={() =>
                             updateQuantity(item.id, item.quantity - 1)
                           }
@@ -198,10 +207,11 @@ export function CartDrawer() {
                         >
                           <Minus size={12} />
                         </button>
-                        <span className="text-sm w-6 text-center font-medium">
+                        <span aria-live="polite" className="text-sm w-6 text-center font-medium">
                           {item.quantity}
                         </span>
                         <button
+                          aria-label="Augmenter la quantité"
                           onClick={() =>
                             updateQuantity(item.id, item.quantity + 1)
                           }
@@ -211,6 +221,7 @@ export function CartDrawer() {
                         </button>
                       </div>
                       <button
+                        aria-label="Supprimer l'article"
                         onClick={() => removeItem(item.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
                       >

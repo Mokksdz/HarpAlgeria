@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useCart } from "@/components/CartProvider";
 import {
@@ -300,17 +301,15 @@ export default function ProductPage({
   const handleAddToCart = () => {
     if (!product) return;
     if (!selectedSize || !selectedColor) {
-      alert("Veuillez sélectionner une taille et une couleur");
+      toast.error("Veuillez sélectionner une taille et une couleur");
       return;
     }
     if (isOutOfStock) {
-      alert(
-        "Ce produit est en rupture de stock pour cette combinaison taille/couleur.",
-      );
+      toast.error("Rupture de stock pour cette combinaison taille/couleur");
       return;
     }
     if (availableStock > 0 && quantity > availableStock) {
-      alert(`Stock insuffisant. Seulement ${availableStock} disponible(s).`);
+      toast.error(`Stock insuffisant. Seulement ${availableStock} disponible(s).`);
       return;
     }
     const { price: activePrice } = getActivePrice(product);
@@ -515,7 +514,7 @@ export default function ProductPage({
             </div>
 
             {/* Thumbnails */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
               {product.images.map((img: string, idx: number) => (
                 <button
                   key={idx}
@@ -624,7 +623,7 @@ export default function ProductPage({
                       }
                     } else {
                       await navigator.clipboard.writeText(window.location.href);
-                      alert("Lien copié !");
+                      toast.success("Lien copié !");
                     }
                   }}
                 >

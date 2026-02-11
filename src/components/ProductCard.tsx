@@ -52,7 +52,7 @@ export function ProductCard({
   const isOutOfStock = stock !== undefined && stock <= 0;
 
   return (
-    <div className={`group relative card-hover rounded-2xl overflow-hidden bg-white ${isOutOfStock ? "opacity-70" : ""}`}>
+    <div className={`group relative card-hover rounded-2xl overflow-hidden bg-white`}>
       <Link href={`/product/${id}`} className="block h-full">
         {/* Image Container */}
         <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
@@ -61,9 +61,18 @@ export function ProductCard({
             alt={name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className={`object-cover ${isOutOfStock ? "grayscale-[30%]" : "img-zoom"}`}
+            className={`object-cover ${isOutOfStock ? "grayscale-[50%] opacity-60" : "img-zoom"}`}
             onError={() => setImageError(true)}
           />
+
+          {/* Out of stock overlay */}
+          {isOutOfStock && (
+            <div className="absolute inset-0 bg-white/40 flex items-center justify-center z-[5]">
+              <span className="bg-gray-900/85 text-white text-xs uppercase tracking-widest px-5 py-2.5 font-bold rounded-full backdrop-blur-sm">
+                Rupture de stock
+              </span>
+            </div>
+          )}
 
           {/* Gradient overlay on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -127,7 +136,7 @@ export function ProductCard({
         className={`absolute top-4 right-4 p-3 rounded-full shadow-lg transition-all duration-300 z-10 ${
           isWishlisted
             ? "bg-red-50 scale-110"
-            : "glass opacity-0 group-hover:opacity-100"
+            : "glass opacity-100 md:opacity-0 md:group-hover:opacity-100"
         }`}
         aria-label={
           isWishlisted

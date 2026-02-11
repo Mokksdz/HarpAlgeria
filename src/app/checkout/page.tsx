@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useCart } from "@/components/CartProvider";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -55,6 +56,8 @@ export default function CheckoutPage() {
   const [selectedStopDesk, setSelectedStopDesk] = useState<string>("");
   const [loadingStopDesks, setLoadingStopDesks] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [wilayaSearch, setWilayaSearch] = useState("");
+  const [wilayaDropdownOpen, setWilayaDropdownOpen] = useState(false);
 
   // Promo code state
   const [promoCode, setPromoCode] = useState("");
@@ -226,6 +229,39 @@ export default function CheckoutPage() {
     setFormData({ ...formData, [name]: value });
   };
 
+  // Real-time field validation on blur
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const { name, value } = e.target;
+      const errors = { ...formErrors };
+      switch (name) {
+        case "firstName":
+          if (!value.trim()) errors.firstName = "Prénom requis";
+          else delete errors.firstName;
+          break;
+        case "lastName":
+          if (!value.trim()) errors.lastName = "Nom requis";
+          else delete errors.lastName;
+          break;
+        case "phone":
+          if (!formData.phone || formData.phone.length !== 10)
+            errors.phone = "Numéro à 10 chiffres requis (ex: 0550123456)";
+          else if (!formData.phone.startsWith("0"))
+            errors.phone = "Le numéro doit commencer par 0";
+          else delete errors.phone;
+          break;
+        case "wilaya":
+          if (!value) errors.wilaya = "Sélectionnez une wilaya";
+          else delete errors.wilaya;
+          break;
+        default:
+          break;
+      }
+      setFormErrors(errors);
+    },
+    [formErrors, formData.phone],
+  );
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
     if (!formData.firstName.trim()) errors.firstName = "Prénom requis";
@@ -355,11 +391,11 @@ export default function CheckoutPage() {
         const errorData = await response.json().catch(() => null);
         const errorMsg =
           errorData?.error || "Une erreur est survenue. Veuillez réessayer.";
-        alert(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error("Error submitting order:", error);
-      alert("Une erreur est survenue.");
+      toast.error("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setIsSubmitting(false);
     }
@@ -426,6 +462,7 @@ export default function CheckoutPage() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                       className={cn(
                         "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
                         formErrors.firstName
@@ -449,6 +486,7 @@ export default function CheckoutPage() {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
+                      onBlur={handleBlur}
                       className={cn(
                         "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
                         formErrors.lastName
@@ -480,6 +518,7 @@ export default function CheckoutPage() {
                           : ""
                       }
                       onChange={handleChange}
+                      onBlur={handleBlur}
                       className={cn(
                         "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
                         formErrors.phone ? "border-red-400" : "border-gray-200",
@@ -506,25 +545,101 @@ export default function CheckoutPage() {
                     <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
                       Wilaya <span className="text-red-400">*</span>
                     </label>
-                    <select
-                      required
-                      name="wilaya"
-                      value={formData.wilaya}
-                      onChange={handleChange}
-                      className={cn(
-                        "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors cursor-pointer",
-                        formErrors.wilaya
-                          ? "border-red-400"
-                          : "border-gray-200",
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Rechercher une wilaya..."
+                        value={wilayaSearch}
+                        onChange={(e) => {
+                          setWilayaSearch(e.target.value);
+                          setWilayaDropdownOpen(true);
+                          // If clearing, reset wilaya
+                          if (!e.target.value) {
+                            setFormData((prev) => ({ ...prev, wilaya: "" }));
+                          }
+                        }}
+                        onFocus={() => setWilayaDropdownOpen(true)}
+                        onBlur={(e) => {
+                          // Delay to allow click on dropdown item
+                          setTimeout(() => setWilayaDropdownOpen(false), 200);
+                          handleBlur(e as any);
+                        }}
+                        className={cn(
+                          "w-full bg-transparent border-b py-3 text-gray-900 focus:border-gray-900 outline-none transition-colors placeholder:text-gray-300",
+                          formErrors.wilaya
+                            ? "border-red-400"
+                            : "border-gray-200",
+                        )}
+                      />
+                      {formData.wilaya && !wilayaDropdownOpen && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({ ...prev, wilaya: "" }));
+                            setWilayaSearch("");
+                          }}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                        >
+                          <X size={14} />
+                        </button>
                       )}
-                    >
-                      <option value="">Sélectionner</option>
-                      {deliveryRates.map((rate) => (
-                        <option key={rate.wilayaCode} value={rate.wilayaCode}>
-                          {rate.wilayaCode} - {rate.wilayaName}
-                        </option>
-                      ))}
-                    </select>
+                      {wilayaDropdownOpen && (
+                        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                          {deliveryRates
+                            .filter(
+                              (rate) =>
+                                !wilayaSearch ||
+                                rate.wilayaName
+                                  .toLowerCase()
+                                  .includes(wilayaSearch.toLowerCase()) ||
+                                String(rate.wilayaCode).includes(wilayaSearch),
+                            )
+                            .map((rate) => (
+                              <button
+                                key={rate.wilayaCode}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    wilaya: String(rate.wilayaCode),
+                                  }));
+                                  setWilayaSearch(
+                                    `${rate.wilayaCode} - ${rate.wilayaName}`,
+                                  );
+                                  setWilayaDropdownOpen(false);
+                                  // Clear wilaya error
+                                  setFormErrors((prev) => {
+                                    const next = { ...prev };
+                                    delete next.wilaya;
+                                    return next;
+                                  });
+                                }}
+                                className={cn(
+                                  "w-full text-left px-4 py-2.5 text-sm hover:bg-harp-cream/50 transition-colors",
+                                  formData.wilaya ===
+                                    String(rate.wilayaCode) &&
+                                    "bg-harp-cream/30 font-medium text-harp-brown",
+                                )}
+                              >
+                                {rate.wilayaCode} - {rate.wilayaName}
+                              </button>
+                            ))}
+                          {deliveryRates.filter(
+                            (rate) =>
+                              !wilayaSearch ||
+                              rate.wilayaName
+                                .toLowerCase()
+                                .includes(wilayaSearch.toLowerCase()) ||
+                              String(rate.wilayaCode).includes(wilayaSearch),
+                          ).length === 0 && (
+                            <p className="px-4 py-3 text-sm text-gray-400">
+                              Aucune wilaya trouvée
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     {formErrors.wilaya && (
                       <p className="text-xs text-red-500">
                         {formErrors.wilaya}

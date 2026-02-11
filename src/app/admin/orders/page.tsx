@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import {
   ChevronDown,
   ChevronUp,
@@ -56,6 +57,7 @@ export default function AdminOrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [reservingOrderId, setReservingOrderId] = useState<string | null>(null);
   const [shippingOrderId, setShippingOrderId] = useState<string | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/orders?pageSize=100")
@@ -79,6 +81,7 @@ export default function AdminOrdersPage() {
   };
 
   const handleStatusUpdate = async (id: string, newStatus: string) => {
+    setUpdatingOrderId(id);
     try {
       const res = await fetch(`/api/orders/${id}`, {
         method: "PATCH",
@@ -106,28 +109,24 @@ export default function AdminOrdersPage() {
           const message = `✅ Commande confirmée !\n\n📦 Expédition créée sur ${provider}\n🔢 Tracking: ${data.trackingNumber}`;
 
           if (data.label) {
-            const openLabel = confirm(
-              message + "\n\nVoulez-vous ouvrir le bordereau ?",
-            );
-            if (openLabel) {
-              window.open(data.label, "_blank");
-            }
+            toast.success(`${provider}: Tracking ${data.trackingNumber}`, { duration: 5000 });
+            window.open(data.label, "_blank");
           } else {
-            alert(message);
+            toast.success(message.replace(/\n/g, " "), { duration: 4000 });
           }
         } else if (data.shipmentError) {
-          alert(
-            `⚠️ Commande confirmée mais erreur création expédition:\n${data.shipmentError}\n\nVous pouvez créer l'expédition manuellement depuis la page Livraison.`,
-          );
+          toast.error(`Erreur expédition: ${data.shipmentError}`, { duration: 5000 });
         } else if (newStatus === "CONFIRMED") {
-          alert("✅ Commande confirmée !");
+          toast.success("Commande confirmée !");
         }
       } else {
-        alert("Erreur lors de la mise à jour du statut");
+        toast.error("Erreur lors de la mise à jour du statut");
       }
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Erreur lors de la mise à jour du statut");
+      toast.error("Erreur lors de la mise à jour du statut");
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -173,7 +172,7 @@ export default function AdminOrdersPage() {
     }
 
     setSyncingAll(false);
-    alert(`✅ ${ordersWithTracking.length} commande(s) synchronisée(s)`);
+    toast.success(`${ordersWithTracking.length} commande(s) synchronisée(s)`);
   };
 
   const handleReserveStock = async (orderId: string) => {
@@ -197,15 +196,13 @@ export default function AdminOrdersPage() {
               : o,
           ),
         );
-        alert(
-          `✅ Stock réservé avec succès!\n\n${data.reservedItems || 0} matières réservées`,
-        );
+        toast.success(`Stock réservé: ${data.reservedItems || 0} matières réservées`);
       } else {
-        alert(`❌ Erreur: ${data.error}`);
+        toast.error(data.error || "Erreur de réservation");
       }
     } catch (error) {
       console.error("Reserve error:", error);
-      alert("Erreur lors de la réservation du stock");
+      toast.error("Erreur lors de la réservation du stock");
     } finally {
       setReservingOrderId(null);
     }
@@ -232,13 +229,13 @@ export default function AdminOrdersPage() {
               : o,
           ),
         );
-        alert(`✅ Commande expédiée!\n\nStock consommé avec succès.`);
+        toast.success("Commande expédiée ! Stock consommé.");
       } else {
-        alert(`❌ Erreur: ${data.error}`);
+        toast.error(data.error || "Erreur d'expédition");
       }
     } catch (error) {
       console.error("Ship error:", error);
-      alert("Erreur lors de l'expédition");
+      toast.error("Erreur lors de l'expédition");
     } finally {
       setShippingOrderId(null);
     }
@@ -266,13 +263,13 @@ export default function AdminOrdersPage() {
               : o,
           ),
         );
-        alert(`✅ Réservation annulée`);
+        toast.success("Réservation annulée");
       } else {
-        alert(`❌ Erreur: ${data.error}`);
+        toast.error(data.error || "Erreur d'annulation");
       }
     } catch (error) {
       console.error("Cancel reservation error:", error);
-      alert("Erreur lors de l'annulation");
+      toast.error("Erreur lors de l'annulation");
     }
   };
 
@@ -691,6 +688,7 @@ export default function AdminOrdersPage() {
                                 </label>
                                 <select
                                   value={order.status}
+                                  disabled={updatingOrderId === order.id}
                                   onChange={(e) => {
                                     e.stopPropagation();
                                     handleStatusUpdate(
@@ -699,7 +697,10 @@ export default function AdminOrdersPage() {
                                     );
                                   }}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="w-full border border-gray-200 p-2.5 rounded-lg text-sm focus:border-gray-900 outline-none bg-white transition-colors"
+                                  className={cn(
+                                    "w-full border border-gray-200 p-2.5 rounded-lg text-sm focus:border-gray-900 outline-none bg-white transition-colors",
+                                    updatingOrderId === order.id && "opacity-50 cursor-wait",
+                                  )}
                                 >
                                   <option value="PENDING">En attente</option>
                                   <option value="CONFIRMED">Confirmée</option>
