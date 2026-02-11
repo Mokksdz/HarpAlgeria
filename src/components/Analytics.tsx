@@ -1,6 +1,8 @@
 "use client";
 
 import Script from "next/script";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 // Configuration - Update these values with your tracking IDs
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || "";
@@ -57,13 +59,28 @@ export function GoogleAnalytics() {
   );
 }
 
-// NOTE: Facebook Pixel is injected directly in <head> via layout.tsx
-// for reliable server-side rendering. The trackEvent.fb.* functions
-// below still work because they reference window.fbq set by that script.
+// Facebook Pixel PageView tracker for client-side navigations.
+// The pixel is initialized in <head> via layout.tsx (first load).
+// This component fires PageView on every route change in the SPA.
+function FacebookPageView() {
+  const pathname = usePathname();
+  useEffect(() => {
+    const w = getWindow();
+    if (w?.fbq) {
+      w.fbq("track", "PageView");
+    }
+  }, [pathname]);
+  return null;
+}
 
 // Combined Analytics Component
 export function Analytics() {
-  return <GoogleAnalytics />;
+  return (
+    <>
+      <GoogleAnalytics />
+      <FacebookPageView />
+    </>
+  );
 }
 
 // Analytics Event Tracking Functions
