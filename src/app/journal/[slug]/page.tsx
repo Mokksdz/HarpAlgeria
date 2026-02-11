@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 import {
   BookOpen,
   Calendar,
@@ -251,7 +251,16 @@ export default async function BlogPostPage({ params }: PageProps) {
                 "prose-blockquote:border-harp-caramel prose-blockquote:text-gray-500 prose-blockquote:font-serif prose-blockquote:italic",
                 "prose-strong:text-harp-brown",
               )}
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.contentFr || "", { ADD_TAGS: ["iframe"], ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling", "target"] }) }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.contentFr || "", {
+                allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "iframe", "h1", "h2"]),
+                allowedAttributes: {
+                  ...sanitizeHtml.defaults.allowedAttributes,
+                  iframe: ["src", "allow", "allowfullscreen", "frameborder", "scrolling", "width", "height"],
+                  img: ["src", "alt", "width", "height", "loading"],
+                  a: ["href", "target", "rel"],
+                },
+                allowedIframeHostnames: ["www.youtube.com", "youtube.com", "player.vimeo.com"],
+              }) }}
             />
 
             {/* Tags */}
