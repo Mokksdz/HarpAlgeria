@@ -61,14 +61,14 @@ export function ProductCard({
             alt={name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className={`object-cover ${isOutOfStock ? "grayscale-[50%] opacity-60" : "img-zoom"}`}
+            className={`object-cover ${isOutOfStock ? "opacity-75" : "img-zoom"}`}
             onError={() => setImageError(true)}
           />
 
-          {/* Out of stock overlay */}
+          {/* Out of stock badge overlay */}
           {isOutOfStock && (
-            <div className="absolute inset-0 bg-white/40 flex items-center justify-center z-[5]">
-              <span className="bg-gray-900/85 text-white text-xs uppercase tracking-widest px-5 py-2.5 font-bold rounded-full backdrop-blur-sm">
+            <div className="absolute inset-0 flex items-center justify-center z-[5]">
+              <span className="bg-gray-900/80 text-white text-xs uppercase tracking-widest px-5 py-2.5 font-bold rounded-full backdrop-blur-sm">
                 Rupture de stock
               </span>
             </div>

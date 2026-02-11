@@ -84,10 +84,10 @@ export default function ContactPage() {
       {/* Contact Methods Grid */}
       <section className="py-16 md:py-24 border-b border-gray-100">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {contactMethods.map((method, index) => (
-              <div key={index} className="group">
-                <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 text-gray-900 group-hover:bg-gray-900 group-hover:text-white transition-colors">
+              <div key={index} className="group text-center">
+                <div className="mb-4 mx-auto inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 text-gray-900 group-hover:bg-gray-900 group-hover:text-white transition-colors">
                   <method.icon size={20} />
                 </div>
                 <h3 className="font-serif font-medium text-xl text-gray-900 mb-2">
