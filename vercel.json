@@ -3,6 +3,10 @@
     {
       "path": "/api/v3/cron/post-purchase",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/v3/cron/sync-tracking",
+      "schedule": "0 */3 * * *"
     }
   ]
 }

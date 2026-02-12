@@ -3,7 +3,10 @@
  * API Base URL: https://api.zrexpress.app/api/v1
  * Docs: https://docs.zrexpress.app/reference
  * Auth: X-Tenant + X-Api-Key headers
+ * Webhooks: Svix-based signature verification
  */
+
+import { createHmac, timingSafeEqual } from "crypto";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -56,15 +59,44 @@ export interface ZRRate {
   deliveryPrices: { deliveryType: string; price: number }[];
 }
 
+export interface ZRStateHistoryEntry {
+  id?: string;
+  stateName: string;
+  previousStateName?: string;
+  timestamp: string;
+  comment?: string;
+  hubName?: string;
+  deliveryPersonName?: string;
+}
+
+export interface ZRWebhookEndpoint {
+  id: string;
+  url: string;
+  description?: string;
+  eventTypes: string[];
+  headers?: Record<string, string>;
+}
+
+export interface ZRWebhookPayload {
+  eventType: string;
+  data: {
+    parcelId?: string;
+    trackingNumber?: string;
+    newStateId?: string;
+    newStateName?: string;
+    previousStateName?: string;
+    comment?: string;
+    timestamp?: string;
+    [key: string]: any;
+  };
+}
+
 // ── Configuration ──────────────────────────────────────────────────────
 
 const ZR_CONFIG = {
   baseUrl: process.env.ZR_EXPRESS_API_URL || "https://api.zrexpress.app/api/v1",
   tenantId: process.env.ZR_EXPRESS_TENANT_ID || "",
   apiKey: process.env.ZR_EXPRESS_API_KEY || "",
-  // Legacy fallback (old procolis.com credentials)
-  legacyToken: process.env.ZR_EXPRESS_TOKEN || "",
-  legacyKey: process.env.ZR_EXPRESS_KEY || "",
 };
 
 // ── Territory cache (wilaya name → UUID) ───────────────────────────────
@@ -86,7 +118,7 @@ class ZRExpressClient {
 
   private async request<T>(
     endpoint: string,
-    method: "GET" | "POST" | "PATCH" | "DELETE" = "GET",
+    method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
     body?: any,
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
@@ -111,7 +143,6 @@ class ZRExpressClient {
 
       if (!response.ok) {
         console.error(`ZR Express API HTTP ${response.status}:`, text.slice(0, 500));
-        // Try to parse error JSON
         try {
           const errorJson = JSON.parse(text);
           throw new Error(errorJson.detail || errorJson.title || errorJson.message || `HTTP ${response.status}`);
@@ -155,18 +186,12 @@ class ZRExpressClient {
     }
   }
 
-  /**
-   * Resolve a wilaya name or numeric ID to a territory UUID.
-   * Searches the API and caches results.
-   */
   async resolveWilayaId(wilayaNameOrCode: string): Promise<string | null> {
-    // Check cache
     const cacheKey = wilayaNameOrCode.toLowerCase().trim();
     if (territoryCache.has(cacheKey)) {
       return territoryCache.get(cacheKey)!;
     }
 
-    // Try searching by name first
     const searchTerm = WILAYAS.find(
       (w) =>
         w.id === wilayaNameOrCode ||
@@ -176,7 +201,6 @@ class ZRExpressClient {
 
     const results = await this.searchTerritories(searchTerm);
 
-    // Find a city-level territory (wilaya)
     const city = results.find(
       (t) =>
         t.level === "city" &&
@@ -192,9 +216,6 @@ class ZRExpressClient {
     return null;
   }
 
-  /**
-   * Resolve a commune name within a wilaya to a territory UUID.
-   */
   async resolveCommuneId(communeName: string, wilayaName?: string): Promise<string | null> {
     const cacheKey = `commune:${communeName}:${wilayaName || ""}`.toLowerCase();
     if (territoryCache.has(cacheKey)) {
@@ -239,7 +260,7 @@ class ZRExpressClient {
         return {
           success: true,
           parcelId: result.id,
-          tracking: result.id, // parcelId serves as reference until tracking is assigned
+          tracking: result.id,
           message: "Colis créé",
           data: result,
         };
@@ -266,16 +287,15 @@ class ZRExpressClient {
     customerPhone: string;
     customerPhoneB?: string;
     address: string;
-    wilayaId: string;      // Numeric code or name
+    wilayaId: string;
     commune: string;
     total: number;
     products: string;
-    deliveryType: string;  // "HOME", "DOMICILE", "STOP_DESK", "DESK"
+    deliveryType: string;
     externalId?: string;
     notes?: string;
   }): Promise<ZRColisResponse> {
     try {
-      // Resolve territory UUIDs
       const cityId = await this.resolveWilayaId(orderData.wilayaId);
       if (!cityId) {
         return {
@@ -329,13 +349,45 @@ class ZRExpressClient {
     }
   }
 
-  // ── Get Parcel (Tracking) ────────────────────────────────────────────
+  // ── Get Parcel by ID ─────────────────────────────────────────────────
 
-  async getParcel(parcelIdOrTracking: string): Promise<any> {
+  async getParcel(parcelId: string): Promise<any> {
     try {
-      return await this.request(`/parcels/${parcelIdOrTracking}`, "GET");
+      return await this.request(`/parcels/${parcelId}`, "GET");
     } catch {
       return null;
+    }
+  }
+
+  // ── Get Parcel by Tracking Number ────────────────────────────────────
+
+  async getParcelByTracking(trackingNumber: string): Promise<any> {
+    try {
+      return await this.request(`/parcels/tracking/${trackingNumber}`, "GET");
+    } catch {
+      return null;
+    }
+  }
+
+  // ── Get Parcel State History ─────────────────────────────────────────
+
+  async getParcelStateHistory(parcelId: string): Promise<ZRStateHistoryEntry[]> {
+    try {
+      const result = await this.request<any>(`/parcels/${parcelId}/state-history`, "GET");
+      // Normalize response — API may return array directly or wrapped
+      const entries = Array.isArray(result) ? result : result?.items || result?.data || [];
+      return entries.map((e: any) => ({
+        id: e.id,
+        stateName: e.stateName || e.newStateName || e.state?.name || "",
+        previousStateName: e.previousStateName || e.previousState?.name || "",
+        timestamp: e.timestamp || e.createdAt || e.date || "",
+        comment: e.comment || "",
+        hubName: e.hubName || e.hub?.name || e.arrivalHub?.name || "",
+        deliveryPersonName: e.deliveryPersonName || e.deliveryPerson?.name || "",
+      }));
+    } catch (error) {
+      console.error("ZR Express getParcelStateHistory error:", error);
+      return [];
     }
   }
 
@@ -347,6 +399,89 @@ class ZRExpressClient {
       pageSize: 20,
       pageNumber: 1,
     });
+  }
+
+  // ── Get Workflows (all possible states) ──────────────────────────────
+
+  async getWorkflows(): Promise<any> {
+    try {
+      return await this.request("/workflows/search", "POST", {
+        pageSize: 50,
+        pageNumber: 1,
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  // ── Webhook Management ───────────────────────────────────────────────
+
+  async createWebhook(data: {
+    url: string;
+    description?: string;
+    eventTypes?: string[];
+    headers?: Record<string, string>;
+  }): Promise<{ id: string } | null> {
+    try {
+      return await this.request<{ id: string }>("/webhooks/endpoints", "POST", {
+        url: data.url,
+        description: data.description || "Harp e-commerce webhook",
+        eventTypes: data.eventTypes || ["parcel.state.updated"],
+        headers: data.headers || {},
+      });
+    } catch (error) {
+      console.error("ZR Express createWebhook error:", error);
+      return null;
+    }
+  }
+
+  async listWebhooks(): Promise<ZRWebhookEndpoint[]> {
+    try {
+      const result = await this.request<any>("/webhooks/endpoints", "GET");
+      return Array.isArray(result) ? result : result?.items || result?.data || [];
+    } catch {
+      return [];
+    }
+  }
+
+  async getWebhook(id: string): Promise<ZRWebhookEndpoint | null> {
+    try {
+      return await this.request<ZRWebhookEndpoint>(`/webhooks/endpoints/${id}`, "GET");
+    } catch {
+      return null;
+    }
+  }
+
+  async updateWebhook(id: string, data: {
+    url?: string;
+    description?: string;
+    eventTypes?: string[];
+    headers?: Record<string, string>;
+  }): Promise<boolean> {
+    try {
+      await this.request(`/webhooks/endpoints/${id}`, "PUT", data);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async deleteWebhook(id: string): Promise<boolean> {
+    try {
+      await this.request(`/webhooks/endpoints/${id}`, "DELETE");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getWebhookSecret(id: string): Promise<string | null> {
+    try {
+      const result = await this.request<any>(`/webhooks/endpoints/${id}/secret`, "GET");
+      return result?.key || result?.secret || null;
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -361,24 +496,87 @@ export function getZRClient(): ZRExpressClient {
   return zrClient;
 }
 
+// ── Svix Webhook Signature Verification ────────────────────────────────
+
+const SVIX_TOLERANCE_SECONDS = 300; // 5 minutes
+
+export function verifySvixSignature(
+  payload: string,
+  headers: { svixId: string; svixTimestamp: string; svixSignature: string },
+  secret: string,
+): boolean {
+  try {
+    const { svixId, svixTimestamp, svixSignature } = headers;
+
+    // Validate timestamp tolerance (prevent replay attacks)
+    const ts = parseInt(svixTimestamp, 10);
+    const now = Math.floor(Date.now() / 1000);
+    if (Math.abs(now - ts) > SVIX_TOLERANCE_SECONDS) {
+      console.error("Svix webhook: timestamp too old/new", { ts, now });
+      return false;
+    }
+
+    // Secret may be base64 with "whsec_" prefix
+    const secretBytes = Buffer.from(
+      secret.startsWith("whsec_") ? secret.slice(6) : secret,
+      "base64",
+    );
+
+    // Sign: "{svix-id}.{svix-timestamp}.{body}"
+    const signedContent = `${svixId}.${svixTimestamp}.${payload}`;
+    const expectedSig = createHmac("sha256", secretBytes)
+      .update(signedContent)
+      .digest("base64");
+
+    // svix-signature may contain multiple signatures separated by spaces
+    const signatures = svixSignature.split(" ");
+    for (const sig of signatures) {
+      // Each signature is "v1,<base64>"
+      const sigValue = sig.startsWith("v1,") ? sig.slice(3) : sig;
+      const sigBuf = Buffer.from(sigValue, "base64");
+      const expectedBuf = Buffer.from(expectedSig, "base64");
+
+      if (sigBuf.length === expectedBuf.length && timingSafeEqual(sigBuf, expectedBuf)) {
+        return true;
+      }
+    }
+
+    console.error("Svix webhook: signature mismatch");
+    return false;
+  } catch (error) {
+    console.error("Svix webhook verification error:", error);
+    return false;
+  }
+}
+
 // ── Mapper le statut ZR Express vers statut Harp ───────────────────────
 
 export function mapZRStatusToHarpStatus(zrStatus: string): string {
-  const statusMap: Record<string, string> = {
-    "En préparation": "CONFIRMED",
-    "Prêt à expédier": "CONFIRMED",
-    "En cours de ramassage": "CONFIRMED",
-    Ramassé: "SHIPPED",
-    "Au hub": "SHIPPED",
-    "En transit": "SHIPPED",
-    "Reçu à destination": "SHIPPED",
-    "En cours de livraison": "SHIPPED",
-    Livré: "DELIVERED",
-    "Livré (payé)": "DELIVERED",
-    Retourné: "CANCELLED",
-    Annulé: "CANCELLED",
-  };
-  return statusMap[zrStatus] || "PENDING";
+  const statusLower = zrStatus.toLowerCase();
+
+  // Match by keyword for robustness with API state name variations
+  if (statusLower.includes("livré") || statusLower.includes("delivered") || statusLower.includes("payé")) {
+    return "DELIVERED";
+  }
+  if (statusLower.includes("retour") || statusLower.includes("annul") || statusLower.includes("cancel") || statusLower.includes("refus")) {
+    return "CANCELLED";
+  }
+  if (
+    statusLower.includes("transit") ||
+    statusLower.includes("ramass") ||
+    statusLower.includes("hub") ||
+    statusLower.includes("sorti") ||
+    statusLower.includes("livraison") ||
+    statusLower.includes("destination") ||
+    statusLower.includes("expédi")
+  ) {
+    return "SHIPPED";
+  }
+  if (statusLower.includes("préparation") || statusLower.includes("prêt") || statusLower.includes("créé")) {
+    return "CONFIRMED";
+  }
+
+  return "PENDING";
 }
 
 // ── Liste des 69 wilayas d'Algérie ────────────────────────────────────

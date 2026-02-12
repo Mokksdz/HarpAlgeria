@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getYalidineClient } from "@/lib/yalidine";
-import { getZRClient } from "@/lib/zrexpress";
+import { getZRClient, mapZRStatusToHarpStatus } from "@/lib/zrexpress";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/tracking - Get tracking info for a package
@@ -97,34 +97,81 @@ export async function GET(request: NextRequest) {
     ) {
       try {
         const zrClient = getZRClient();
-        const parcel = await zrClient.getParcel(tracking);
+
+        // Try by tracking number first, then by parcel ID
+        const parcel =
+          (await zrClient.getParcelByTracking(tracking)) ||
+          (await zrClient.getParcel(tracking));
 
         if (parcel) {
-          result = {
-            found: true,
-            provider: "ZR Express",
-            tracking: parcel.tracking || parcel.id || tracking,
-            status: parcel.status || parcel.lastStatus || "En cours",
-            customerName: parcel.customer?.name || "",
-            destination: parcel.deliveryAddress?.street || "",
-            history: [
+          const parcelId = parcel.id || tracking;
+          const currentStatus =
+            parcel.state?.name || parcel.stateName || parcel.status || parcel.lastStatus || "En cours";
+          const destination = [
+            parcel.deliveryAddress?.district?.name || parcel.deliveryAddress?.districtName,
+            parcel.deliveryAddress?.city?.name || parcel.deliveryAddress?.cityName,
+          ]
+            .filter(Boolean)
+            .join(", ") || parcel.deliveryAddress?.street || "";
+
+          // Fetch full state history from the API
+          let history: {
+            status: string;
+            date: string;
+            location?: string;
+            completed: boolean;
+            current: boolean;
+          }[] = [];
+
+          try {
+            const stateHistory = await zrClient.getParcelStateHistory(parcelId);
+            if (stateHistory.length > 0) {
+              history = stateHistory.map((entry, index) => ({
+                status: entry.stateName,
+                date: entry.timestamp
+                  ? new Date(entry.timestamp).toLocaleString("fr-FR")
+                  : "",
+                location: entry.hubName || undefined,
+                completed: true,
+                current: index === 0,
+              }));
+            }
+          } catch (e) {
+            console.error("ZR Express state-history error:", e);
+          }
+
+          // Fallback if no history returned
+          if (history.length === 0) {
+            history = [
               {
-                status: parcel.status || parcel.lastStatus || "En cours",
+                status: currentStatus,
                 date: parcel.updatedAt
                   ? new Date(parcel.updatedAt).toLocaleString("fr-FR")
                   : "Maintenant",
                 completed: true,
                 current: true,
               },
-              {
-                status: "Colis créé",
-                date: parcel.createdAt
-                  ? new Date(parcel.createdAt).toLocaleString("fr-FR")
-                  : "",
-                completed: true,
-                current: false,
-              },
-            ],
+              ...(parcel.createdAt
+                ? [
+                    {
+                      status: "Colis cr\u00e9\u00e9",
+                      date: new Date(parcel.createdAt).toLocaleString("fr-FR"),
+                      completed: true,
+                      current: false,
+                    },
+                  ]
+                : []),
+            ];
+          }
+
+          result = {
+            found: true,
+            provider: "ZR Express",
+            tracking: parcel.trackingNumber || parcel.tracking || parcelId,
+            status: currentStatus,
+            customerName: parcel.customer?.name || "",
+            destination,
+            history,
           };
         }
       } catch (e) {
@@ -216,10 +263,14 @@ export async function POST(request: NextRequest) {
     } else if (order.deliveryProvider === "ZR Express") {
       try {
         const zrClient = getZRClient();
-        const parcel = await zrClient.getParcel(order.trackingNumber);
+        // Try by tracking number first, then by parcel ID
+        const parcel =
+          (await zrClient.getParcelByTracking(order.trackingNumber)) ||
+          (await zrClient.getParcel(order.trackingNumber));
 
         if (parcel) {
-          newStatus = parcel.status || parcel.lastStatus || null;
+          newStatus =
+            parcel.state?.name || parcel.stateName || parcel.status || parcel.lastStatus || null;
           updated = !!newStatus;
         }
       } catch (e) {
@@ -228,25 +279,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (updated && newStatus !== order.trackingStatus) {
-      // Map delivery status to order status
-      let orderStatus = order.status;
-      const statusLower = newStatus?.toLowerCase() || "";
-
-      if (statusLower.includes("livré") || statusLower.includes("delivered")) {
-        orderStatus = "DELIVERED";
-      } else if (
-        statusLower.includes("retour") ||
-        statusLower.includes("échec") ||
-        statusLower.includes("annul")
-      ) {
-        orderStatus = "CANCELLED";
-      } else if (
-        statusLower.includes("expédié") ||
-        statusLower.includes("transit") ||
-        statusLower.includes("sorti")
-      ) {
-        orderStatus = "SHIPPED";
-      }
+      const orderStatus = newStatus ? mapZRStatusToHarpStatus(newStatus) : order.status;
 
       await prisma.order.update({
         where: { id: orderId },

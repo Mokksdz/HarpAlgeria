@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
@@ -53,8 +53,11 @@ export default function ShippingPage() {
     yalidine: null,
   });
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [syncingAll, setSyncingAll] = useState(false);
   const [creating, setCreating] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "shipped">("all");
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Vérifier la connexion aux deux services
   const checkConnections = async () => {
@@ -96,16 +99,47 @@ export default function ShippingPage() {
   };
 
   // Charger les commandes
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async (silent = false) => {
     try {
       const res = await fetch("/api/orders?pageSize=100");
       const data = await res.json();
       const ordersList = Array.isArray(data) ? data : data.items || [];
       setOrders(ordersList);
+      setLastRefresh(new Date());
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+    }
+  }, []);
+
+  // Sync all active shipments at once
+  const syncAllTracking = async () => {
+    const activeOrders = orders.filter(
+      (o) => o.trackingNumber && (o.status === "CONFIRMED" || o.status === "SHIPPED"),
+    );
+    if (activeOrders.length === 0) return;
+
+    setSyncingAll(true);
+    try {
+      await Promise.all(
+        activeOrders.map(async (order) => {
+          try {
+            await fetch("/api/tracking", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ orderId: order.id }),
+            });
+          } catch {
+            // Individual errors are ok
+          }
+        }),
+      );
+      await fetchOrders(true);
+    } catch (error) {
+      console.error("Error syncing all:", error);
+    } finally {
+      setSyncingAll(false);
     }
   };
 
@@ -116,7 +150,18 @@ export default function ShippingPage() {
       checkConnections();
     }
     fetchOrders();
-  }, [status]);
+  }, [status, fetchOrders]);
+
+  // Auto-polling every 60 seconds
+  useEffect(() => {
+    pollingRef.current = setInterval(() => {
+      fetchOrders(true);
+    }, 60_000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [fetchOrders]);
 
   // Créer une expédition avec le provider sélectionné
   const createShipment = async (order: Order, provider: DeliveryProvider) => {
@@ -208,51 +253,20 @@ export default function ShippingPage() {
     }
   };
 
-  // Synchroniser le statut (détecte automatiquement le provider)
+  // Synchroniser le statut via le endpoint unifié
   const syncTracking = async (order: Order) => {
     if (!order.trackingNumber) return;
 
     setSyncing(order.id);
     try {
-      const isYalidine =
-        order.deliveryProvider === "Yalidine" ||
-        order.trackingNumber.startsWith("yal-");
-
-      let trackingStatus = "";
-
-      if (isYalidine) {
-        const res = await fetch("/api/shipping/yalidine/track", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            trackingNumbers: [order.trackingNumber],
-          }),
-        });
-        const data = await res.json();
-        if (data.success && data.data?.[0]) {
-          trackingStatus = data.data[0].last_status;
-        }
-      } else {
-        const res = await fetch("/api/shipping/track", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            trackingNumbers: [order.trackingNumber],
-          }),
-        });
-        const data = await res.json();
-        if (data.success && data.data?.[0]) {
-          trackingStatus = data.data[0].Situation;
-        }
-      }
-
-      if (trackingStatus) {
-        await fetch(`/api/orders/${order.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ trackingStatus }),
-        });
-        fetchOrders();
+      const res = await fetch("/api/tracking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchOrders(true);
       }
     } catch (error) {
       console.error("Error syncing:", error);
@@ -270,7 +284,7 @@ export default function ShippingPage() {
     if (isYalidine) {
       return `https://yalidine.app/track/${order.trackingNumber}`;
     }
-    return `https://procolis.com/suivi/${order.trackingNumber}`;
+    return `https://zrexpress.com/suivi/${order.trackingNumber}`;
   };
 
   // Helper pour obtenir l'ID de wilaya
@@ -330,13 +344,29 @@ export default function ShippingPage() {
               Gestion des Livraisons
             </h1>
           </div>
-          <p className="text-gray-500 text-sm">
-            Gérez vos expéditions via Yalidine et ZR Express
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-gray-500 text-sm">
+              Gérez vos expéditions via Yalidine et ZR Express
+            </p>
+            {lastRefresh && (
+              <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                Maj {lastRefresh.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Connection Status - Both Providers */}
-        <div className="flex gap-3">
+        {/* Connection Status + Sync All */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={syncAllTracking}
+            disabled={syncingAll}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-full hover:bg-gray-50 disabled:opacity-50 transition-all"
+            title="Synchroniser tous les statuts"
+          >
+            <RefreshCw size={12} className={syncingAll ? "animate-spin" : ""} />
+            {syncingAll ? "Sync..." : "Sync tout"}
+          </button>
           {/* Yalidine Status */}
           <div
             className={cn(
