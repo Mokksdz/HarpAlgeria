@@ -291,7 +291,7 @@ export default function ShippingPage() {
 
       const data = await res.json();
 
-      if (data.success) {
+      if (data.success && data.tracking) {
         await fetch(`/api/orders/${order.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -316,7 +316,7 @@ export default function ShippingPage() {
           );
         }
       } else {
-        alert("❌ Erreur: " + (data.error || "Échec de création"));
+        alert("❌ Erreur: " + (data.error || data.message || "Échec de création — pas de tracking reçu"));
       }
     } catch (error) {
       console.error("Error creating shipment:", error);
@@ -351,13 +351,8 @@ export default function ShippingPage() {
   // Obtenir le lien de suivi selon le provider
   const getTrackingUrl = (order: Order): string => {
     if (!order.trackingNumber) return "#";
-    const isYalidine =
-      order.deliveryProvider === "Yalidine" ||
-      order.trackingNumber.startsWith("yal-");
-    if (isYalidine) {
-      return `https://yalidine.app/track/${order.trackingNumber}`;
-    }
-    return `https://zrexpress.com/suivi/${order.trackingNumber}`;
+    // Use internal tracking page — external URLs (yalidine.app, zrexpress.com) require form-based lookups
+    return `https://www.harpalgeria.com/suivi?tracking=${order.trackingNumber}`;
   };
 
   // Helper pour obtenir l'ID de wilaya

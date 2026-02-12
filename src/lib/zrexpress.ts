@@ -510,13 +510,31 @@ class ZRExpressClient {
         parcel,
       );
 
-      console.log("ZR Express createParcel response:", JSON.stringify(result));
+      console.log("[ZR] createParcel POST response:", JSON.stringify(result));
 
       if (result?.id) {
+        // POST /parcels only returns { id }, the real trackingNumber is set server-side.
+        // We MUST GET the parcel to retrieve the actual tracking number (e.g. "16-CN5YF1VIVA-ZR")
+        let trackingNumber = result.id; // fallback to UUID if GET fails
+        try {
+          const parcelData = await this.request<{ id: string; trackingNumber?: string }>(
+            `/parcels/${result.id}`,
+            "GET",
+          );
+          if (parcelData?.trackingNumber) {
+            trackingNumber = parcelData.trackingNumber;
+            console.log(`[ZR] Real tracking number: ${trackingNumber} (parcelId: ${result.id})`);
+          } else {
+            console.warn(`[ZR] GET parcel returned no trackingNumber, using UUID: ${result.id}`);
+          }
+        } catch (getError) {
+          console.warn(`[ZR] Failed to GET parcel after creation, using UUID: ${result.id}`, getError);
+        }
+
         return {
           success: true,
           parcelId: result.id,
-          tracking: result.id,
+          tracking: trackingNumber,
           message: "Colis créé",
           data: result,
         };
@@ -528,7 +546,7 @@ class ZRExpressClient {
         data: result,
       };
     } catch (error: any) {
-      console.error("ZR Express createParcel error:", error);
+      console.error("[ZR] createParcel error:", error);
       return {
         success: false,
         message: error?.message || "Erreur création colis ZR Express",
