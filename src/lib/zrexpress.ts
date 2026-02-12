@@ -104,6 +104,13 @@ const ZR_CONFIG = {
   apiKey: (process.env.ZR_EXPRESS_API_KEY || "").trim(),
 };
 
+// ── Helpers ─────────────────────────────────────────────────────────────
+
+/** Strip diacritics/accents: "Béchar" → "Bechar", "Béjaïa" → "Bejaia" */
+function stripDiacritics(str: string): string {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 // ── Caches ──────────────────────────────────────────────────────────────
 
 const territoryCache = new Map<string, string>();
@@ -212,55 +219,54 @@ class ZRExpressClient {
         w.name_ar === wilayaNameOrCode,
     );
     const searchTerm = wilayaEntry?.name || wilayaNameOrCode;
+    // ZR Express API may store names without diacritics ("Bechar" not "Béchar")
+    const searchTermNoDiacritics = stripDiacritics(searchTerm);
 
-    console.log(`[ZR] resolveWilayaId("${wilayaNameOrCode}") → searchTerm: "${searchTerm}" (entry: ${wilayaEntry ? wilayaEntry.name : "none"})`);
+    console.log(`[ZR] resolveWilayaId("${wilayaNameOrCode}") → searchTerm: "${searchTerm}" / "${searchTermNoDiacritics}" (entry: ${wilayaEntry ? wilayaEntry.name : "none"})`);
 
     // Helper to find best wilaya/city match from results
     // ZR Express API uses "wilaya"/"commune" levels (not "city"/"district")
     const isWilayaLevel = (t: ZRTerritory) => t.level === "wilaya" || t.level === "city";
+    const matchesName = (name: string) => {
+      const n = stripDiacritics(name).toLowerCase();
+      const s = searchTermNoDiacritics.toLowerCase();
+      return n === s || n.includes(s);
+    };
     const findCity = (results: ZRTerritory[]): ZRTerritory | undefined =>
-      results.find(
-        (t) =>
-          isWilayaLevel(t) &&
-          t.name.toLowerCase() === searchTerm.toLowerCase(),
-      ) ||
-      results.find(
-        (t) =>
-          isWilayaLevel(t) &&
-          t.name.toLowerCase().includes(searchTerm.toLowerCase()),
-      ) ||
+      // Exact match (diacritics-insensitive)
+      results.find((t) => isWilayaLevel(t) && stripDiacritics(t.name).toLowerCase() === searchTermNoDiacritics.toLowerCase()) ||
+      // Partial match (diacritics-insensitive)
+      results.find((t) => isWilayaLevel(t) && matchesName(t.name)) ||
+      // Any wilaya-level result
       results.find((t) => isWilayaLevel(t));
 
-    // 1. Try searching by wilaya name
+    // 1. Try searching by wilaya name (with diacritics)
     let results = await this.searchTerritories(searchTerm);
     let city = findCity(results);
 
-    // 2. If no result, try with the Arabic name as fallback
+    // 2. If no result, try searching WITHOUT diacritics ("Béchar" → "Bechar")
+    if (!city && searchTerm !== searchTermNoDiacritics) {
+      results = await this.searchTerritories(searchTermNoDiacritics);
+      city = findCity(results);
+    }
+
+    // 3. If no result, try with the Arabic name as fallback
     if (!city && wilayaEntry?.name_ar) {
       results = await this.searchTerritories(wilayaEntry.name_ar);
       city = findCity(results);
     }
 
-    // 3. If still no result and we have a numeric code, try searching with "Wilaya" prefix or code
-    if (!city && wilayaEntry) {
-      // Try with code as search term (some APIs index by postal/wilaya code)
-      results = await this.searchTerritories(wilayaEntry.id);
-      city = findCity(results);
-    }
-
-    // 4. Last resort: try includeUnavailable=true
+    // 4. Last resort: try includeUnavailable=true (with no-diacritics term)
     if (!city) {
       try {
         const result = await this.request<{ items: ZRTerritory[] }>(
           "/territories/search",
           "POST",
-          { keyword: searchTerm, pageSize: 50, pageNumber: 1, includeUnavailable: true },
+          { keyword: searchTermNoDiacritics, pageSize: 50, pageNumber: 1, includeUnavailable: true },
         );
         const items = result.items || [];
-        console.log(`[ZR] resolveWilayaId fallback (includeUnavailable) for "${searchTerm}" → ${items.length} results`);
-        city = items.find(
-          (t) => (t.level === "wilaya" || t.level === "city") && t.name.toLowerCase().includes(searchTerm.toLowerCase()),
-        ) || items.find((t) => t.level === "wilaya" || t.level === "city");
+        console.log(`[ZR] resolveWilayaId fallback (includeUnavailable) for "${searchTermNoDiacritics}" → ${items.length} results`);
+        city = findCity(items);
       } catch (error) {
         console.error(`[ZR] resolveWilayaId fallback search failed:`, error);
       }
@@ -272,7 +278,7 @@ class ZRExpressClient {
       return city.id;
     }
 
-    console.error(`[ZR] Could not resolve wilaya: "${wilayaNameOrCode}" (searched: "${searchTerm}", entry: ${JSON.stringify(wilayaEntry)})`);
+    console.error(`[ZR] Could not resolve wilaya: "${wilayaNameOrCode}" (searched: "${searchTerm}" / "${searchTermNoDiacritics}", entry: ${JSON.stringify(wilayaEntry)})`);
     return null;
   }
 
@@ -282,9 +288,20 @@ class ZRExpressClient {
       return territoryCache.get(cacheKey)!;
     }
 
-    const results = await this.searchTerritories(communeName);
-    // ZR Express API uses "commune" level (not "district")
-    const district = results.find((t) => t.level === "commune" || t.level === "district");
+    const isCommuneLevel = (t: ZRTerritory) => t.level === "commune" || t.level === "district";
+
+    // Try with original name
+    let results = await this.searchTerritories(communeName);
+    let district = results.find((t) => isCommuneLevel(t));
+
+    // Try without diacritics if needed ("Béjaïa" → "Bejaia")
+    if (!district) {
+      const noDiacritics = stripDiacritics(communeName);
+      if (noDiacritics !== communeName) {
+        results = await this.searchTerritories(noDiacritics);
+        district = results.find((t) => isCommuneLevel(t));
+      }
+    }
 
     if (district) {
       territoryCache.set(cacheKey, district.id);
