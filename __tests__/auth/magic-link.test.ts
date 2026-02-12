@@ -1,22 +1,24 @@
-import { createOrGetUserByEmail, issueMagicLink, verifyMagicLink } from "@/lib/auth/auto-email.service";
+import { createOrGetUserByEmail, issueMagicLink } from "@/lib/auth/auto-email.service";
 import { prisma } from "@/lib/prisma";
 
-// Mock prisma and other deps would be ideal, but for this deliverable I'll provide a structure 
-// that *would* run if configured with a test DB or mocks.
-// Since I cannot easily set up the full Jest environment in this turn without potentially breaking things or taking long,
-// I will provide the test file content.
+// Mock the email sending to avoid needing RESEND_API_KEY in tests
+jest.mock("@/lib/email/magic-link", () => ({
+  sendMagicLinkEmail: jest.fn().mockResolvedValue(undefined),
+}));
 
 describe("Auto Email Auth Service", () => {
   const testEmail = `test-${Date.now()}@example.com`;
-  let token: string;
 
   beforeAll(async () => {
     // Cleanup
+    await prisma.magicLinkToken.deleteMany({ where: { email: testEmail } });
     await prisma.user.deleteMany({ where: { email: testEmail } });
   });
 
   afterAll(async () => {
+    await prisma.magicLinkToken.deleteMany({ where: { email: testEmail } });
     await prisma.user.deleteMany({ where: { email: testEmail } });
+    await prisma.$disconnect();
   });
 
   it("should create a user", async () => {
@@ -30,9 +32,6 @@ describe("Auto Email Auth Service", () => {
     const result = await issueMagicLink(testEmail);
     expect(result.sent).toBe(true);
     expect(result.expiresAt).toBeDefined();
-    
-    // We can't easily capture the token from the function return unless we modify it to return the token for testing
-    // or spy on sendMagicLinkEmail.
-    // For the sake of this test, we'll assume we can verify if we had the token.
+    expect(result.expiresAt).toBeInstanceOf(Date);
   });
 });

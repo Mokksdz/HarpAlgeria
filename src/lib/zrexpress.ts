@@ -44,7 +44,7 @@ export interface ZRTerritory {
   code: number;
   name: string;
   postalCode?: string;
-  level: "city" | "district";
+  level: "wilaya" | "commune" | "city" | "district";
   parentId?: string;
   delivery?: {
     hasHomeDelivery: boolean;
@@ -206,19 +206,21 @@ class ZRExpressClient {
 
     console.log(`[ZR] resolveWilayaId("${wilayaNameOrCode}") → searchTerm: "${searchTerm}" (entry: ${wilayaEntry ? wilayaEntry.name : "none"})`);
 
-    // Helper to find best city match from results
+    // Helper to find best wilaya/city match from results
+    // ZR Express API uses "wilaya"/"commune" levels (not "city"/"district")
+    const isWilayaLevel = (t: ZRTerritory) => t.level === "wilaya" || t.level === "city";
     const findCity = (results: ZRTerritory[]): ZRTerritory | undefined =>
       results.find(
         (t) =>
-          t.level === "city" &&
+          isWilayaLevel(t) &&
           t.name.toLowerCase() === searchTerm.toLowerCase(),
       ) ||
       results.find(
         (t) =>
-          t.level === "city" &&
+          isWilayaLevel(t) &&
           t.name.toLowerCase().includes(searchTerm.toLowerCase()),
       ) ||
-      results.find((t) => t.level === "city");
+      results.find((t) => isWilayaLevel(t));
 
     // 1. Try searching by wilaya name
     let results = await this.searchTerritories(searchTerm);
@@ -248,8 +250,8 @@ class ZRExpressClient {
         const items = result.items || [];
         console.log(`[ZR] resolveWilayaId fallback (includeUnavailable) for "${searchTerm}" → ${items.length} results`);
         city = items.find(
-          (t) => t.level === "city" && t.name.toLowerCase().includes(searchTerm.toLowerCase()),
-        ) || items.find((t) => t.level === "city");
+          (t) => (t.level === "wilaya" || t.level === "city") && t.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        ) || items.find((t) => t.level === "wilaya" || t.level === "city");
       } catch (error) {
         console.error(`[ZR] resolveWilayaId fallback search failed:`, error);
       }
@@ -272,7 +274,8 @@ class ZRExpressClient {
     }
 
     const results = await this.searchTerritories(communeName);
-    const district = results.find((t) => t.level === "district");
+    // ZR Express API uses "commune" level (not "district")
+    const district = results.find((t) => t.level === "commune" || t.level === "district");
 
     if (district) {
       territoryCache.set(cacheKey, district.id);

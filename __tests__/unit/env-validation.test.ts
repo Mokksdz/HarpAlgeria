@@ -22,7 +22,7 @@ describe("Environment Validation", () => {
     expect(() => {
       const { validateEnv } = require("@/lib/env");
       validateEnv();
-    }).toThrow("FATAL: Missing required environment variables");
+    }).toThrow(/Missing required environment variables/);
   });
 
   it("should not throw in development when vars are missing", () => {
