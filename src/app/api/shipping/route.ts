@@ -66,6 +66,21 @@ export async function POST(request: NextRequest) {
 
     const client = getZRClient();
 
+    // Validate required fields before calling ZR Express
+    if (!orderData.customerName || !orderData.customerPhone || !orderData.address) {
+      return NextResponse.json(
+        { success: false, error: "Champs obligatoires manquants: nom, téléphone, adresse" },
+        { status: 400 },
+      );
+    }
+
+    console.log("Creating ZR Express shipment for order:", orderId, {
+      wilayaId: orderData.wilayaId,
+      commune: orderData.commune,
+      deliveryType: orderData.deliveryType,
+      total: orderData.total,
+    });
+
     // Créer le colis ZR Express (nouvelle API)
     const result = await client.createShipment({
       customerName: orderData.customerName,
@@ -73,7 +88,7 @@ export async function POST(request: NextRequest) {
       customerPhoneB: orderData.customerPhoneB || "",
       address: orderData.address,
       wilayaId: orderData.wilayaId || "16",
-      commune: orderData.commune,
+      commune: orderData.commune || "",
       total: parseFloat(orderData.total) || 0,
       products: orderData.products || "Articles Harp",
       deliveryType: orderData.deliveryType || "HOME",
@@ -82,6 +97,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
+      console.error("ZR Express shipment creation failed for order:", orderId, result.message, result.data);
       return NextResponse.json(
         { success: false, error: result.message || "Échec création colis ZR Express", data: result.data },
         { status: 400 },

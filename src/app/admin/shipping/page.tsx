@@ -23,6 +23,79 @@ import { cn } from "@/lib/utils";
 
 type DeliveryProvider = "zrexpress" | "yalidine";
 
+// Full list of 69 Algerian wilayas (mirrors WILAYAS in zrexpress.ts)
+const WILAYAS_LIST = [
+  { id: "1", name: "Adrar", name_ar: "أدرار" },
+  { id: "2", name: "Chlef", name_ar: "الشلف" },
+  { id: "3", name: "Laghouat", name_ar: "الأغواط" },
+  { id: "4", name: "Oum El Bouaghi", name_ar: "أم البواقي" },
+  { id: "5", name: "Batna", name_ar: "باتنة" },
+  { id: "6", name: "Béjaïa", name_ar: "بجاية" },
+  { id: "7", name: "Biskra", name_ar: "بسكرة" },
+  { id: "8", name: "Béchar", name_ar: "بشار" },
+  { id: "9", name: "Blida", name_ar: "البليدة" },
+  { id: "10", name: "Bouira", name_ar: "البويرة" },
+  { id: "11", name: "Tamanrasset", name_ar: "تمنراست" },
+  { id: "12", name: "Tébessa", name_ar: "تبسة" },
+  { id: "13", name: "Tlemcen", name_ar: "تلمسان" },
+  { id: "14", name: "Tiaret", name_ar: "تيارت" },
+  { id: "15", name: "Tizi Ouzou", name_ar: "تيزي وزو" },
+  { id: "16", name: "Alger", name_ar: "الجزائر" },
+  { id: "17", name: "Djelfa", name_ar: "الجلفة" },
+  { id: "18", name: "Jijel", name_ar: "جيجل" },
+  { id: "19", name: "Sétif", name_ar: "سطيف" },
+  { id: "20", name: "Saïda", name_ar: "سعيدة" },
+  { id: "21", name: "Skikda", name_ar: "سكيكدة" },
+  { id: "22", name: "Sidi Bel Abbès", name_ar: "سيدي بلعباس" },
+  { id: "23", name: "Annaba", name_ar: "عنابة" },
+  { id: "24", name: "Guelma", name_ar: "قالمة" },
+  { id: "25", name: "Constantine", name_ar: "قسنطينة" },
+  { id: "26", name: "Médéa", name_ar: "المدية" },
+  { id: "27", name: "Mostaganem", name_ar: "مستغانم" },
+  { id: "28", name: "M'Sila", name_ar: "المسيلة" },
+  { id: "29", name: "Mascara", name_ar: "معسكر" },
+  { id: "30", name: "Ouargla", name_ar: "ورقلة" },
+  { id: "31", name: "Oran", name_ar: "وهران" },
+  { id: "32", name: "El Bayadh", name_ar: "البيض" },
+  { id: "33", name: "Illizi", name_ar: "إليزي" },
+  { id: "34", name: "Bordj Bou Arreridj", name_ar: "برج بوعريريج" },
+  { id: "35", name: "Boumerdès", name_ar: "بومرداس" },
+  { id: "36", name: "El Tarf", name_ar: "الطارف" },
+  { id: "37", name: "Tindouf", name_ar: "تندوف" },
+  { id: "38", name: "Tissemsilt", name_ar: "تيسمسيلت" },
+  { id: "39", name: "El Oued", name_ar: "الوادي" },
+  { id: "40", name: "Khenchela", name_ar: "خنشلة" },
+  { id: "41", name: "Souk Ahras", name_ar: "سوق أهراس" },
+  { id: "42", name: "Tipaza", name_ar: "تيبازة" },
+  { id: "43", name: "Mila", name_ar: "ميلة" },
+  { id: "44", name: "Aïn Defla", name_ar: "عين الدفلى" },
+  { id: "45", name: "Naâma", name_ar: "النعامة" },
+  { id: "46", name: "Aïn Témouchent", name_ar: "عين تموشنت" },
+  { id: "47", name: "Ghardaïa", name_ar: "غرداية" },
+  { id: "48", name: "Relizane", name_ar: "غليزان" },
+  { id: "49", name: "El M'Ghair", name_ar: "المغير" },
+  { id: "50", name: "El Meniaa", name_ar: "المنيعة" },
+  { id: "51", name: "Ouled Djellal", name_ar: "أولاد جلال" },
+  { id: "52", name: "Bordj Baji Mokhtar", name_ar: "برج باجي مختار" },
+  { id: "53", name: "Béni Abbès", name_ar: "بني عباس" },
+  { id: "54", name: "Timimoun", name_ar: "تيميمون" },
+  { id: "55", name: "Touggourt", name_ar: "تقرت" },
+  { id: "56", name: "Djanet", name_ar: "جانت" },
+  { id: "57", name: "In Salah", name_ar: "عين صالح" },
+  { id: "58", name: "In Guezzam", name_ar: "عين قزام" },
+  { id: "59", name: "Aflou", name_ar: "أفلو" },
+  { id: "60", name: "Barika", name_ar: "بريكة" },
+  { id: "61", name: "Ksar Chellala", name_ar: "قصر الشلالة" },
+  { id: "62", name: "Messaad", name_ar: "مسعد" },
+  { id: "63", name: "Aïn Oussara", name_ar: "عين وسارة" },
+  { id: "64", name: "Bou Saâda", name_ar: "بوسعادة" },
+  { id: "65", name: "El Abiodh Sidi Cheikh", name_ar: "الأبيض سيدي الشيخ" },
+  { id: "66", name: "El Kantara", name_ar: "القنطرة" },
+  { id: "67", name: "Bir El Ater", name_ar: "بئر العاتر" },
+  { id: "68", name: "Ksar El Boukhari", name_ar: "قصر البخاري" },
+  { id: "69", name: "El Aricha", name_ar: "العريشة" },
+];
+
 interface Order {
   id: string;
   customerName: string;
@@ -289,17 +362,20 @@ export default function ShippingPage() {
 
   // Helper pour obtenir l'ID de wilaya
   const getWilayaId = (wilayaName: string): string => {
-    const wilayas: Record<string, string> = {
-      alger: "16",
-      oran: "31",
-      constantine: "25",
-      blida: "9",
-      sétif: "19",
-      annaba: "23",
-      batna: "5",
-      "tizi ouzou": "15",
-    };
-    return wilayas[wilayaName.toLowerCase()] || "16";
+    if (!wilayaName) return "16";
+    const name = wilayaName.toLowerCase().trim();
+
+    // Try exact match on name first, then partial match
+    const match = WILAYAS_LIST.find(
+      (w) =>
+        w.name.toLowerCase() === name ||
+        w.id === name ||
+        w.name_ar === wilayaName,
+    ) || WILAYAS_LIST.find(
+      (w) => w.name.toLowerCase().includes(name) || name.includes(w.name.toLowerCase()),
+    );
+
+    return match?.id || wilayaName;
   };
 
   const filteredOrders = orders.filter((order) => {
