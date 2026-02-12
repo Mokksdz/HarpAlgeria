@@ -18,7 +18,7 @@ export interface ZRCreateParcel {
   };
   deliveryAddress: {
     cityTerritoryId: string;      // UUID wilaya
-    districtTerritoryId?: string;  // UUID commune
+    districtTerritoryId: string;   // UUID commune — required by API
     street: string;
   };
   orderedProducts: {
@@ -30,6 +30,7 @@ export interface ZRCreateParcel {
     stockType: "local" | "warehouse" | "none";
   }[];
   deliveryType: "home" | "pickup-point";
+  hubId?: string;                 // UUID — required for pickup-point delivery
   description: string;            // Required by API
   amount: number;
   externalId?: string;
@@ -377,6 +378,54 @@ class ZRExpressClient {
     return { productId: result.id, productSku: DEFAULT_PRODUCT_SKU };
   }
 
+  // ── Hub / Pickup Point Management ────────────────────────────────────
+
+  async searchHubs(keyword: string, cityTerritoryId?: string): Promise<{ id: string; name: string; isPickupPoint: boolean }[]> {
+    try {
+      const body: Record<string, unknown> = { keyword, pageSize: 20, pageNumber: 1 };
+      const result = await this.request<{ items: { id: string; name: string; isPickupPoint: boolean; address?: { cityTerritoryId?: string } }[] }>(
+        "/hubs/search",
+        "POST",
+        body,
+      );
+      let hubs = result.items || [];
+      // Filter by city if provided
+      if (cityTerritoryId) {
+        const filtered = hubs.filter((h) => h.address?.cityTerritoryId === cityTerritoryId);
+        if (filtered.length > 0) hubs = filtered;
+      }
+      console.log(`[ZR] searchHubs("${keyword}") → ${hubs.length} results`);
+      return hubs;
+    } catch (error) {
+      console.error(`[ZR] searchHubs("${keyword}") FAILED:`, error);
+      return [];
+    }
+  }
+
+  async resolveHubId(communeName: string, cityTerritoryId: string): Promise<string | null> {
+    // Try searching by commune name
+    const hubs = await this.searchHubs(communeName, cityTerritoryId);
+    const pickupHub = hubs.find((h) => h.isPickupPoint) || hubs[0];
+    if (pickupHub) {
+      console.log(`[ZR] Resolved hub for "${communeName}" → "${pickupHub.name}" (${pickupHub.id})`);
+      return pickupHub.id;
+    }
+
+    // Fallback: search by wilaya name
+    const wilayaEntry = WILAYAS.find((w) => w.id === cityTerritoryId);
+    if (wilayaEntry) {
+      const fallbackHubs = await this.searchHubs(wilayaEntry.name);
+      const fallbackHub = fallbackHubs.find((h) => h.isPickupPoint) || fallbackHubs[0];
+      if (fallbackHub) {
+        console.log(`[ZR] Resolved hub via wilaya fallback for "${communeName}" → "${fallbackHub.name}" (${fallbackHub.id})`);
+        return fallbackHub.id;
+      }
+    }
+
+    console.error(`[ZR] Could not resolve hub for commune "${communeName}"`);
+    return null;
+  }
+
   // ── Parcel Creation ──────────────────────────────────────────────────
 
   async createParcel(parcel: ZRCreateParcel): Promise<ZRColisResponse> {
@@ -455,8 +504,31 @@ class ZRExpressClient {
         };
       }
 
-      const districtId = await this.resolveCommuneId(orderData.commune, orderData.wilayaId);
-      console.log(`[ZR] Resolved territory: wilaya "${orderData.wilayaId}" → ${cityId}, commune "${orderData.commune}" → ${districtId || "(non trouvée)"}`);
+      // Resolve commune — required by ZR Express API
+      let districtId = await this.resolveCommuneId(orderData.commune, orderData.wilayaId);
+
+      // If commune not found and commune name matches wilaya, try the wilaya's main commune
+      if (!districtId) {
+        // Search for the first commune in this wilaya (e.g. "Alger Centre" for Alger)
+        const wilayaEntry = WILAYAS.find((w) => w.id === orderData.wilayaId || w.name.toLowerCase() === orderData.wilayaId.toLowerCase());
+        if (wilayaEntry) {
+          const fallbackResults = await this.searchTerritories(wilayaEntry.name);
+          const fallbackCommune = fallbackResults.find((t) => t.level === "commune" || t.level === "district");
+          if (fallbackCommune) {
+            districtId = fallbackCommune.id;
+            console.log(`[ZR] Commune fallback: "${orderData.commune}" → "${fallbackCommune.name}" (${fallbackCommune.id})`);
+          }
+        }
+      }
+
+      if (!districtId) {
+        return {
+          success: false,
+          message: `Commune non trouvée dans ZR Express: "${orderData.commune}". La commune est requise pour la livraison.`,
+        };
+      }
+
+      console.log(`[ZR] Resolved territory: wilaya "${orderData.wilayaId}" → ${cityId}, commune "${orderData.commune}" → ${districtId}`);
 
       // 2. Format & validate phone
       const rawPhone = orderData.customerPhone.replace(/\s/g, "");
@@ -474,13 +546,25 @@ class ZRExpressClient {
       // 4. Get or create default product
       const { productId, productSku } = await this.getOrCreateDefaultProduct();
 
-      // 5. Determine delivery type
+      // 5. Determine delivery type & resolve hub for pickup-point
       const deliveryType: "home" | "pickup-point" =
         orderData.deliveryType === "STOP_DESK" ||
         orderData.deliveryType === "DESK" ||
         orderData.deliveryType === "pickup-point"
           ? "pickup-point"
           : "home";
+
+      let hubId: string | undefined;
+      if (deliveryType === "pickup-point") {
+        const resolvedHub = await this.resolveHubId(orderData.commune, cityId);
+        if (!resolvedHub) {
+          return {
+            success: false,
+            message: `Point relais non trouvé dans ZR Express pour "${orderData.commune}". Vérifiez qu'un hub existe dans cette zone.`,
+          };
+        }
+        hubId = resolvedHub;
+      }
 
       // 6. Build parcel
       const parcel: ZRCreateParcel = {
@@ -496,9 +580,10 @@ class ZRExpressClient {
         },
         deliveryAddress: {
           cityTerritoryId: cityId,
-          districtTerritoryId: districtId || undefined,
+          districtTerritoryId: districtId,
           street: orderData.address,
         },
+        hubId,
         orderedProducts: [
           {
             productId,
