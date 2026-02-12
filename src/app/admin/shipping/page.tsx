@@ -694,6 +694,8 @@ export default function ShippingPage() {
                                   order.deliveryProvider === "ZR Express" || order.deliveryProvider === "zrexpress"
                                     ? "zrexpress"
                                     : "yalidine";
+                                const providerLabel = provider === "zrexpress" ? "ZR Express" : "Yalidine";
+                                if (!confirm(`Expédier la commande #${order.id.slice(0, 8)} via ${providerLabel} ?\n\n${order.customerName} — ${order.customerCity}, ${order.customerWilaya}\nTotal: ${order.total} DA`)) return;
                                 createShipment(order, provider);
                               }}
                               disabled={creating === order.id}
