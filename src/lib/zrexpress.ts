@@ -94,9 +94,9 @@ export interface ZRWebhookPayload {
 // ── Configuration ──────────────────────────────────────────────────────
 
 const ZR_CONFIG = {
-  baseUrl: process.env.ZR_EXPRESS_API_URL || "https://api.zrexpress.app/api/v1",
-  tenantId: process.env.ZR_EXPRESS_TENANT_ID || "",
-  apiKey: process.env.ZR_EXPRESS_API_KEY || "",
+  baseUrl: (process.env.ZR_EXPRESS_API_URL || "https://api.zrexpress.app/api/v1").trim(),
+  tenantId: (process.env.ZR_EXPRESS_TENANT_ID || "").trim(),
+  apiKey: (process.env.ZR_EXPRESS_API_KEY || "").trim(),
 };
 
 // ── Territory cache (wilaya name → UUID) ───────────────────────────────
@@ -180,8 +180,11 @@ class ZRExpressClient {
         "POST",
         { keyword, pageSize: 50, pageNumber: 1, includeUnavailable: false },
       );
-      return result.items || [];
-    } catch {
+      const items = result.items || [];
+      console.log(`[ZR] searchTerritories("${keyword}") → ${items.length} results`, items.map(t => `${t.name} (${t.level})`).slice(0, 10));
+      return items;
+    } catch (error) {
+      console.error(`[ZR] searchTerritories("${keyword}") FAILED:`, error);
       return [];
     }
   }
@@ -201,35 +204,64 @@ class ZRExpressClient {
     );
     const searchTerm = wilayaEntry?.name || wilayaNameOrCode;
 
-    // Try searching by wilaya name
+    console.log(`[ZR] resolveWilayaId("${wilayaNameOrCode}") → searchTerm: "${searchTerm}" (entry: ${wilayaEntry ? wilayaEntry.name : "none"})`);
+
+    // Helper to find best city match from results
+    const findCity = (results: ZRTerritory[]): ZRTerritory | undefined =>
+      results.find(
+        (t) =>
+          t.level === "city" &&
+          t.name.toLowerCase() === searchTerm.toLowerCase(),
+      ) ||
+      results.find(
+        (t) =>
+          t.level === "city" &&
+          t.name.toLowerCase().includes(searchTerm.toLowerCase()),
+      ) ||
+      results.find((t) => t.level === "city");
+
+    // 1. Try searching by wilaya name
     let results = await this.searchTerritories(searchTerm);
+    let city = findCity(results);
 
-    // Exact match on name first, then any city-level result
-    let city = results.find(
-      (t) =>
-        t.level === "city" &&
-        t.name.toLowerCase() === searchTerm.toLowerCase(),
-    ) ||
-    results.find(
-      (t) =>
-        t.level === "city" &&
-        t.name.toLowerCase().includes(searchTerm.toLowerCase()),
-    ) ||
-    results.find((t) => t.level === "city");
-
-    // If no result, try with the Arabic name as fallback
+    // 2. If no result, try with the Arabic name as fallback
     if (!city && wilayaEntry?.name_ar) {
       results = await this.searchTerritories(wilayaEntry.name_ar);
-      city = results.find((t) => t.level === "city");
+      city = findCity(results);
+    }
+
+    // 3. If still no result and we have a numeric code, try searching with "Wilaya" prefix or code
+    if (!city && wilayaEntry) {
+      // Try with code as search term (some APIs index by postal/wilaya code)
+      results = await this.searchTerritories(wilayaEntry.id);
+      city = findCity(results);
+    }
+
+    // 4. Last resort: try includeUnavailable=true
+    if (!city) {
+      try {
+        const result = await this.request<{ items: ZRTerritory[] }>(
+          "/territories/search",
+          "POST",
+          { keyword: searchTerm, pageSize: 50, pageNumber: 1, includeUnavailable: true },
+        );
+        const items = result.items || [];
+        console.log(`[ZR] resolveWilayaId fallback (includeUnavailable) for "${searchTerm}" → ${items.length} results`);
+        city = items.find(
+          (t) => t.level === "city" && t.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        ) || items.find((t) => t.level === "city");
+      } catch (error) {
+        console.error(`[ZR] resolveWilayaId fallback search failed:`, error);
+      }
     }
 
     if (city) {
       territoryCache.set(cacheKey, city.id);
-      console.log(`Resolved wilaya "${wilayaNameOrCode}" → "${city.name}" (${city.id})`);
+      console.log(`[ZR] Resolved wilaya "${wilayaNameOrCode}" → "${city.name}" (${city.id})`);
       return city.id;
     }
 
-    console.error(`Could not resolve wilaya: "${wilayaNameOrCode}" (searched: "${searchTerm}")`);
+    console.error(`[ZR] Could not resolve wilaya: "${wilayaNameOrCode}" (searched: "${searchTerm}", entry: ${JSON.stringify(wilayaEntry)})`);
     return null;
   }
 
