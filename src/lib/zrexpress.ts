@@ -192,27 +192,44 @@ class ZRExpressClient {
       return territoryCache.get(cacheKey)!;
     }
 
-    const searchTerm = WILAYAS.find(
+    // Look up the wilaya name from our list (handles numeric codes like "16" → "Alger")
+    const wilayaEntry = WILAYAS.find(
       (w) =>
         w.id === wilayaNameOrCode ||
         w.name.toLowerCase() === cacheKey ||
         w.name_ar === wilayaNameOrCode,
-    )?.name || wilayaNameOrCode;
+    );
+    const searchTerm = wilayaEntry?.name || wilayaNameOrCode;
 
-    const results = await this.searchTerritories(searchTerm);
+    // Try searching by wilaya name
+    let results = await this.searchTerritories(searchTerm);
 
-    const city = results.find(
+    // Exact match on name first, then any city-level result
+    let city = results.find(
       (t) =>
         t.level === "city" &&
-        (t.name.toLowerCase() === searchTerm.toLowerCase() ||
-          t.code === parseInt(wilayaNameOrCode)),
-    ) || results.find((t) => t.level === "city");
+        t.name.toLowerCase() === searchTerm.toLowerCase(),
+    ) ||
+    results.find(
+      (t) =>
+        t.level === "city" &&
+        t.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    ) ||
+    results.find((t) => t.level === "city");
+
+    // If no result, try with the Arabic name as fallback
+    if (!city && wilayaEntry?.name_ar) {
+      results = await this.searchTerritories(wilayaEntry.name_ar);
+      city = results.find((t) => t.level === "city");
+    }
 
     if (city) {
       territoryCache.set(cacheKey, city.id);
+      console.log(`Resolved wilaya "${wilayaNameOrCode}" → "${city.name}" (${city.id})`);
       return city.id;
     }
 
+    console.error(`Could not resolve wilaya: "${wilayaNameOrCode}" (searched: "${searchTerm}")`);
     return null;
   }
 
