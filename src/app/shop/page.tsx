@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductGridSkeleton } from "@/components/Skeleton";
@@ -18,6 +18,15 @@ import { trackEvent } from "@/components/Analytics";
 import { getActivePrice } from "@/lib/product-utils";
 
 type SortOption = "newest" | "price-asc" | "price-desc" | "name";
+
+// Desired display order for collection filters (case-insensitive keyword match on nameFr)
+const COLLECTION_ORDER = [
+  "abaya",
+  "trench",
+  "veste ambre",
+  "blazer",
+  "gilet",
+];
 
 export default function ShopPage() {
   const { t, language } = useLanguage();
@@ -77,6 +86,26 @@ export default function ShopPage() {
 
     fetchData();
   }, []);
+
+  // Filter collections with stock and sort by desired order
+  const orderedCollections = useMemo(() => {
+    // Only keep collections that have at least 1 product in stock
+    const withStock = collections.filter((c: any) =>
+      c.products?.some((p: any) => p.stock > 0),
+    );
+
+    return withStock.sort((a: any, b: any) => {
+      const aIdx = COLLECTION_ORDER.findIndex((kw) =>
+        a.nameFr.toLowerCase().includes(kw),
+      );
+      const bIdx = COLLECTION_ORDER.findIndex((kw) =>
+        b.nameFr.toLowerCase().includes(kw),
+      );
+      const aPriority = aIdx === -1 ? 999 : aIdx;
+      const bPriority = bIdx === -1 ? 999 : bIdx;
+      return aPriority - bPriority;
+    });
+  }, [collections]);
 
   // Extract unique sizes and colors from all products
   const allSizes = [
@@ -152,9 +181,9 @@ export default function ShopPage() {
     );
   });
 
-  // Build collection order map (collections already sorted by nameFr asc from API)
+  // Build collection order map (using orderedCollections priority)
   const collectionOrder = new Map<string, number>();
-  collections.forEach((c, i) => collectionOrder.set(c.id, i));
+  orderedCollections.forEach((c: any, i: number) => collectionOrder.set(c.id, i));
 
   // Sort products
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -229,7 +258,7 @@ export default function ShopPage() {
               >
                 Tous
               </button>
-              {collections.map((collection) => (
+              {orderedCollections.map((collection: any) => (
                 <button
                   key={collection.id}
                   onClick={() => setActiveCollection(collection.id)}
