@@ -313,15 +313,18 @@ class ZRExpressClient {
     notes?: string;
   }): Promise<ZRColisResponse> {
     try {
+      console.log("[ZR] createShipment input:", JSON.stringify(orderData));
+
       const cityId = await this.resolveWilayaId(orderData.wilayaId);
       if (!cityId) {
         return {
           success: false,
-          message: `Wilaya non trouvée: ${orderData.wilayaId}`,
+          message: `Wilaya non trouvée dans ZR Express: "${orderData.wilayaId}". Vérifiez que la wilaya existe dans votre compte ZR Express.`,
         };
       }
 
       const districtId = await this.resolveCommuneId(orderData.commune, orderData.wilayaId);
+      console.log(`[ZR] Resolved territory: wilaya "${orderData.wilayaId}" → ${cityId}, commune "${orderData.commune}" → ${districtId || "(non trouvée)"}`);
 
       const deliveryType: "home" | "pickup-point" =
         orderData.deliveryType === "STOP_DESK" ||
@@ -330,11 +333,19 @@ class ZRExpressClient {
           ? "pickup-point"
           : "home";
 
+      const phone1 = orderData.customerPhone.replace(/\s/g, "");
+      if (!phone1 || phone1.length < 9) {
+        return {
+          success: false,
+          message: `Numéro de téléphone invalide: "${phone1}". Minimum 9 chiffres requis.`,
+        };
+      }
+
       const parcel: ZRCreateParcel = {
         customer: {
           name: orderData.customerName,
           phone: {
-            number1: orderData.customerPhone.replace(/\s/g, ""),
+            number1: phone1,
             number2: orderData.customerPhoneB || undefined,
           },
         },
@@ -355,6 +366,8 @@ class ZRExpressClient {
         amount: orderData.total,
         externalId: orderData.externalId,
       };
+
+      console.log("[ZR] Parcel payload:", JSON.stringify(parcel));
 
       return await this.createParcel(parcel);
     } catch (error: any) {
