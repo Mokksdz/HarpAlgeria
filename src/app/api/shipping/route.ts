@@ -70,7 +70,10 @@ export async function POST(request: NextRequest) {
     const missing: string[] = [];
     if (!orderData.customerName) missing.push("nom");
     if (!orderData.customerPhone) missing.push("téléphone");
-    if (!orderData.address) missing.push("adresse");
+    // Address: use commune + wilaya as fallback for existing orders with empty address
+    const resolvedAddress = orderData.address?.trim()
+      || [orderData.commune, orderData.wilayaId].filter(Boolean).join(", ")
+      || "N/A";
     if (missing.length > 0) {
       console.error("[SHIPPING] Missing fields:", missing, "orderData:", JSON.stringify(orderData));
       return NextResponse.json(
@@ -79,13 +82,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log("[SHIPPING] Resolved address:", resolvedAddress, "(original:", orderData.address, ")");
+
     const client = getZRClient();
 
     const result = await client.createShipment({
       customerName: orderData.customerName,
       customerPhone: orderData.customerPhone,
       customerPhoneB: orderData.customerPhoneB || "",
-      address: orderData.address,
+      address: resolvedAddress,
       wilayaId: orderData.wilayaId || "16",
       commune: orderData.commune || "",
       total: parseFloat(orderData.total) || 0,

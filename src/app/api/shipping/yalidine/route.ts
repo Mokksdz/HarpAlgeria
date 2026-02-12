@@ -94,6 +94,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate required fields
+    const missing: string[] = [];
+    if (!orderData.customerName) missing.push("nom");
+    if (!orderData.customerPhone) missing.push("téléphone");
+    if (missing.length > 0) {
+      console.error("[YALIDINE] Missing fields:", missing, "orderData:", JSON.stringify(orderData));
+      return NextResponse.json(
+        { success: false, error: `Champs obligatoires manquants: ${missing.join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    // Address: use commune + wilaya as fallback for existing orders with empty address
+    const resolvedAddress = orderData.address?.trim()
+      || [orderData.commune, orderData.wilaya].filter(Boolean).join(", ")
+      || "N/A";
+    console.log("[YALIDINE] Resolved address:", resolvedAddress, "(original:", orderData.address, ")");
+
     const client = getYalidineClient();
 
     // Convertir en format Yalidine
@@ -102,7 +120,7 @@ export async function POST(request: NextRequest) {
         id: orderId,
         customerName: orderData.customerName,
         customerPhone: orderData.customerPhone,
-        address: orderData.address,
+        address: resolvedAddress,
         wilaya: orderData.wilaya,
         commune: orderData.commune,
         total: parseFloat(orderData.total) || 0,

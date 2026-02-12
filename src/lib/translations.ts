@@ -250,6 +250,7 @@ export const translations = {
     "checkout.errorPhoneStart": "Le numéro doit commencer par 0",
     "checkout.errorWilaya": "Sélectionnez une wilaya",
     "checkout.errorCommune": "Sélectionnez une commune",
+    "checkout.errorAddress": "L'adresse est obligatoire pour la livraison à domicile",
     "checkout.errorStopDesk": "Sélectionnez un point de retrait",
 
     // Product
@@ -649,6 +650,7 @@ export const translations = {
     "checkout.errorPhoneStart": "يجب أن يبدأ الرقم بـ 0",
     "checkout.errorWilaya": "اختر ولاية",
     "checkout.errorCommune": "اختر بلدية",
+    "checkout.errorAddress": "العنوان مطلوب للتوصيل إلى المنزل",
     "checkout.errorStopDesk": "اختر نقطة استلام",
 
     // Product

@@ -257,7 +257,7 @@ export default function ShippingPage() {
           orderData: {
             customerName: order.customerName,
             customerPhone: order.customerPhone,
-            address: order.customerAddress,
+            address: order.customerAddress || order.customerCity || "N/A",
             commune: order.customerCity,
             wilaya: order.customerWilaya,
             total: order.total,
@@ -273,7 +273,7 @@ export default function ShippingPage() {
           orderData: {
             customerName: order.customerName,
             customerPhone: order.customerPhone,
-            address: order.customerAddress,
+            address: order.customerAddress || order.customerCity || "N/A",
             commune: order.customerCity,
             wilayaId: getWilayaId(order.customerWilaya),
             total: order.total,

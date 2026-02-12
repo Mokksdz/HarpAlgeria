@@ -278,6 +278,8 @@ export default function CheckoutPage() {
     if (!formData.wilaya) errors.wilaya = t("checkout.errorWilaya");
     if (deliveryType === "HOME" && !formData.city)
       errors.city = t("checkout.errorCommune");
+    if (deliveryType === "HOME" && !formData.address.trim())
+      errors.address = t("checkout.errorAddress");
     if (deliveryType === "DESK" && !selectedStopDesk)
       errors.stopDesk = t("checkout.errorStopDesk");
     setFormErrors(errors);
@@ -892,8 +894,8 @@ export default function CheckoutPage() {
                     <div className="space-y-2 animate-fade-in">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
                         {t("checkout.address")}{" "}
-                        <span className="text-gray-400 normal-case tracking-normal font-normal">
-                          {t("checkout.addressOptional")}
+                        <span className="text-red-400 normal-case tracking-normal font-normal">
+                          *
                         </span>
                       </label>
                       <input
