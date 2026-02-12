@@ -163,14 +163,6 @@ export function validateOrder(data: any): ValidationResult {
     errors.push("Un numéro de téléphone valide est requis");
   }
 
-  if (
-    !data.customerAddress ||
-    typeof data.customerAddress !== "string" ||
-    data.customerAddress.trim().length < 5
-  ) {
-    errors.push("L'adresse est requise (min 5 caractères)");
-  }
-
   if (!data.customerCity || typeof data.customerCity !== "string") {
     errors.push("La ville est requise");
   }
