@@ -12,6 +12,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 
 export interface ZRCreateParcel {
   customer: {
+    customerId: string;           // UUID — created via /customers/individual
     name: string;
     phone: { number1: string; number2?: string };
   };
@@ -21,12 +22,15 @@ export interface ZRCreateParcel {
     street: string;
   };
   orderedProducts: {
+    productId: string;            // UUID — created via /products
+    productSku: string;
     productName: string;
     unitPrice: number;
     quantity: number;
+    stockType: "local" | "warehouse" | "none";
   }[];
   deliveryType: "home" | "pickup-point";
-  description?: string;
+  description: string;            // Required by API
   amount: number;
   externalId?: string;
 }
@@ -99,9 +103,13 @@ const ZR_CONFIG = {
   apiKey: (process.env.ZR_EXPRESS_API_KEY || "").trim(),
 };
 
-// ── Territory cache (wilaya name → UUID) ───────────────────────────────
+// ── Caches ──────────────────────────────────────────────────────────────
 
 const territoryCache = new Map<string, string>();
+const customerCache = new Map<string, string>();   // phone → customerId
+let defaultProductId: string | null = null;
+const DEFAULT_PRODUCT_SKU = "HARP-GENERAL";
+const DEFAULT_PRODUCT_NAME = "Articles Harp";
 
 // ── Client API ─────────────────────────────────────────────────────────
 
@@ -296,6 +304,79 @@ class ZRExpressClient {
     }
   }
 
+  // ── Customer Management ─────────────────────────────────────────────
+
+  async getOrCreateCustomer(name: string, phone: string): Promise<string> {
+    // Check cache first
+    if (customerCache.has(phone)) {
+      return customerCache.get(phone)!;
+    }
+
+    // Search existing customers by phone
+    try {
+      const result = await this.request<{ items: { id: string; phone: { number1: string } }[] }>(
+        "/customers/search",
+        "POST",
+        { keyword: phone.replace("+213", "0"), pageSize: 10, pageNumber: 1 },
+      );
+      const existing = (result.items || []).find(
+        (c) => c.phone?.number1 === phone || c.phone?.number1 === phone.replace("+213", "0"),
+      );
+      if (existing) {
+        customerCache.set(phone, existing.id);
+        console.log(`[ZR] Found existing customer "${name}" → ${existing.id}`);
+        return existing.id;
+      }
+    } catch {
+      // Search failed, try to create
+    }
+
+    // Create new customer
+    const result = await this.request<{ id: string }>(
+      "/customers/individual",
+      "POST",
+      { name, phone: { number1: phone } },
+    );
+    customerCache.set(phone, result.id);
+    console.log(`[ZR] Created new customer "${name}" → ${result.id}`);
+    return result.id;
+  }
+
+  // ── Product Management ─────────────────────────────────────────────
+
+  async getOrCreateDefaultProduct(): Promise<{ productId: string; productSku: string }> {
+    if (defaultProductId) {
+      return { productId: defaultProductId, productSku: DEFAULT_PRODUCT_SKU };
+    }
+
+    // Search for existing product
+    try {
+      const result = await this.request<{ items: { id: string; sku: string }[] }>(
+        "/products/search",
+        "POST",
+        { keyword: DEFAULT_PRODUCT_SKU, pageSize: 10, pageNumber: 1 },
+      );
+      const existing = (result.items || []).find((p) => p.sku === DEFAULT_PRODUCT_SKU);
+      if (existing) {
+        defaultProductId = existing.id;
+        console.log(`[ZR] Found existing product "${DEFAULT_PRODUCT_SKU}" → ${existing.id}`);
+        return { productId: existing.id, productSku: DEFAULT_PRODUCT_SKU };
+      }
+    } catch {
+      // Search failed, try to create
+    }
+
+    // Create the default product
+    const result = await this.request<{ id: string }>(
+      "/products",
+      "POST",
+      { name: DEFAULT_PRODUCT_NAME, sku: DEFAULT_PRODUCT_SKU, price: 0, stockType: "none" },
+    );
+    defaultProductId = result.id;
+    console.log(`[ZR] Created default product "${DEFAULT_PRODUCT_SKU}" → ${result.id}`);
+    return { productId: result.id, productSku: DEFAULT_PRODUCT_SKU };
+  }
+
   // ── Parcel Creation ──────────────────────────────────────────────────
 
   async createParcel(parcel: ZRCreateParcel): Promise<ZRColisResponse> {
@@ -334,6 +415,21 @@ class ZRExpressClient {
 
   // ── High-level: Create Shipment from order data ──────────────────────
 
+  /**
+   * Format phone number to international format (+213...)
+   * Algerian numbers: 0XXXXXXXXX → +213XXXXXXXXX
+   */
+  private formatPhoneInternational(phone: string): string {
+    let cleaned = phone.replace(/[\s\-().]/g, "");
+    // Already international
+    if (cleaned.startsWith("+213")) return cleaned;
+    // Remove leading 0
+    if (cleaned.startsWith("0")) cleaned = cleaned.slice(1);
+    // Remove 213 prefix without +
+    if (cleaned.startsWith("213") && cleaned.length > 11) cleaned = cleaned.slice(3);
+    return `+213${cleaned}`;
+  }
+
   async createShipment(orderData: {
     customerName: string;
     customerPhone: string;
@@ -350,6 +446,7 @@ class ZRExpressClient {
     try {
       console.log("[ZR] createShipment input:", JSON.stringify(orderData));
 
+      // 1. Resolve territory
       const cityId = await this.resolveWilayaId(orderData.wilayaId);
       if (!cityId) {
         return {
@@ -361,6 +458,23 @@ class ZRExpressClient {
       const districtId = await this.resolveCommuneId(orderData.commune, orderData.wilayaId);
       console.log(`[ZR] Resolved territory: wilaya "${orderData.wilayaId}" → ${cityId}, commune "${orderData.commune}" → ${districtId || "(non trouvée)"}`);
 
+      // 2. Format & validate phone
+      const rawPhone = orderData.customerPhone.replace(/\s/g, "");
+      if (!rawPhone || rawPhone.replace(/\D/g, "").length < 9) {
+        return {
+          success: false,
+          message: `Numéro de téléphone invalide: "${rawPhone}". Minimum 9 chiffres requis.`,
+        };
+      }
+      const phone1 = this.formatPhoneInternational(rawPhone);
+
+      // 3. Get or create customer in ZR Express
+      const customerId = await this.getOrCreateCustomer(orderData.customerName, phone1);
+
+      // 4. Get or create default product
+      const { productId, productSku } = await this.getOrCreateDefaultProduct();
+
+      // 5. Determine delivery type
       const deliveryType: "home" | "pickup-point" =
         orderData.deliveryType === "STOP_DESK" ||
         orderData.deliveryType === "DESK" ||
@@ -368,20 +482,16 @@ class ZRExpressClient {
           ? "pickup-point"
           : "home";
 
-      const phone1 = orderData.customerPhone.replace(/\s/g, "");
-      if (!phone1 || phone1.length < 9) {
-        return {
-          success: false,
-          message: `Numéro de téléphone invalide: "${phone1}". Minimum 9 chiffres requis.`,
-        };
-      }
-
+      // 6. Build parcel
       const parcel: ZRCreateParcel = {
         customer: {
+          customerId,
           name: orderData.customerName,
           phone: {
             number1: phone1,
-            number2: orderData.customerPhoneB || undefined,
+            number2: orderData.customerPhoneB
+              ? this.formatPhoneInternational(orderData.customerPhoneB)
+              : undefined,
           },
         },
         deliveryAddress: {
@@ -391,13 +501,16 @@ class ZRExpressClient {
         },
         orderedProducts: [
           {
-            productName: orderData.products || "Articles Harp",
+            productId,
+            productSku,
+            productName: orderData.products || DEFAULT_PRODUCT_NAME,
             unitPrice: orderData.total,
             quantity: 1,
+            stockType: "none",
           },
         ],
         deliveryType,
-        description: orderData.notes || undefined,
+        description: orderData.notes || orderData.products || "Commande Harp",
         amount: orderData.total,
         externalId: orderData.externalId,
       };
