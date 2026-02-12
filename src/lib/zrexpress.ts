@@ -282,32 +282,56 @@ class ZRExpressClient {
     return null;
   }
 
-  async resolveCommuneId(communeName: string, wilayaName?: string): Promise<string | null> {
-    const cacheKey = `commune:${communeName}:${wilayaName || ""}`.toLowerCase();
+  async resolveCommuneId(communeName: string, wilayaName?: string, cityTerritoryId?: string): Promise<string | null> {
+    const cacheKey = `commune:${communeName}:${cityTerritoryId || wilayaName || ""}`.toLowerCase();
     if (territoryCache.has(cacheKey)) {
       return territoryCache.get(cacheKey)!;
     }
 
     const isCommuneLevel = (t: ZRTerritory) => t.level === "commune" || t.level === "district";
 
+    // Helper: find best commune match, prioritizing ones that belong to the correct wilaya
+    const findBestCommune = (items: ZRTerritory[]): ZRTerritory | undefined => {
+      const communes = items.filter(isCommuneLevel);
+      if (communes.length === 0) return undefined;
+
+      // If we know the wilaya UUID, pick the commune whose parentId matches
+      if (cityTerritoryId) {
+        const exact = communes.find((t) => t.parentId === cityTerritoryId);
+        if (exact) return exact;
+      }
+
+      // If only one result, use it
+      if (communes.length === 1) return communes[0];
+
+      // Multiple results but no cityTerritoryId to filter — return undefined to avoid picking wrong one
+      if (!cityTerritoryId) return communes[0];
+
+      // Multiple results and none matched the wilaya — don't guess
+      console.warn(`[ZR] Multiple communes found for "${communeName}" but none match wilaya ${cityTerritoryId}:`, communes.map(c => `${c.name} (parent:${c.parentId})`));
+      return undefined;
+    };
+
     // Try with original name
     let results = await this.searchTerritories(communeName);
-    let district = results.find((t) => isCommuneLevel(t));
+    let district = findBestCommune(results);
 
     // Try without diacritics if needed ("Béjaïa" → "Bejaia")
     if (!district) {
       const noDiacritics = stripDiacritics(communeName);
       if (noDiacritics !== communeName) {
         results = await this.searchTerritories(noDiacritics);
-        district = results.find((t) => isCommuneLevel(t));
+        district = findBestCommune(results);
       }
     }
 
     if (district) {
+      console.log(`[ZR] Resolved commune "${communeName}" → "${district.name}" (${district.id}, parent:${district.parentId})`);
       territoryCache.set(cacheKey, district.id);
       return district.id;
     }
 
+    console.warn(`[ZR] Could not resolve commune: "${communeName}" (wilaya: ${cityTerritoryId || wilayaName || "unknown"})`);
     return null;
   }
 
@@ -555,18 +579,23 @@ class ZRExpressClient {
       }
 
       // Resolve commune — required by ZR Express API
-      let districtId = await this.resolveCommuneId(orderData.commune, orderData.wilayaId);
+      // Pass cityId so we pick the commune that belongs to the correct wilaya
+      let districtId = await this.resolveCommuneId(orderData.commune, orderData.wilayaId, cityId);
 
-      // If commune not found and commune name matches wilaya, try the wilaya's main commune
+      // If commune not found, try the wilaya's main commune (same name as wilaya)
       if (!districtId) {
-        // Search for the first commune in this wilaya (e.g. "Alger Centre" for Alger)
         const wilayaEntry = WILAYAS.find((w) => w.id === orderData.wilayaId || w.name.toLowerCase() === orderData.wilayaId.toLowerCase());
         if (wilayaEntry) {
           const fallbackResults = await this.searchTerritories(wilayaEntry.name);
-          const fallbackCommune = fallbackResults.find((t) => t.level === "commune" || t.level === "district");
+          // MUST filter by parentId to pick a commune that belongs to the correct wilaya
+          const fallbackCommune = fallbackResults.find(
+            (t) => (t.level === "commune" || t.level === "district") && t.parentId === cityId
+          ) || fallbackResults.find(
+            (t) => (t.level === "commune" || t.level === "district")
+          );
           if (fallbackCommune) {
             districtId = fallbackCommune.id;
-            console.log(`[ZR] Commune fallback: "${orderData.commune}" → "${fallbackCommune.name}" (${fallbackCommune.id})`);
+            console.log(`[ZR] Commune fallback: "${orderData.commune}" → "${fallbackCommune.name}" (${fallbackCommune.id}, parent:${fallbackCommune.parentId})`);
           }
         }
       }
