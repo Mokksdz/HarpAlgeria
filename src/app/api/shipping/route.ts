@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/shipping - Créer une expédition
+// POST /api/shipping - Créer une expédition ZR Express
 export async function POST(request: NextRequest) {
   try {
     await requireAdmin(request);
@@ -57,31 +57,30 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { orderId, orderData } = body;
 
+    console.log("[SHIPPING] POST /api/shipping received:", JSON.stringify({ orderId, orderData }, null, 2));
+
     if (!orderId || !orderData) {
       return NextResponse.json(
-        { error: "orderId et orderData sont requis" },
+        { success: false, error: "orderId et orderData sont requis" },
+        { status: 400 },
+      );
+    }
+
+    // Validate required fields
+    const missing: string[] = [];
+    if (!orderData.customerName) missing.push("nom");
+    if (!orderData.customerPhone) missing.push("téléphone");
+    if (!orderData.address) missing.push("adresse");
+    if (missing.length > 0) {
+      console.error("[SHIPPING] Missing fields:", missing, "orderData:", JSON.stringify(orderData));
+      return NextResponse.json(
+        { success: false, error: `Champs obligatoires manquants: ${missing.join(", ")}` },
         { status: 400 },
       );
     }
 
     const client = getZRClient();
 
-    // Validate required fields before calling ZR Express
-    if (!orderData.customerName || !orderData.customerPhone || !orderData.address) {
-      return NextResponse.json(
-        { success: false, error: "Champs obligatoires manquants: nom, téléphone, adresse" },
-        { status: 400 },
-      );
-    }
-
-    console.log("Creating ZR Express shipment for order:", orderId, {
-      wilayaId: orderData.wilayaId,
-      commune: orderData.commune,
-      deliveryType: orderData.deliveryType,
-      total: orderData.total,
-    });
-
-    // Créer le colis ZR Express (nouvelle API)
     const result = await client.createShipment({
       customerName: orderData.customerName,
       customerPhone: orderData.customerPhone,
@@ -91,15 +90,16 @@ export async function POST(request: NextRequest) {
       commune: orderData.commune || "",
       total: parseFloat(orderData.total) || 0,
       products: orderData.products || "Articles Harp",
-      deliveryType: orderData.deliveryType || "HOME",
+      deliveryType: orderData.deliveryType || "DOMICILE",
       externalId: orderId,
       notes: orderData.notes || "",
     });
 
+    console.log("[SHIPPING] ZR Express result for", orderId, ":", JSON.stringify(result));
+
     if (!result.success) {
-      console.error("ZR Express shipment creation failed for order:", orderId, result.message, result.data);
       return NextResponse.json(
-        { success: false, error: result.message || "Échec création colis ZR Express", data: result.data },
+        { success: false, error: result.message || "Échec création colis ZR Express" },
         { status: 400 },
       );
     }
@@ -109,7 +109,8 @@ export async function POST(request: NextRequest) {
       tracking: result.tracking,
       data: result,
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("[SHIPPING] Unhandled error:", error);
     return handleApiError(error);
   }
 }

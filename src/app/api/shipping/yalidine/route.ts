@@ -85,9 +85,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { orderId, orderData } = body;
 
+    console.log("[YALIDINE] POST /api/shipping/yalidine received:", JSON.stringify({ orderId, orderData }, null, 2));
+
     if (!orderId || !orderData) {
       return NextResponse.json(
-        { error: "orderId et orderData sont requis" },
+        { success: false, error: "orderId et orderData sont requis" },
         { status: 400 },
       );
     }
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest) {
         address: orderData.address,
         wilaya: orderData.wilaya,
         commune: orderData.commune,
-        total: orderData.total,
+        total: parseFloat(orderData.total) || 0,
         items: orderData.items || [],
         deliveryType: orderData.deliveryType,
         stopDeskId: orderData.stopDeskId,
@@ -111,8 +113,12 @@ export async function POST(request: NextRequest) {
       orderData.fromWilaya || "Alger",
     );
 
+    console.log("[YALIDINE] Parcel to send:", JSON.stringify(parcel));
+
     // Créer le colis
     const result = await client.createParcel(parcel);
+
+    console.log("[YALIDINE] API result for", orderId, ":", JSON.stringify(result));
 
     if (result.success) {
       return NextResponse.json({
@@ -131,7 +137,8 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("[YALIDINE] Unhandled error:", error);
     return handleApiError(error);
   }
 }
