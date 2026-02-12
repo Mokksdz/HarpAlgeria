@@ -123,6 +123,7 @@ export function Footer() {
                 <FooterLink href="/shop">{t("nav.shop")}</FooterLink>
                 <FooterLink href="/about">{t("nav.about")}</FooterLink>
                 <FooterLink href="/contact">{t("nav.contact")}</FooterLink>
+                <FooterLink href="/faq">{t("nav.faq")}</FooterLink>
               </ul>
             </div>
 

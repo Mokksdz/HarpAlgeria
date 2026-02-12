@@ -5,6 +5,7 @@ export const translations = {
     "nav.about": "À propos",
     "nav.contact": "Contact",
     "nav.journal": "Journal",
+    "nav.faq": "FAQ",
     "nav.language": "Langue :",
     "hero.title": "Une élégance qui résonne",
     "hero.subtitle":
@@ -409,6 +410,7 @@ export const translations = {
     "nav.about": "من نحن",
     "nav.contact": "اتصل بنا",
     "nav.journal": "المجلة",
+    "nav.faq": "الأسئلة الشائعة",
     "nav.language": "اللغة :",
     "hero.title": "هــارب – أناقة تلامسك",
     "hero.subtitle": "قطع راقية، دافئة ومحتشمة، مصمّمة للمرأة العصرية.",
