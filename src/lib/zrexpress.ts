@@ -402,27 +402,60 @@ class ZRExpressClient {
     }
   }
 
-  async resolveHubId(communeName: string, cityTerritoryId: string): Promise<string | null> {
-    // Try searching by commune name
+  async resolveHubId(communeName: string, cityTerritoryId: string, address?: string): Promise<string | null> {
+    const findPickupHub = (hubs: { id: string; name: string; isPickupPoint: boolean }[]) =>
+      hubs.find((h) => h.isPickupPoint) || hubs[0] || null;
+
+    // Strategy 1: Extract pickup point name from address (e.g., "Point de retrait: Birkhadem - Agence de...")
+    if (address) {
+      const pickupMatch = address.match(/Point de retrait\s*:\s*([^-–,]+)/i);
+      if (pickupMatch) {
+        const pickupName = pickupMatch[1].trim();
+        console.log(`[ZR] Extracted pickup point name from address: "${pickupName}"`);
+        const hubs = await this.searchHubs(pickupName);
+        const hub = findPickupHub(hubs);
+        if (hub) {
+          console.log(`[ZR] Resolved hub from address "${pickupName}" → "${hub.name}" (${hub.id})`);
+          return hub.id;
+        }
+      }
+    }
+
+    // Strategy 2: Search by commune name (if different from wilaya name)
     const hubs = await this.searchHubs(communeName, cityTerritoryId);
-    const pickupHub = hubs.find((h) => h.isPickupPoint) || hubs[0];
+    const pickupHub = findPickupHub(hubs);
     if (pickupHub) {
       console.log(`[ZR] Resolved hub for "${communeName}" → "${pickupHub.name}" (${pickupHub.id})`);
       return pickupHub.id;
     }
 
-    // Fallback: search by wilaya name
-    const wilayaEntry = WILAYAS.find((w) => w.id === cityTerritoryId);
+    // Strategy 3: Search by wilaya name (lookup from our WILAYAS list by name or code)
+    // Note: cityTerritoryId is a UUID from ZR Express, NOT a numeric wilaya code
+    // So we search WILAYAS by name matching the communeName (since commune often = wilaya name)
+    const wilayaEntry = WILAYAS.find(
+      (w) => w.name.toLowerCase() === communeName.toLowerCase() ||
+             w.name_ar === communeName,
+    );
     if (wilayaEntry) {
+      // Search hubs broadly by wilaya name
       const fallbackHubs = await this.searchHubs(wilayaEntry.name);
-      const fallbackHub = fallbackHubs.find((h) => h.isPickupPoint) || fallbackHubs[0];
+      const fallbackHub = findPickupHub(fallbackHubs);
       if (fallbackHub) {
         console.log(`[ZR] Resolved hub via wilaya fallback for "${communeName}" → "${fallbackHub.name}" (${fallbackHub.id})`);
         return fallbackHub.id;
       }
     }
 
-    console.error(`[ZR] Could not resolve hub for commune "${communeName}"`);
+    // Strategy 4: Try a broad search with just first few chars or generic terms
+    // Search for any hubs without keyword to get all available
+    const broadHubs = await this.searchHubs("", cityTerritoryId);
+    const broadHub = findPickupHub(broadHubs);
+    if (broadHub) {
+      console.log(`[ZR] Resolved hub via broad search for wilaya → "${broadHub.name}" (${broadHub.id})`);
+      return broadHub.id;
+    }
+
+    console.error(`[ZR] Could not resolve hub for commune "${communeName}" (address: "${address || "none"}")`);
     return null;
   }
 
@@ -556,7 +589,7 @@ class ZRExpressClient {
 
       let hubId: string | undefined;
       if (deliveryType === "pickup-point") {
-        const resolvedHub = await this.resolveHubId(orderData.commune, cityId);
+        const resolvedHub = await this.resolveHubId(orderData.commune, cityId, orderData.address);
         if (!resolvedHub) {
           return {
             success: false,
