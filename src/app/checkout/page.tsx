@@ -377,6 +377,8 @@ export default function CheckoutPage() {
       trackEvent.ga.addPaymentInfo(finalTotal, "COD");
       trackEvent.fb.addPaymentInfo(finalTotal);
 
+      console.log("Order payload:", JSON.stringify(orderData, null, 2));
+
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -417,9 +419,16 @@ export default function CheckoutPage() {
         router.push(`/order-confirmation?${params.toString()}`);
       } else {
         const errorData = await response.json().catch(() => null);
-        const errorMsg =
-          errorData?.error || t("checkout.errorGeneric");
-        toast.error(errorMsg);
+        console.error("Order error response:", errorData);
+        const errorDetails = errorData?.details;
+        if (errorDetails && Array.isArray(errorDetails) && errorDetails.length > 0) {
+          // Show each validation error
+          errorDetails.forEach((detail: string) => toast.error(detail));
+        } else {
+          const errorMsg =
+            errorData?.error || t("checkout.errorGeneric");
+          toast.error(errorMsg);
+        }
       }
     } catch (error) {
       console.error("Error submitting order:", error);

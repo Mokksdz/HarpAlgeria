@@ -163,8 +163,10 @@ export function validateOrder(data: any): ValidationResult {
     errors.push("Un numéro de téléphone valide est requis");
   }
 
-  if (!data.customerCity || typeof data.customerCity !== "string") {
-    errors.push("La ville est requise");
+  // customerCity is optional for DESK delivery (stop desk provides commune)
+  // Only validate if provided and wrong type
+  if (data.customerCity && typeof data.customerCity !== "string") {
+    errors.push("La ville doit être un texte valide");
   }
 
   if (!data.customerWilaya || typeof data.customerWilaya !== "string") {

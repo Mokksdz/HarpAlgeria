@@ -181,8 +181,8 @@ export async function POST(request: NextRequest) {
         data: {
           customerName: sanitizeString(body.customerName),
           customerPhone: sanitizeString(body.customerPhone),
-          customerAddress: sanitizeString(body.customerAddress),
-          customerCity: sanitizeString(body.customerCity),
+          customerAddress: body.customerAddress ? sanitizeString(body.customerAddress) : "",
+          customerCity: body.customerCity ? sanitizeString(body.customerCity) : "",
           customerWilaya: body.customerWilaya,
           deliveryProvider: body.deliveryProvider || null,
           deliveryType: body.deliveryType || null,
