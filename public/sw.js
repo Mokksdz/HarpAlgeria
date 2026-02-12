@@ -1,5 +1,5 @@
 // Harp Service Worker — Offline support & caching
-const CACHE_NAME = "harp-v2";
+const CACHE_NAME = "harp-v3";
 const OFFLINE_URL = "/offline";
 
 // Assets to pre-cache on install
@@ -42,6 +42,9 @@ self.addEventListener("fetch", (event) => {
   // Skip non-GET and API requests
   if (request.method !== "GET") return;
   if (url.pathname.startsWith("/api/")) return;
+
+  // Skip third-party requests entirely (Facebook, Vercel Live, Google Analytics, etc.)
+  if (url.origin !== self.location.origin) return;
 
   // Static assets (fonts, images) → Cache-first
   if (

@@ -297,7 +297,7 @@ export default function ShippingPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             trackingNumber: data.tracking,
-            status: "CONFIRMED",
+            status: "SHIPPED",
             deliveryProvider: providerName,
           }),
         });
