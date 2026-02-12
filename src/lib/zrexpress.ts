@@ -444,8 +444,9 @@ class ZRExpressClient {
   }
 
   async resolveHubId(communeName: string, cityTerritoryId: string, address?: string): Promise<string | null> {
+    // ONLY return hubs that are actual pickup points — never return sorting centers (Tri/مركز فرز)
     const findPickupHub = (hubs: { id: string; name: string; isPickupPoint: boolean }[]) =>
-      hubs.find((h) => h.isPickupPoint) || hubs[0] || null;
+      hubs.find((h) => h.isPickupPoint) || null;
 
     // Strategy 1: Extract pickup point name from address (e.g., "Point de retrait: Birkhadem - Agence de...")
     if (address) {
@@ -459,10 +460,12 @@ class ZRExpressClient {
           console.log(`[ZR] Resolved hub from address "${pickupName}" → "${hub.name}" (${hub.id})`);
           return hub.id;
         }
+        // Don't return non-pickup hubs — continue to next strategy
+        console.log(`[ZR] No pickup hub found for "${pickupName}", trying other strategies...`);
       }
     }
 
-    // Strategy 2: Search by commune name (if different from wilaya name)
+    // Strategy 2: Search by commune name, filter by city
     const hubs = await this.searchHubs(communeName, cityTerritoryId);
     const pickupHub = findPickupHub(hubs);
     if (pickupHub) {
@@ -470,15 +473,21 @@ class ZRExpressClient {
       return pickupHub.id;
     }
 
-    // Strategy 3: Search by wilaya name (lookup from our WILAYAS list by name or code)
-    // Note: cityTerritoryId is a UUID from ZR Express, NOT a numeric wilaya code
-    // So we search WILAYAS by name matching the communeName (since commune often = wilaya name)
+    // Strategy 3: Broad search — get ALL hubs and filter by cityTerritoryId + isPickupPoint
+    // This catches cases where keyword search returns sorting centers instead of pickup hubs
+    const broadHubs = await this.searchHubs("", cityTerritoryId);
+    const broadHub = findPickupHub(broadHubs);
+    if (broadHub) {
+      console.log(`[ZR] Resolved hub via broad search for wilaya → "${broadHub.name}" (${broadHub.id})`);
+      return broadHub.id;
+    }
+
+    // Strategy 4: Search by wilaya name from our WILAYAS list
     const wilayaEntry = WILAYAS.find(
       (w) => w.name.toLowerCase() === communeName.toLowerCase() ||
              w.name_ar === communeName,
     );
     if (wilayaEntry) {
-      // Search hubs broadly by wilaya name
       const fallbackHubs = await this.searchHubs(wilayaEntry.name);
       const fallbackHub = findPickupHub(fallbackHubs);
       if (fallbackHub) {
@@ -487,16 +496,7 @@ class ZRExpressClient {
       }
     }
 
-    // Strategy 4: Try a broad search with just first few chars or generic terms
-    // Search for any hubs without keyword to get all available
-    const broadHubs = await this.searchHubs("", cityTerritoryId);
-    const broadHub = findPickupHub(broadHubs);
-    if (broadHub) {
-      console.log(`[ZR] Resolved hub via broad search for wilaya → "${broadHub.name}" (${broadHub.id})`);
-      return broadHub.id;
-    }
-
-    console.error(`[ZR] Could not resolve hub for commune "${communeName}" (address: "${address || "none"}")`);
+    console.error(`[ZR] Could not resolve pickup hub for commune "${communeName}" (address: "${address || "none"}")`);
     return null;
   }
 
