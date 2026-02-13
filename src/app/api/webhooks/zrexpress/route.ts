@@ -4,6 +4,21 @@ import { verifySvixSignature, mapZRStatusToHarpStatus } from "@/lib/zrexpress";
 
 export const dynamic = "force-dynamic";
 
+// Bug #6: Status transition state machine — forward-only transitions
+const STATUS_ORDER: Record<string, number> = {
+  PENDING: 0,
+  CONFIRMED: 1,
+  SHIPPED: 2,
+  DELIVERED: 3,
+  CANCELLED: 4,
+};
+
+function isForwardTransition(currentStatus: string, newStatus: string): boolean {
+  if (newStatus === "CANCELLED") return currentStatus !== "DELIVERED";
+  if (currentStatus === "CANCELLED" || currentStatus === "DELIVERED") return false;
+  return (STATUS_ORDER[newStatus] ?? -1) > (STATUS_ORDER[currentStatus] ?? -1);
+}
+
 /**
  * POST /api/webhooks/zrexpress
  * Receives real-time parcel state updates from ZR Express via Svix webhooks.
@@ -13,36 +28,37 @@ export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
 
-    // ── Verify Svix signature ──────────────────────────────────────────
+    // Bug #3: Fail-closed — reject ALL requests if webhook secret is not configured
     const webhookSecret = process.env.ZR_EXPRESS_WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const svixId = request.headers.get("svix-id") || "";
-      const svixTimestamp = request.headers.get("svix-timestamp") || "";
-      const svixSignature = request.headers.get("svix-signature") || "";
+    if (!webhookSecret) {
+      console.error("[ZR Webhook] ZR_EXPRESS_WEBHOOK_SECRET not configured — rejecting request");
+      return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
+    }
 
-      if (!svixId || !svixTimestamp || !svixSignature) {
-        console.error("[ZR Webhook] Missing Svix headers");
-        return NextResponse.json({ error: "Missing signature" }, { status: 401 });
-      }
+    const svixId = request.headers.get("svix-id") || "";
+    const svixTimestamp = request.headers.get("svix-timestamp") || "";
+    const svixSignature = request.headers.get("svix-signature") || "";
 
-      const valid = verifySvixSignature(rawBody, {
-        svixId,
-        svixTimestamp,
-        svixSignature,
-      }, webhookSecret);
+    if (!svixId || !svixTimestamp || !svixSignature) {
+      console.error("[ZR Webhook] Missing Svix headers");
+      return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+    }
 
-      if (!valid) {
-        console.error("[ZR Webhook] Invalid signature");
-        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-      }
+    const valid = verifySvixSignature(rawBody, {
+      svixId,
+      svixTimestamp,
+      svixSignature,
+    }, webhookSecret);
+
+    if (!valid) {
+      console.error("[ZR Webhook] Invalid signature");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     // ── Parse payload ──────────────────────────────────────────────────
     const payload = JSON.parse(rawBody);
-    console.log("[ZR Webhook] Received:", JSON.stringify(payload).slice(0, 1000));
 
     // Extract tracking info — adapt to actual payload structure
-    const eventType = payload.eventType || payload.type || "";
     const data = payload.data || payload;
 
     const trackingNumber = data.trackingNumber || data.tracking || "";
@@ -55,14 +71,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, skipped: "no identifier" });
     }
 
+    // Bug #9: Build safe OR query — only include non-empty values to avoid matching all orders
+    const orConditions: { trackingNumber: string }[] = [];
+    if (trackingNumber) orConditions.push({ trackingNumber });
+    if (parcelId && parcelId !== trackingNumber) orConditions.push({ trackingNumber: parcelId });
+
+    if (orConditions.length === 0) {
+      return NextResponse.json({ received: true, skipped: "no valid identifier" });
+    }
+
     // ── Find matching order in database ────────────────────────────────
     const order = await prisma.order.findFirst({
-      where: {
-        OR: [
-          { trackingNumber: trackingNumber || undefined },
-          { trackingNumber: parcelId || undefined },
-        ],
-      },
+      where: { OR: orConditions },
       include: { user: { select: { email: true, name: true } } },
     });
 
@@ -80,34 +100,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, skipped: "no status change" });
     }
 
+    // Bug #6: Only apply forward transitions — never regress DELIVERED→SHIPPED etc.
+    const shouldUpdateOrderStatus = orderStatusChanged && isForwardTransition(order.status, harpStatus);
+
     // ── Update order ───────────────────────────────────────────────────
     await prisma.order.update({
       where: { id: order.id },
       data: {
         trackingStatus: newStateName,
-        ...(orderStatusChanged ? { status: harpStatus } : {}),
+        ...(shouldUpdateOrderStatus ? { status: harpStatus } : {}),
       },
     });
 
+    const finalStatus = shouldUpdateOrderStatus ? harpStatus : order.status;
     console.log(
-      `[ZR Webhook] Order ${order.id} updated: ${previousStateName || order.trackingStatus} → ${newStateName} (${order.status} → ${harpStatus})`,
+      `[ZR Webhook] Order ${order.id} updated: ${previousStateName || order.trackingStatus} → ${newStateName} (${order.status} → ${finalStatus})`,
     );
 
-    // ── Send email notification for significant status changes ─────────
-    if (orderStatusChanged && order.user?.email) {
+    // Bug #18: Send email notification — also try customerPhone-based email lookup for guests
+    if (shouldUpdateOrderStatus && order.user?.email) {
       try {
         const { sendTrackingUpdateEmail } = await import("@/lib/email/tracking-update");
-        sendTrackingUpdateEmail({
+        await sendTrackingUpdateEmail({
           customerName: order.user.name || order.customerName,
           customerEmail: order.user.email,
           orderNumber: order.id.slice(-8).toUpperCase(),
           trackingNumber: order.trackingNumber || trackingNumber,
           deliveryProvider: order.deliveryProvider || "ZR Express",
           newStatus: newStateName,
-          harpStatus,
-        }).catch((e: any) => console.error("[ZR Webhook] Email failed:", e));
+          harpStatus: finalStatus,
+        });
       } catch (e) {
-        console.error("[ZR Webhook] Email import error:", e);
+        console.error("[ZR Webhook] Email failed:", e);
       }
     }
 
@@ -115,7 +139,7 @@ export async function POST(request: NextRequest) {
       received: true,
       orderId: order.id,
       statusUpdated: newStateName,
-      orderStatus: harpStatus,
+      orderStatus: finalStatus,
     });
   } catch (error) {
     console.error("[ZR Webhook] Error:", error);

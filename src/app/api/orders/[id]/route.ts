@@ -1,11 +1,36 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, handleApiError } from "@/lib/auth-helpers";
+
+// Bug #6: Status transition state machine — forward-only transitions
+const STATUS_ORDER: Record<string, number> = {
+  PENDING: 0,
+  CONFIRMED: 1,
+  SHIPPED: 2,
+  DELIVERED: 3,
+  CANCELLED: 4, // Terminal — can be reached from any non-DELIVERED state
+};
+
+function isValidTransition(currentStatus: string, newStatus: string): boolean {
+  // CANCELLED can be reached from PENDING, CONFIRMED, SHIPPED (not from DELIVERED)
+  if (newStatus === "CANCELLED") {
+    return currentStatus !== "DELIVERED";
+  }
+  // Cannot transition FROM cancelled or delivered (terminal states)
+  if (currentStatus === "CANCELLED" || currentStatus === "DELIVERED") {
+    return false;
+  }
+  // Must move forward
+  return (STATUS_ORDER[newStatus] ?? -1) > (STATUS_ORDER[currentStatus] ?? -1);
+}
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // Bug #1: Require admin for single order access (contains PII)
+    await requireAdmin(request);
     const { id } = await params;
     const order = await prisma.order.findUnique({
       where: { id },
@@ -30,6 +55,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // Bug #1: Require admin for order updates
+    await requireAdmin(request);
     const { id } = await params;
     const body = await request.json();
     const { status, ...otherUpdates } = body;
@@ -48,6 +75,14 @@ export async function PATCH(
 
     // If status is being updated
     if (status) {
+      // Bug #6: State machine — reject invalid transitions
+      if (!isValidTransition(currentOrder.status, status)) {
+        return NextResponse.json(
+          { error: `Transition invalide: ${currentOrder.status} → ${status}` },
+          { status: 400 },
+        );
+      }
+
       // SERVER-SIDE GUARD: SHIPPED status requires a valid tracking number
       // This prevents ghost SHIPPED orders from stale front-end code
       if (status === "SHIPPED") {
@@ -103,13 +138,7 @@ export async function PATCH(
     return NextResponse.json(updatedOrder);
   } catch (error: unknown) {
     console.error("Error updating order:", error);
-    return NextResponse.json(
-      {
-        error: "Error updating order",
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    return handleApiError(error);
   }
 }
 

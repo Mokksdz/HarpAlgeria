@@ -55,8 +55,8 @@ function TrackingPageInner() {
     setResult(null);
 
     try {
-      const isYalidine = number.toLowerCase().startsWith("yal-");
-      const provider = isYalidine ? "yalidine" : "zrexpress";
+      // Bug #19: Let server auto-detect provider — client-side detection was too rigid
+      const provider = "auto";
 
       const response = await fetch(
         `/api/tracking?tracking=${number}&provider=${provider}`,

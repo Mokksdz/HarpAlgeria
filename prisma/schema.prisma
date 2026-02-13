@@ -83,6 +83,7 @@ model Order {
   shippingPrice    Decimal     @default(0)
   trackingNumber   String?
   trackingStatus   String?
+  stopDeskId       Int?        // Bug #13: Persist stop desk ID from checkout
   subtotal         Decimal
   total            Decimal
   status           String      @default("PENDING")
@@ -97,6 +98,8 @@ model Order {
   @@index([createdAt])
   @@index([orderNumber])
   @@index([userId])
+  @@index([trackingNumber])    // Bug #36: Index for webhook/tracking lookups
+  @@index([deliveryProvider])  // Bug #36: Index for cron sync queries
 }
 
 model OrderItem {

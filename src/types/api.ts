@@ -85,81 +85,64 @@ export interface YalidineApiResponse<T> {
   message?: string;
 }
 
-// ---- ZR Express Types ----
+// ---- ZR Express Types (New API: api.zrexpress.app/api/v1) ----
 
 export interface ZRWilaya {
-  id: number;
+  id: string; // UUID in new API
   name: string;
-  ar_name?: string;
   code?: string;
 }
 
 export interface ZRCommune {
-  id: number;
+  id: string; // UUID in new API
   name: string;
-  ar_name?: string;
-  wilaya_id: number;
+  parentId?: string; // wilaya territory ID
 }
 
 export interface ZRStopDesk {
-  id: number;
+  id: string;
   name: string;
   address: string;
-  wilaya_id: number;
-  commune_id: number;
+  wilayaId?: number;
   phone?: string;
 }
 
-export interface ZRColis {
-  Ession: string;
-  Nom: string;
-  Telephone: string;
-  Telephone_2?: string;
-  Adresse: string;
-  Wilaya: string;
-  Commune: string;
-  Produit: string;
-  Prix: number;
-  Remarque?: string;
-  id_Externe?: string;
-  Source?: string;
-  Poids?: number;
-  Longueur?: number;
-  Largeur?: number;
-  Hauteur?: number;
-  Fragile?: number;
-  Ouverture?: number;
-  Echange?: number;
-  Recouvrement?: number;
-  StopDesk?: number;
+export interface ZRParcel {
+  id: string;
+  trackingNumber?: string;
+  state?: { name: string };
+  stateName?: string;
+  status?: string;
+  lastStatus?: string;
+  customer?: { name: string };
+  deliveryAddress?: {
+    street?: string;
+    city?: { name: string };
+    district?: { name: string };
+    cityName?: string;
+    districtName?: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface ZRColisResponse {
+export interface ZRParcelResponse {
   success: boolean;
   tracking?: string;
-  Tracking?: string;
+  id?: string;
   message?: string;
   error?: string;
 }
 
 export interface ZRTrackingEvent {
-  date: string;
-  status: string;
-  location?: string;
-  note?: string;
-}
-
-export interface ZRTrackingResponse {
-  tracking: string;
-  status: string;
-  statusCode?: number;
-  history?: ZRTrackingEvent[];
+  stateName: string;
+  timestamp?: string;
+  hubName?: string;
 }
 
 export interface ZRApiResponse<T> {
   success: boolean;
   data?: T;
-  Colis?: T[];
   error?: string;
   message?: string;
 }

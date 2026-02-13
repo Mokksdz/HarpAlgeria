@@ -169,7 +169,14 @@ class YalidineClient {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(30000), // Bug #41: 30s timeout
       });
+
+      // Bug #5: Check HTTP response status before parsing
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        throw new Error(`Yalidine API ${response.status}: ${errorText.slice(0, 200)}`);
+      }
 
       const data = await response.json();
       return data;
@@ -483,7 +490,7 @@ export function orderToYalidineParcel(
     commune: string;
     total: number;
     items: any[];
-    deliveryType?: "DOMICILE" | "STOP_DESK";
+    deliveryType?: "DOMICILE" | "STOP_DESK" | "HOME" | "DESK";
     stopDeskId?: number;
     notes?: string;
   },
@@ -524,7 +531,8 @@ export function orderToYalidineParcel(
     height: 10,
     weight: 1,
     freeshipping: false, // Client paie la livraison
-    is_stopdesk: order.deliveryType === "STOP_DESK",
+    // Bug #12: Accept both "DESK" (from checkout) and "STOP_DESK" (legacy)
+    is_stopdesk: order.deliveryType === "STOP_DESK" || order.deliveryType === "DESK",
     stopdesk_id: order.stopDeskId,
     has_exchange: false,
   };
@@ -557,6 +565,14 @@ export function mapYalidineStatusToHarpStatus(yalidineStatus: string): string {
     "Retourné au centre": "CANCELLED",
     "Retour vers vendeur": "CANCELLED",
     "Retourné au vendeur": "CANCELLED",
+    // Bug #23: Previously unmapped statuses
+    "Bloqué": "SHIPPED",
+    "Débloqué": "SHIPPED",
+    "En alerte": "SHIPPED",
+    "Retour transfert": "CANCELLED",
+    "Retour groupé": "CANCELLED",
+    "Retour à retirer": "CANCELLED",
+    "Echange échoué": "CANCELLED",
   };
   return statusMap[yalidineStatus] || "PENDING";
 }

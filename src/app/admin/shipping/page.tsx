@@ -261,8 +261,9 @@ export default function ShippingPage() {
             commune: order.customerCity,
             wilaya: order.customerWilaya,
             total: order.total,
+            // Bug #12: Accept "DESK" (from checkout) OR "STOP_DESK"
             deliveryType:
-              order.deliveryType === "STOP_DESK" ? "STOP_DESK" : "DOMICILE",
+              (order.deliveryType === "STOP_DESK" || order.deliveryType === "DESK") ? "STOP_DESK" : "DOMICILE",
             items: order.items,
             fromWilaya: "Alger",
           },

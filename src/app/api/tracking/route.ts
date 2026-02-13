@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getYalidineClient } from "@/lib/yalidine";
+import { getYalidineClient, mapYalidineStatusToHarpStatus } from "@/lib/yalidine";
 import { getZRClient, mapZRStatusToHarpStatus } from "@/lib/zrexpress";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, handleApiError } from "@/lib/auth-helpers";
 
-// GET /api/tracking - Get tracking info for a package
+// Bug #6: Status transition state machine — forward-only transitions
+const STATUS_ORDER: Record<string, number> = {
+  PENDING: 0,
+  CONFIRMED: 1,
+  SHIPPED: 2,
+  DELIVERED: 3,
+  CANCELLED: 4,
+};
+
+function isForwardTransition(currentStatus: string, newStatus: string): boolean {
+  if (newStatus === "CANCELLED") return currentStatus !== "DELIVERED";
+  if (currentStatus === "CANCELLED" || currentStatus === "DELIVERED") return false;
+  return (STATUS_ORDER[newStatus] ?? -1) > (STATUS_ORDER[currentStatus] ?? -1);
+}
+
+// GET /api/tracking - Get tracking info for a package (public — for customer tracking page)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -17,15 +33,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Auto-detect provider from tracking format
+    // Bug #19: Fix auto-detection — ZR tracking ends with "-ZR", Yalidine starts with "YAL-"
     let detectedProvider = provider;
     if (provider === "auto") {
-      if (tracking.toLowerCase().startsWith("yal-")) {
+      if (tracking.toLowerCase().startsWith("yal-") || tracking.toLowerCase().startsWith("yal_")) {
         detectedProvider = "yalidine";
-      } else if (tracking.toLowerCase().startsWith("zr")) {
+      } else if (tracking.toUpperCase().endsWith("-ZR") || tracking.toLowerCase().startsWith("zr")) {
         detectedProvider = "zrexpress";
       } else {
-        // Try both
         detectedProvider = "both";
       }
     }
@@ -41,7 +56,6 @@ export async function GET(request: NextRequest) {
         if (yalidineResult.data && yalidineResult.data.length > 0) {
           const parcel = yalidineResult.data[0];
 
-          // Get tracking history
           let history: {
             status: string;
             date: string;
@@ -52,8 +66,12 @@ export async function GET(request: NextRequest) {
           try {
             const historyResult =
               await yalidineClient.getTrackingHistory(tracking);
-            if (historyResult.data) {
-              history = historyResult.data.map((h, index) => ({
+            if (historyResult.data && historyResult.data.length > 0) {
+              // Bug #12: Sort history newest-first to ensure current marker is on latest event
+              const sorted = [...historyResult.data].sort(
+                (a, b) => new Date(b.date_status).getTime() - new Date(a.date_status).getTime()
+              );
+              history = sorted.map((h, index) => ({
                 status: h.status,
                 date: new Date(h.date_status).toLocaleString("fr-FR"),
                 location: h.center_name || h.wilaya_name,
@@ -98,7 +116,6 @@ export async function GET(request: NextRequest) {
       try {
         const zrClient = getZRClient();
 
-        // Try by tracking number first, then by parcel ID
         const parcel =
           (await zrClient.getParcelByTracking(tracking)) ||
           (await zrClient.getParcel(tracking));
@@ -114,7 +131,6 @@ export async function GET(request: NextRequest) {
             .filter(Boolean)
             .join(", ") || parcel.deliveryAddress?.street || "";
 
-          // Fetch full state history from the API
           let history: {
             status: string;
             date: string;
@@ -140,7 +156,6 @@ export async function GET(request: NextRequest) {
             console.error("ZR Express state-history error:", e);
           }
 
-          // Fallback if no history returned
           if (history.length === 0) {
             history = [
               {
@@ -154,7 +169,7 @@ export async function GET(request: NextRequest) {
               ...(parcel.createdAt
                 ? [
                     {
-                      status: "Colis cr\u00e9\u00e9",
+                      status: "Colis créé",
                       date: new Date(parcel.createdAt).toLocaleString("fr-FR"),
                       completed: true,
                       current: false,
@@ -169,7 +184,6 @@ export async function GET(request: NextRequest) {
             provider: "ZR Express",
             tracking: parcel.trackingNumber || parcel.tracking || parcelId,
             status: currentStatus,
-            customerName: parcel.customer?.name || "",
             destination,
             history,
           };
@@ -226,6 +240,9 @@ export async function GET(request: NextRequest) {
 // POST /api/tracking/sync - Sync tracking status for an order
 export async function POST(request: NextRequest) {
   try {
+    // Bug #2: Require admin auth for status sync endpoint
+    await requireAdmin(request);
+
     const body = await request.json();
     const { orderId } = body;
 
@@ -263,7 +280,6 @@ export async function POST(request: NextRequest) {
     } else if (order.deliveryProvider === "ZR Express") {
       try {
         const zrClient = getZRClient();
-        // Try by tracking number first, then by parcel ID
         const parcel =
           (await zrClient.getParcelByTracking(order.trackingNumber)) ||
           (await zrClient.getParcel(order.trackingNumber));
@@ -279,13 +295,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (updated && newStatus !== order.trackingStatus) {
-      const orderStatus = newStatus ? mapZRStatusToHarpStatus(newStatus) : order.status;
+      // Bug #4: Use the correct mapper per provider
+      const orderStatus = newStatus
+        ? (order.deliveryProvider === "Yalidine"
+            ? mapYalidineStatusToHarpStatus(newStatus)
+            : mapZRStatusToHarpStatus(newStatus))
+        : order.status;
+
+      // Bug #6: Only apply forward transitions
+      const shouldUpdateOrderStatus = isForwardTransition(order.status, orderStatus);
 
       await prisma.order.update({
         where: { id: orderId },
         data: {
           trackingStatus: newStatus,
-          status: orderStatus,
+          ...(shouldUpdateOrderStatus ? { status: orderStatus } : {}),
         },
       });
 
@@ -293,7 +317,7 @@ export async function POST(request: NextRequest) {
         success: true,
         previousStatus: order.trackingStatus,
         newStatus: newStatus,
-        orderStatus: orderStatus,
+        orderStatus: shouldUpdateOrderStatus ? orderStatus : order.status,
       });
     }
 
@@ -304,9 +328,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Tracking sync error:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la synchronisation" },
-      { status: 500 },
-    );
+    return handleApiError(error);
   }
 }

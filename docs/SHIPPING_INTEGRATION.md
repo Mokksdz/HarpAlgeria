@@ -11,15 +11,16 @@ Le dashboard Harp supporte deux services de livraison algériens :
 Ajoutez ces variables dans votre fichier `.env` :
 
 ```env
-# Yalidine API (Recommandé)
+# Yalidine API
 YALIDINE_API_URL=https://api.yalidine.app/v1
-YALIDINE_API_ID=82986803451220526533
-YALIDINE_API_TOKEN=OEdv3fyC0q8cemUgZIBtJnNlGYbwixzPKsHDTQFo4WMhk5V9RSujL2p6Ara17X
+YALIDINE_API_ID=your_yalidine_api_id
+YALIDINE_API_TOKEN=your_yalidine_api_token
 
-# ZR Express API (Procolis)
-ZR_EXPRESS_API_URL=https://procolis.com/api_v1
-ZR_EXPRESS_TOKEN=b30091c8d5d1edb4d7ef5260b1aa23d01d29d047f0df5054c977265385086b96
-ZR_EXPRESS_KEY=98eb7db732444af680f52e49df17bbdb
+# ZR Express API (New API)
+ZR_EXPRESS_API_URL=https://api.zrexpress.app/api/v1
+ZR_EXPRESS_TENANT_ID=your_tenant_id
+ZR_EXPRESS_API_KEY=your_api_key
+ZR_EXPRESS_WEBHOOK_SECRET=your_webhook_secret
 ```
 
 ### Accéder à l'interface

@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { shipOrderStock, cancelShipment } from "@/lib/accounting/services";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 // POST - Expédier la commande
 export async function POST(
@@ -13,6 +14,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // Bug #1: Require admin for stock deduction
+    await requireAdmin(req);
     const { id } = await params;
 
     const order = await prisma.order.findUnique({
@@ -100,6 +103,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await requireAdmin(req);
     const { id } = await params;
 
     const order = await prisma.order.findUnique({

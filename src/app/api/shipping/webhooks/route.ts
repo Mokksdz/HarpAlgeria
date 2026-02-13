@@ -37,12 +37,11 @@ export async function POST(request: NextRequest) {
     const alreadyExists = existing.find((w) => w.url === webhookUrl);
     if (alreadyExists) {
       // Retrieve the secret for this endpoint
-      const secret = await client.getWebhookSecret(alreadyExists.id);
+      // Bug #39: Don't return the secret in the response — only show it exists
       return NextResponse.json({
         success: true,
-        message: "Webhook existe d\u00e9j\u00e0",
+        message: "Webhook existe déjà. Le secret est déjà configuré dans ZR_EXPRESS_WEBHOOK_SECRET.",
         webhook: alreadyExists,
-        secret,
         alreadyExisted: true,
       });
     }
@@ -60,15 +59,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Retrieve the secret for signature verification
+    // Bug #39: Retrieve secret but only hint that it needs to be configured
     const secret = await client.getWebhookSecret(result.id);
 
     return NextResponse.json({
       success: true,
       webhook: result,
-      secret,
-      message: `Webhook cr\u00e9\u00e9 ! Ajoutez ZR_EXPRESS_WEBHOOK_SECRET="${secret || ""}" \u00e0 votre .env`,
+      secretConfigured: !!secret,
+      message: secret
+        ? `Webhook créé ! Configurez ZR_EXPRESS_WEBHOOK_SECRET dans votre .env (secret affiché une seule fois dans les logs serveur).`
+        : "Webhook créé, mais impossible de récupérer le secret.",
     });
+    // Log secret server-side only (not returned to client for security)
+    if (secret) console.log("[ZR Webhook] New webhook secret (configure in .env):", secret);
   } catch (error) {
     return handleApiError(error);
   }

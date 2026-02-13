@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
     const results = await Promise.all(
       trackingNumbers.map(async (tn: string) => {
         try {
-          const parcel = await client.getParcel(tn);
+          // Bug #28: Try by tracking number first (tn may not be a UUID)
+          const parcel = await client.getParcelByTracking(tn) || await client.getParcel(tn);
           return parcel ? { tracking: tn, found: true, ...parcel } : { tracking: tn, found: false };
         } catch {
           return { tracking: tn, found: false };

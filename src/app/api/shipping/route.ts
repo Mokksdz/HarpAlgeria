@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { orderId, orderData } = body;
 
-    console.log("[SHIPPING] POST /api/shipping received:", JSON.stringify({ orderId, orderData }, null, 2));
+    // Bug #43: Don't log full order data (PII) in production
 
     if (!orderId || !orderData) {
       return NextResponse.json(
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       || [orderData.commune, orderData.wilayaId].filter(Boolean).join(", ")
       || "N/A";
     if (missing.length > 0) {
-      console.error("[SHIPPING] Missing fields:", missing, "orderData:", JSON.stringify(orderData));
+      console.error("[SHIPPING] Missing fields:", missing);
       return NextResponse.json(
         { success: false, error: `Champs obligatoires manquants: ${missing.join(", ")}` },
         { status: 400 },
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       notes: orderData.notes || "",
     });
 
-    console.log("[SHIPPING] ZR Express result for", orderId, ":", JSON.stringify(result));
+    console.log("[SHIPPING] ZR Express result for", orderId, "- success:", result.success);
 
     if (!result.success) {
       return NextResponse.json(

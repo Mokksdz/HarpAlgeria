@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { orderId, orderData } = body;
 
-    console.log("[YALIDINE] POST /api/shipping/yalidine received:", JSON.stringify({ orderId, orderData }, null, 2));
+    // Bug #43: Don't log full order data (PII) in production
 
     if (!orderId || !orderData) {
       return NextResponse.json(
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     if (!orderData.customerName) missing.push("nom");
     if (!orderData.customerPhone) missing.push("téléphone");
     if (missing.length > 0) {
-      console.error("[YALIDINE] Missing fields:", missing, "orderData:", JSON.stringify(orderData));
+      console.error("[YALIDINE] Missing fields:", missing);
       return NextResponse.json(
         { success: false, error: `Champs obligatoires manquants: ${missing.join(", ")}` },
         { status: 400 },
@@ -131,12 +131,12 @@ export async function POST(request: NextRequest) {
       orderData.fromWilaya || "Alger",
     );
 
-    console.log("[YALIDINE] Parcel to send:", JSON.stringify(parcel));
+    // Bug #43: Removed PII logging
 
     // Créer le colis
     const result = await client.createParcel(parcel);
 
-    console.log("[YALIDINE] API result for", orderId, ":", JSON.stringify(result));
+    console.log("[YALIDINE] API result for", orderId, "- success:", result.success);
 
     if (result.success) {
       return NextResponse.json({

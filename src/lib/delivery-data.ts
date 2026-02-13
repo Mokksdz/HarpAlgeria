@@ -437,11 +437,22 @@ export function getDeliveryPrice(
   type: DeliveryType,
 ): number {
   const rate = deliveryRates.find((r) => r.wilayaCode === wilayaCode);
-  if (!rate) return 0;
+  // Bug #25: Return -1 for unknown wilayas instead of 0 (which implies free shipping)
+  if (!rate) return -1;
 
   if (provider === "ZR Express") {
     return type === "HOME" ? rate.zrExpress.home : rate.zrExpress.desk;
   } else {
     return type === "HOME" ? rate.yalidine.home : rate.yalidine.desk;
   }
+}
+
+// Bug #25: Check if a provider is available for a given wilaya
+export function isProviderAvailable(
+  wilayaCode: number,
+  provider: DeliveryProvider,
+  type: DeliveryType,
+): boolean {
+  const price = getDeliveryPrice(wilayaCode, provider, type);
+  return price > 0;
 }

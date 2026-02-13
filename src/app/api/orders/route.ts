@@ -10,9 +10,14 @@ import {
 } from "@/lib/loyalty/services/loyalty.service";
 import { withRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { getActivePrice } from "@/lib/product-utils";
+import { requireAdmin } from "@/lib/auth-helpers";
+import { getDeliveryPrice } from "@/lib/delivery-data";
 
 export async function GET(request: NextRequest) {
   try {
+    // Bug #1: Orders list requires admin auth to prevent PII exposure
+    await requireAdmin(request);
+
     const { searchParams } = new URL(request.url);
     const { page, pageSize, skip } = parsePagination(searchParams);
 
@@ -99,7 +104,19 @@ export async function POST(request: NextRequest) {
       0,
     );
 
-    const totalAmount = parseFloat(body.total);
+    // Bug #8/#14: Validate shipping price server-side instead of trusting client
+    const wilayaCode = parseInt(body.customerWilaya);
+    const provider = body.deliveryProvider as "ZR Express" | "Yalidine" | undefined;
+    const deliveryType = body.deliveryType as "HOME" | "DESK" | undefined;
+    let serverShippingPrice = parseFloat(body.shippingPrice) || 0;
+    if (provider && deliveryType && !isNaN(wilayaCode)) {
+      const expectedPrice = getDeliveryPrice(wilayaCode, provider, deliveryType);
+      // Only override if the rate table has a nonzero price and client sent less
+      if (expectedPrice > 0 && serverShippingPrice < expectedPrice) {
+        serverShippingPrice = expectedPrice;
+      }
+    }
+    const totalAmount = subtotal + serverShippingPrice;
 
     // Prepare items - skip productId validation to avoid FK issues
     const itemsData = body.items.map(
@@ -186,7 +203,7 @@ export async function POST(request: NextRequest) {
           customerWilaya: body.customerWilaya,
           deliveryProvider: body.deliveryProvider || null,
           deliveryType: body.deliveryType || null,
-          shippingPrice: parseFloat(body.shippingPrice) || 0,
+          shippingPrice: serverShippingPrice,
           subtotal,
           total: totalAmount,
           userId: userId || null,
@@ -215,7 +232,7 @@ export async function POST(request: NextRequest) {
           sendOrderConfirmationEmail({
             customerName: body.customerName,
             customerEmail: userForEmail.email,
-            orderNumber: order.id.slice(0, 8).toUpperCase(),
+            orderNumber: order.id.slice(-8).toUpperCase(),
             items: body.items.map((item: any) => ({
               productName: item.productName,
               size: item.size,

@@ -15,8 +15,10 @@ interface EnvConfig {
   CLOUDINARY_API_SECRET?: string;
   YALIDINE_API_ID?: string;
   YALIDINE_API_TOKEN?: string;
-  ZR_EXPRESS_TOKEN?: string;
-  ZR_EXPRESS_KEY?: string;
+  // Bug #22: Corrected env var names to match actual usage in zrexpress.ts
+  ZR_EXPRESS_TENANT_ID?: string;
+  ZR_EXPRESS_API_KEY?: string;
+  ZR_EXPRESS_WEBHOOK_SECRET?: string;
 }
 
 const REQUIRED_IN_PRODUCTION: (keyof EnvConfig)[] = [
@@ -28,10 +30,15 @@ const REQUIRED_IN_PRODUCTION: (keyof EnvConfig)[] = [
   "MAGIC_LINK_JWT_SECRET",
 ];
 
+// Bug #22: Add shipping env vars to recommended list
 const RECOMMENDED: (keyof EnvConfig)[] = [
   "CLOUDINARY_CLOUD_NAME",
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
+  "YALIDINE_API_ID",
+  "YALIDINE_API_TOKEN",
+  "ZR_EXPRESS_TENANT_ID",
+  "ZR_EXPRESS_API_KEY",
 ];
 
 export function validateEnv(): void {

@@ -22,9 +22,7 @@ export async function sendShippingNotificationEmail(
   const resend = new Resend(process.env.RESEND_API_KEY);
   const fromEmail = process.env.RESEND_FROM || "Harp <noreply@harpalgeria.com>";
 
-  // Use internal tracking page — external tracking URLs require form-based lookups
-  const trackingUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.harpalgeria.com"}/suivi?tracking=${data.trackingNumber}`;
-
+  // Bug #32: Use consistent base URL everywhere
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://harp-dz.com";
   const internalTrackingUrl = `${baseUrl}/suivi?tracking=${data.trackingNumber}`;
 

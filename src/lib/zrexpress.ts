@@ -130,6 +130,10 @@ class ZRExpressClient {
     this.tenantId = ZR_CONFIG.tenantId;
     this.apiKey = ZR_CONFIG.apiKey;
     this.baseUrl = ZR_CONFIG.baseUrl;
+    // Bug #38: Warn if credentials are missing
+    if (!this.tenantId || !this.apiKey) {
+      console.warn("[ZR Express] Missing ZR_EXPRESS_TENANT_ID or ZR_EXPRESS_API_KEY");
+    }
   }
 
   private async request<T>(
@@ -146,7 +150,10 @@ class ZRExpressClient {
     };
 
     try {
-      console.log(`ZR Express API ${method} ${endpoint}`, body ? JSON.stringify(body).slice(0, 500) : "");
+      // Bug #43: Don't log full body (contains PII) — log only endpoint
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`ZR Express API ${method} ${endpoint}`);
+      }
 
       const response = await fetch(url, {
         method,
@@ -304,8 +311,8 @@ class ZRExpressClient {
       // If only one result, use it
       if (communes.length === 1) return communes[0];
 
-      // Multiple results but no cityTerritoryId to filter — return undefined to avoid picking wrong one
-      if (!cityTerritoryId) return communes[0];
+      // Bug #20: Multiple results but no cityTerritoryId to filter — return undefined to avoid picking wrong commune
+      if (!cityTerritoryId) return undefined;
 
       // Multiple results and none matched the wilaya — don't guess
       console.warn(`[ZR] Multiple communes found for "${communeName}" but none match wilaya ${cityTerritoryId}:`, communes.map(c => `${c.name} (parent:${c.parentId})`));
@@ -573,10 +580,10 @@ class ZRExpressClient {
     let cleaned = phone.replace(/[\s\-().]/g, "");
     // Already international
     if (cleaned.startsWith("+213")) return cleaned;
-    // Remove leading 0
-    if (cleaned.startsWith("0")) cleaned = cleaned.slice(1);
-    // Remove 213 prefix without +
+    // Remove 213 prefix without + (must check before "0" since "213..." doesn't start with "0")
     if (cleaned.startsWith("213") && cleaned.length > 11) cleaned = cleaned.slice(3);
+    // Bug #21: Remove leading 0 AFTER stripping "213" prefix (was only done before)
+    if (cleaned.startsWith("0")) cleaned = cleaned.slice(1);
     return `+213${cleaned}`;
   }
 
@@ -723,7 +730,12 @@ class ZRExpressClient {
   async getParcel(parcelId: string): Promise<any> {
     try {
       return await this.request(`/parcels/${parcelId}`, "GET");
-    } catch {
+    } catch (error: any) {
+      // Bug #40: Log the error type (404 vs 500) instead of silently swallowing
+      const is404 = error?.message?.includes("404");
+      if (!is404) {
+        console.error(`[ZR Express] getParcel(${parcelId}) error:`, error?.message);
+      }
       return null;
     }
   }
@@ -733,7 +745,11 @@ class ZRExpressClient {
   async getParcelByTracking(trackingNumber: string): Promise<any> {
     try {
       return await this.request(`/parcels/tracking/${trackingNumber}`, "GET");
-    } catch {
+    } catch (error: any) {
+      const is404 = error?.message?.includes("404");
+      if (!is404) {
+        console.error(`[ZR Express] getParcelByTracking(${trackingNumber}) error:`, error?.message);
+      }
       return null;
     }
   }

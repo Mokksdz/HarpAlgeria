@@ -379,7 +379,7 @@ export default function CheckoutPage() {
       trackEvent.ga.addPaymentInfo(finalTotal, "COD");
       trackEvent.fb.addPaymentInfo(finalTotal);
 
-      console.log("Order payload:", JSON.stringify(orderData, null, 2));
+      // Bug #43: Removed PII logging (was: console.log("Order payload:", ...))
 
       const response = await fetch("/api/orders", {
         method: "POST",
