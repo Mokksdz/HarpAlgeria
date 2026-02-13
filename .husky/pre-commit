@@ -12,6 +12,6 @@ npm run lint || echo "⚠️ Lint warnings found (non-blocking)"
 
 # Run tests
 echo "🧪 Running tests..."
-npm test -- --passWithNoTests || exit 1
+npm run test:unit -- --passWithNoTests || exit 1
 
 echo "✅ Pre-commit checks passed!"

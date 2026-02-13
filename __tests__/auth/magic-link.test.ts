@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import { createOrGetUserByEmail, issueMagicLink } from "@/lib/auth/auto-email.service";
 import { prisma } from "@/lib/prisma";
 

@@ -1,9 +1,17 @@
 /**
- * Integration Tests for Comptabilité V3 - Phase 1
- * Tests full flow: create purchase -> preview -> receive -> verify inventory
+ * @jest-environment node
  */
 
-import { PrismaClient } from '@prisma/client';
+/**
+ * Integration Tests for Comptabilité V3 - Phase 1
+ * Tests full flow: create purchase -> preview -> receive -> verify inventory
+ *
+ * Requires: Docker PostgreSQL running (docker compose up -d)
+ * Setup:    npm run test:setup-db
+ * Run:      npm run test:integration
+ */
+
+import { prisma } from '@/lib/prisma';
 import {
   createPurchase,
   previewReceivePurchase,
@@ -17,15 +25,6 @@ import {
   reconcileInventory,
 } from '@/lib/compta/services/inventory-service';
 import { calculateCUMP } from '@/lib/compta/accounting';
-
-// Use a separate test database
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.TEST_DATABASE_URL || 'file:./test.db',
-    },
-  },
-});
 
 describe('Comptabilité V3 Integration Tests', () => {
   let supplierId: string;

@@ -1,20 +1,18 @@
 /**
- * Integration Tests for Purchase Receive Flow
- * HARP Comptabilité V3 - Phase 1
- * 
- * These tests require a test database.
- * Run with: npm run test:integration
+ * @jest-environment node
  */
 
-import { PrismaClient } from '@prisma/client';
-import { calculateCUMP } from '@/lib/compta/accounting';
+/**
+ * Integration Tests for Purchase Receive Flow
+ * HARP Comptabilité V3 - Phase 1
+ *
+ * Requires: Docker PostgreSQL running (docker compose up -d)
+ * Setup:    npm run test:setup-db
+ * Run:      npm run test:integration
+ */
 
-// Use a separate test database
-const prisma = new PrismaClient({
-  datasources: {
-    db: { url: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL },
-  },
-});
+import { prisma } from '@/lib/prisma';
+import { calculateCUMP } from '@/lib/compta/accounting';
 
 // Test data
 const testSupplier = {
