@@ -39,6 +39,7 @@ interface Order {
   deliveryProvider?: string;
   deliveryType?: string;
   shippingPrice?: number;
+  stopDeskId?: number;
   trackingNumber?: string;
   trackingStatus?: string;
   total: number;
@@ -209,6 +210,23 @@ export default function AdminOrdersPage() {
   };
 
   const handleShipOrder = async (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+
+    if (!order.deliveryProvider) {
+      toast.error("Aucun transporteur défini pour cette commande");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Expédier #${orderId.slice(-8).toUpperCase()} via ${order.deliveryProvider} ?\n\n` +
+          `${order.customerName} — ${order.customerCity}, ${order.customerWilaya}\n` +
+          `Total: ${order.total?.toLocaleString()} DZD`,
+      )
+    )
+      return;
+
     setShippingOrderId(orderId);
     try {
       const res = await fetch(`/api/orders/${orderId}/ship`, {
@@ -218,20 +236,28 @@ export default function AdminOrdersPage() {
 
       const data = await res.json();
 
-      if (res.ok) {
+      if (res.ok && data.success) {
         setOrders(
           orders.map((o) =>
             o.id === orderId
               ? {
                   ...o,
                   status: "SHIPPED",
+                  trackingNumber: data.tracking || o.trackingNumber,
+                  deliveryProvider: data.deliveryProvider || o.deliveryProvider,
                 }
               : o,
           ),
         );
-        toast.success("Commande expédiée ! Stock consommé.");
+        toast.success(
+          `Expédié via ${data.deliveryProvider} ! Tracking: ${data.tracking}`,
+          { duration: 5000 },
+        );
+        if (data.label) {
+          window.open(data.label, "_blank");
+        }
       } else {
-        toast.error(data.error || "Erreur d'expédition");
+        toast.error(data.error || "Erreur d'expédition", { duration: 5000 });
       }
     } catch (error) {
       console.error("Ship error:", error);
@@ -759,7 +785,7 @@ export default function AdminOrdersPage() {
                                         />
                                         {shippingOrderId === order.id
                                           ? "Expédition..."
-                                          : "Expédier (consommer stock)"}
+                                          : "Expédier via transporteur"}
                                       </button>
                                       <button
                                         onClick={(e) => {

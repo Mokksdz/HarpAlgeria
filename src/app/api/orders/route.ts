@@ -203,6 +203,7 @@ export async function POST(request: NextRequest) {
           customerWilaya: body.customerWilaya,
           deliveryProvider: body.deliveryProvider || null,
           deliveryType: body.deliveryType || null,
+          stopDeskId: body.stopDeskId ? parseInt(String(body.stopDeskId)) : null,
           shippingPrice: serverShippingPrice,
           subtotal,
           total: totalAmount,

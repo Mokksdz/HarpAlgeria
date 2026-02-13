@@ -105,6 +105,7 @@ interface Order {
   customerWilaya: string;
   deliveryType: string;
   deliveryProvider: string | null;
+  stopDeskId: number | null;
   trackingNumber: string | null;
   trackingStatus: string | null;
   total: number;
@@ -264,6 +265,7 @@ export default function ShippingPage() {
             // Bug #12: Accept "DESK" (from checkout) OR "STOP_DESK"
             deliveryType:
               (order.deliveryType === "STOP_DESK" || order.deliveryType === "DESK") ? "STOP_DESK" : "DOMICILE",
+            stopDeskId: order.stopDeskId || undefined,
             items: order.items,
             fromWilaya: "Alger",
           },
