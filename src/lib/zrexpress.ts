@@ -374,14 +374,23 @@ class ZRExpressClient {
     }
 
     // Create new customer
-    const result = await this.request<{ id: string }>(
-      "/customers/individual",
-      "POST",
-      { name, phone: { number1: phone } },
-    );
-    customerCache.set(phone, result.id);
-    console.log(`[ZR] Created new customer "${name}" → ${result.id}`);
-    return result.id;
+    try {
+      const result = await this.request<{ id: string }>(
+        "/customers/individual",
+        "POST",
+        { name, phone: { number1: phone } },
+      );
+      customerCache.set(phone, result.id);
+      console.log(`[ZR] Created new customer "${name}" → ${result.id}`);
+      return result.id;
+    } catch (error: any) {
+      const msg = error?.message || "";
+      // Provide a clear error message for phone validation failures
+      if (msg.includes("phone") || msg.includes("Phone")) {
+        throw new Error(`Numéro de téléphone rejeté par ZR Express: "${phone}". Le numéro doit être un numéro mobile algérien valide au format international (+213XXXXXXXXX).`);
+      }
+      throw error;
+    }
   }
 
   // ── Product Management ─────────────────────────────────────────────

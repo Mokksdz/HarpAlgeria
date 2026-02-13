@@ -48,6 +48,19 @@ export async function PATCH(
 
     // If status is being updated
     if (status) {
+      // SERVER-SIDE GUARD: SHIPPED status requires a valid tracking number
+      // This prevents ghost SHIPPED orders from stale front-end code
+      if (status === "SHIPPED") {
+        const hasNewTracking = otherUpdates.trackingNumber && otherUpdates.trackingNumber.trim() !== "";
+        const hasExistingTracking = currentOrder.trackingNumber && currentOrder.trackingNumber.trim() !== "";
+        if (!hasNewTracking && !hasExistingTracking) {
+          console.error(`[ORDERS] Blocked SHIPPED without tracking for order ${id}`);
+          return NextResponse.json(
+            { error: "Impossible de mettre en SHIPPED sans numéro de suivi (tracking)" },
+            { status: 400 },
+          );
+        }
+      }
       updateData.status = status;
 
       // Restore stock when order is cancelled (only if not already cancelled)
