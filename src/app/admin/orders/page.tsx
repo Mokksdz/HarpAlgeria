@@ -728,11 +728,16 @@ export default function AdminOrdersPage() {
                                     updatingOrderId === order.id && "opacity-50 cursor-wait",
                                   )}
                                 >
-                                  <option value="PENDING">En attente</option>
-                                  <option value="CONFIRMED">Confirmée</option>
-                                  <option value="SHIPPED">Expédiée</option>
-                                  <option value="DELIVERED">Livrée</option>
-                                  <option value="CANCELLED">Annulée</option>
+                                  {/* Current status (always shown) */}
+                                  <option value={order.status}>
+                                    {{ PENDING: "En attente", CONFIRMED: "Confirmée", SHIPPED: "Expédiée", DELIVERED: "Livrée", CANCELLED: "Annulée" }[order.status] || order.status}
+                                  </option>
+                                  {/* Valid forward transitions only — SHIPPED is via the "Expédier" button */}
+                                  {order.status === "PENDING" && <option value="CONFIRMED">Confirmée</option>}
+                                  {order.status === "PENDING" && <option value="CANCELLED">Annulée</option>}
+                                  {order.status === "CONFIRMED" && <option value="CANCELLED">Annulée</option>}
+                                  {order.status === "SHIPPED" && <option value="DELIVERED">Livrée</option>}
+                                  {order.status === "SHIPPED" && <option value="CANCELLED">Annulée</option>}
                                 </select>
                               </div>
 
