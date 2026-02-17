@@ -12,26 +12,21 @@ import { createHmac, timingSafeEqual } from "crypto";
 
 export interface ZRCreateParcel {
   customer: {
-    customerId: string;           // UUID — created via /customers/individual
     name: string;
     phone: { number1: string; number2?: string };
   };
   deliveryAddress: {
     cityTerritoryId: string;      // UUID wilaya
-    districtTerritoryId: string;   // UUID commune — required by API
+    districtTerritoryId?: string;  // UUID commune
     street: string;
   };
   orderedProducts: {
-    productId: string;            // UUID — created via /products
-    productSku: string;
     productName: string;
     unitPrice: number;
     quantity: number;
-    stockType: "local" | "warehouse" | "none";
   }[];
   deliveryType: "home" | "pickup-point";
-  hubId?: string;                 // UUID — required for pickup-point delivery
-  description: string;            // Required by API
+  description?: string;
   amount: number;
   externalId?: string;
 }
@@ -49,7 +44,7 @@ export interface ZRTerritory {
   code: number;
   name: string;
   postalCode?: string;
-  level: "wilaya" | "commune" | "city" | "district";
+  level: "city" | "district";
   parentId?: string;
   delivery?: {
     hasHomeDelivery: boolean;
@@ -99,25 +94,14 @@ export interface ZRWebhookPayload {
 // ── Configuration ──────────────────────────────────────────────────────
 
 const ZR_CONFIG = {
-  baseUrl: (process.env.ZR_EXPRESS_API_URL || "https://api.zrexpress.app/api/v1").trim(),
-  tenantId: (process.env.ZR_EXPRESS_TENANT_ID || "").trim(),
-  apiKey: (process.env.ZR_EXPRESS_API_KEY || "").trim(),
+  baseUrl: process.env.ZR_EXPRESS_API_URL || "https://api.zrexpress.app/api/v1",
+  tenantId: process.env.ZR_EXPRESS_TENANT_ID || "",
+  apiKey: process.env.ZR_EXPRESS_API_KEY || "",
 };
 
-// ── Helpers ─────────────────────────────────────────────────────────────
-
-/** Strip diacritics/accents: "Béchar" → "Bechar", "Béjaïa" → "Bejaia" */
-function stripDiacritics(str: string): string {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
-// ── Caches ──────────────────────────────────────────────────────────────
+// ── Territory cache (wilaya name → UUID) ───────────────────────────────
 
 const territoryCache = new Map<string, string>();
-const customerCache = new Map<string, string>();   // phone → customerId
-let defaultProductId: string | null = null;
-const DEFAULT_PRODUCT_SKU = "HARP-GENERAL";
-const DEFAULT_PRODUCT_NAME = "Articles Harp";
 
 // ── Client API ─────────────────────────────────────────────────────────
 
@@ -130,10 +114,6 @@ class ZRExpressClient {
     this.tenantId = ZR_CONFIG.tenantId;
     this.apiKey = ZR_CONFIG.apiKey;
     this.baseUrl = ZR_CONFIG.baseUrl;
-    // Bug #38: Warn if credentials are missing
-    if (!this.tenantId || !this.apiKey) {
-      console.warn("[ZR Express] Missing ZR_EXPRESS_TENANT_ID or ZR_EXPRESS_API_KEY");
-    }
   }
 
   private async request<T>(
@@ -150,10 +130,7 @@ class ZRExpressClient {
     };
 
     try {
-      // Bug #43: Don't log full body (contains PII) — log only endpoint
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`ZR Express API ${method} ${endpoint}`);
-      }
+      console.log(`ZR Express API ${method} ${endpoint}`, body ? JSON.stringify(body).slice(0, 500) : "");
 
       const response = await fetch(url, {
         method,
@@ -203,11 +180,8 @@ class ZRExpressClient {
         "POST",
         { keyword, pageSize: 50, pageNumber: 1, includeUnavailable: false },
       );
-      const items = result.items || [];
-      console.log(`[ZR] searchTerritories("${keyword}") → ${items.length} results`, items.map(t => `${t.name} (${t.level})`).slice(0, 10));
-      return items;
-    } catch (error) {
-      console.error(`[ZR] searchTerritories("${keyword}") FAILED:`, error);
+      return result.items || [];
+    } catch {
       return [];
     }
   }
@@ -226,119 +200,53 @@ class ZRExpressClient {
         w.name_ar === wilayaNameOrCode,
     );
     const searchTerm = wilayaEntry?.name || wilayaNameOrCode;
-    // ZR Express API may store names without diacritics ("Bechar" not "Béchar")
-    const searchTermNoDiacritics = stripDiacritics(searchTerm);
 
-    console.log(`[ZR] resolveWilayaId("${wilayaNameOrCode}") → searchTerm: "${searchTerm}" / "${searchTermNoDiacritics}" (entry: ${wilayaEntry ? wilayaEntry.name : "none"})`);
-
-    // Helper to find best wilaya/city match from results
-    // ZR Express API uses "wilaya"/"commune" levels (not "city"/"district")
-    const isWilayaLevel = (t: ZRTerritory) => t.level === "wilaya" || t.level === "city";
-    const matchesName = (name: string) => {
-      const n = stripDiacritics(name).toLowerCase();
-      const s = searchTermNoDiacritics.toLowerCase();
-      return n === s || n.includes(s);
-    };
-    const findCity = (results: ZRTerritory[]): ZRTerritory | undefined =>
-      // Exact match (diacritics-insensitive)
-      results.find((t) => isWilayaLevel(t) && stripDiacritics(t.name).toLowerCase() === searchTermNoDiacritics.toLowerCase()) ||
-      // Partial match (diacritics-insensitive)
-      results.find((t) => isWilayaLevel(t) && matchesName(t.name)) ||
-      // Any wilaya-level result
-      results.find((t) => isWilayaLevel(t));
-
-    // 1. Try searching by wilaya name (with diacritics)
+    // Try searching by wilaya name
     let results = await this.searchTerritories(searchTerm);
-    let city = findCity(results);
 
-    // 2. If no result, try searching WITHOUT diacritics ("Béchar" → "Bechar")
-    if (!city && searchTerm !== searchTermNoDiacritics) {
-      results = await this.searchTerritories(searchTermNoDiacritics);
-      city = findCity(results);
-    }
+    // Exact match on name first, then any city-level result
+    let city = results.find(
+      (t) =>
+        t.level === "city" &&
+        t.name.toLowerCase() === searchTerm.toLowerCase(),
+    ) ||
+    results.find(
+      (t) =>
+        t.level === "city" &&
+        t.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    ) ||
+    results.find((t) => t.level === "city");
 
-    // 3. If no result, try with the Arabic name as fallback
+    // If no result, try with the Arabic name as fallback
     if (!city && wilayaEntry?.name_ar) {
       results = await this.searchTerritories(wilayaEntry.name_ar);
-      city = findCity(results);
-    }
-
-    // 4. Last resort: try includeUnavailable=true (with no-diacritics term)
-    if (!city) {
-      try {
-        const result = await this.request<{ items: ZRTerritory[] }>(
-          "/territories/search",
-          "POST",
-          { keyword: searchTermNoDiacritics, pageSize: 50, pageNumber: 1, includeUnavailable: true },
-        );
-        const items = result.items || [];
-        console.log(`[ZR] resolveWilayaId fallback (includeUnavailable) for "${searchTermNoDiacritics}" → ${items.length} results`);
-        city = findCity(items);
-      } catch (error) {
-        console.error(`[ZR] resolveWilayaId fallback search failed:`, error);
-      }
+      city = results.find((t) => t.level === "city");
     }
 
     if (city) {
       territoryCache.set(cacheKey, city.id);
-      console.log(`[ZR] Resolved wilaya "${wilayaNameOrCode}" → "${city.name}" (${city.id})`);
+      console.log(`Resolved wilaya "${wilayaNameOrCode}" → "${city.name}" (${city.id})`);
       return city.id;
     }
 
-    console.error(`[ZR] Could not resolve wilaya: "${wilayaNameOrCode}" (searched: "${searchTerm}" / "${searchTermNoDiacritics}", entry: ${JSON.stringify(wilayaEntry)})`);
+    console.error(`Could not resolve wilaya: "${wilayaNameOrCode}" (searched: "${searchTerm}")`);
     return null;
   }
 
-  async resolveCommuneId(communeName: string, wilayaName?: string, cityTerritoryId?: string): Promise<string | null> {
-    const cacheKey = `commune:${communeName}:${cityTerritoryId || wilayaName || ""}`.toLowerCase();
+  async resolveCommuneId(communeName: string, wilayaName?: string): Promise<string | null> {
+    const cacheKey = `commune:${communeName}:${wilayaName || ""}`.toLowerCase();
     if (territoryCache.has(cacheKey)) {
       return territoryCache.get(cacheKey)!;
     }
 
-    const isCommuneLevel = (t: ZRTerritory) => t.level === "commune" || t.level === "district";
-
-    // Helper: find best commune match, prioritizing ones that belong to the correct wilaya
-    const findBestCommune = (items: ZRTerritory[]): ZRTerritory | undefined => {
-      const communes = items.filter(isCommuneLevel);
-      if (communes.length === 0) return undefined;
-
-      // If we know the wilaya UUID, pick the commune whose parentId matches
-      if (cityTerritoryId) {
-        const exact = communes.find((t) => t.parentId === cityTerritoryId);
-        if (exact) return exact;
-      }
-
-      // If only one result, use it
-      if (communes.length === 1) return communes[0];
-
-      // Bug #20: Multiple results but no cityTerritoryId to filter — return undefined to avoid picking wrong commune
-      if (!cityTerritoryId) return undefined;
-
-      // Multiple results and none matched the wilaya — don't guess
-      console.warn(`[ZR] Multiple communes found for "${communeName}" but none match wilaya ${cityTerritoryId}:`, communes.map(c => `${c.name} (parent:${c.parentId})`));
-      return undefined;
-    };
-
-    // Try with original name
-    let results = await this.searchTerritories(communeName);
-    let district = findBestCommune(results);
-
-    // Try without diacritics if needed ("Béjaïa" → "Bejaia")
-    if (!district) {
-      const noDiacritics = stripDiacritics(communeName);
-      if (noDiacritics !== communeName) {
-        results = await this.searchTerritories(noDiacritics);
-        district = findBestCommune(results);
-      }
-    }
+    const results = await this.searchTerritories(communeName);
+    const district = results.find((t) => t.level === "district");
 
     if (district) {
-      console.log(`[ZR] Resolved commune "${communeName}" → "${district.name}" (${district.id}, parent:${district.parentId})`);
       territoryCache.set(cacheKey, district.id);
       return district.id;
     }
 
-    console.warn(`[ZR] Could not resolve commune: "${communeName}" (wilaya: ${cityTerritoryId || wilayaName || "unknown"})`);
     return null;
   }
 
@@ -353,169 +261,6 @@ class ZRExpressClient {
     }
   }
 
-  // ── Customer Management ─────────────────────────────────────────────
-
-  async getOrCreateCustomer(name: string, phone: string): Promise<string> {
-    // Check cache first
-    if (customerCache.has(phone)) {
-      return customerCache.get(phone)!;
-    }
-
-    // Search existing customers by phone
-    try {
-      const result = await this.request<{ items: { id: string; phone: { number1: string } }[] }>(
-        "/customers/search",
-        "POST",
-        { keyword: phone.replace("+213", "0"), pageSize: 10, pageNumber: 1 },
-      );
-      const existing = (result.items || []).find(
-        (c) => c.phone?.number1 === phone || c.phone?.number1 === phone.replace("+213", "0"),
-      );
-      if (existing) {
-        customerCache.set(phone, existing.id);
-        console.log(`[ZR] Found existing customer "${name}" → ${existing.id}`);
-        return existing.id;
-      }
-    } catch {
-      // Search failed, try to create
-    }
-
-    // Create new customer
-    try {
-      const result = await this.request<{ id: string }>(
-        "/customers/individual",
-        "POST",
-        { name, phone: { number1: phone } },
-      );
-      customerCache.set(phone, result.id);
-      console.log(`[ZR] Created new customer "${name}" → ${result.id}`);
-      return result.id;
-    } catch (error: any) {
-      const msg = error?.message || "";
-      // Provide a clear error message for phone validation failures
-      if (msg.includes("phone") || msg.includes("Phone")) {
-        throw new Error(`Numéro de téléphone rejeté par ZR Express: "${phone}". Le numéro doit être un numéro mobile algérien valide au format international (+213XXXXXXXXX).`);
-      }
-      throw error;
-    }
-  }
-
-  // ── Product Management ─────────────────────────────────────────────
-
-  async getOrCreateDefaultProduct(): Promise<{ productId: string; productSku: string }> {
-    if (defaultProductId) {
-      return { productId: defaultProductId, productSku: DEFAULT_PRODUCT_SKU };
-    }
-
-    // Search for existing product
-    try {
-      const result = await this.request<{ items: { id: string; sku: string }[] }>(
-        "/products/search",
-        "POST",
-        { keyword: DEFAULT_PRODUCT_SKU, pageSize: 10, pageNumber: 1 },
-      );
-      const existing = (result.items || []).find((p) => p.sku === DEFAULT_PRODUCT_SKU);
-      if (existing) {
-        defaultProductId = existing.id;
-        console.log(`[ZR] Found existing product "${DEFAULT_PRODUCT_SKU}" → ${existing.id}`);
-        return { productId: existing.id, productSku: DEFAULT_PRODUCT_SKU };
-      }
-    } catch {
-      // Search failed, try to create
-    }
-
-    // Create the default product
-    const result = await this.request<{ id: string }>(
-      "/products",
-      "POST",
-      { name: DEFAULT_PRODUCT_NAME, sku: DEFAULT_PRODUCT_SKU, price: 0, stockType: "none" },
-    );
-    defaultProductId = result.id;
-    console.log(`[ZR] Created default product "${DEFAULT_PRODUCT_SKU}" → ${result.id}`);
-    return { productId: result.id, productSku: DEFAULT_PRODUCT_SKU };
-  }
-
-  // ── Hub / Pickup Point Management ────────────────────────────────────
-
-  async searchHubs(keyword: string, cityTerritoryId?: string): Promise<{ id: string; name: string; isPickupPoint: boolean }[]> {
-    try {
-      const body: Record<string, unknown> = { keyword, pageSize: 20, pageNumber: 1 };
-      const result = await this.request<{ items: { id: string; name: string; isPickupPoint: boolean; address?: { cityTerritoryId?: string } }[] }>(
-        "/hubs/search",
-        "POST",
-        body,
-      );
-      let hubs = result.items || [];
-      // Filter by city if provided
-      if (cityTerritoryId) {
-        const filtered = hubs.filter((h) => h.address?.cityTerritoryId === cityTerritoryId);
-        if (filtered.length > 0) hubs = filtered;
-      }
-      console.log(`[ZR] searchHubs("${keyword}") → ${hubs.length} results`);
-      return hubs;
-    } catch (error) {
-      console.error(`[ZR] searchHubs("${keyword}") FAILED:`, error);
-      return [];
-    }
-  }
-
-  async resolveHubId(communeName: string, cityTerritoryId: string, address?: string): Promise<string | null> {
-    // ONLY return hubs that are actual pickup points — never return sorting centers (Tri/مركز فرز)
-    const findPickupHub = (hubs: { id: string; name: string; isPickupPoint: boolean }[]) =>
-      hubs.find((h) => h.isPickupPoint) || null;
-
-    // Strategy 1: Extract pickup point name from address (e.g., "Point de retrait: Birkhadem - Agence de...")
-    if (address) {
-      const pickupMatch = address.match(/Point de retrait\s*:\s*([^-–,]+)/i);
-      if (pickupMatch) {
-        const pickupName = pickupMatch[1].trim();
-        console.log(`[ZR] Extracted pickup point name from address: "${pickupName}"`);
-        const hubs = await this.searchHubs(pickupName);
-        const hub = findPickupHub(hubs);
-        if (hub) {
-          console.log(`[ZR] Resolved hub from address "${pickupName}" → "${hub.name}" (${hub.id})`);
-          return hub.id;
-        }
-        // Don't return non-pickup hubs — continue to next strategy
-        console.log(`[ZR] No pickup hub found for "${pickupName}", trying other strategies...`);
-      }
-    }
-
-    // Strategy 2: Search by commune name, filter by city
-    const hubs = await this.searchHubs(communeName, cityTerritoryId);
-    const pickupHub = findPickupHub(hubs);
-    if (pickupHub) {
-      console.log(`[ZR] Resolved hub for "${communeName}" → "${pickupHub.name}" (${pickupHub.id})`);
-      return pickupHub.id;
-    }
-
-    // Strategy 3: Broad search — get ALL hubs and filter by cityTerritoryId + isPickupPoint
-    // This catches cases where keyword search returns sorting centers instead of pickup hubs
-    const broadHubs = await this.searchHubs("", cityTerritoryId);
-    const broadHub = findPickupHub(broadHubs);
-    if (broadHub) {
-      console.log(`[ZR] Resolved hub via broad search for wilaya → "${broadHub.name}" (${broadHub.id})`);
-      return broadHub.id;
-    }
-
-    // Strategy 4: Search by wilaya name from our WILAYAS list
-    const wilayaEntry = WILAYAS.find(
-      (w) => w.name.toLowerCase() === communeName.toLowerCase() ||
-             w.name_ar === communeName,
-    );
-    if (wilayaEntry) {
-      const fallbackHubs = await this.searchHubs(wilayaEntry.name);
-      const fallbackHub = findPickupHub(fallbackHubs);
-      if (fallbackHub) {
-        console.log(`[ZR] Resolved hub via wilaya fallback for "${communeName}" → "${fallbackHub.name}" (${fallbackHub.id})`);
-        return fallbackHub.id;
-      }
-    }
-
-    console.error(`[ZR] Could not resolve pickup hub for commune "${communeName}" (address: "${address || "none"}")`);
-    return null;
-  }
-
   // ── Parcel Creation ──────────────────────────────────────────────────
 
   async createParcel(parcel: ZRCreateParcel): Promise<ZRColisResponse> {
@@ -526,31 +271,13 @@ class ZRExpressClient {
         parcel,
       );
 
-      console.log("[ZR] createParcel POST response:", JSON.stringify(result));
+      console.log("ZR Express createParcel response:", JSON.stringify(result));
 
       if (result?.id) {
-        // POST /parcels only returns { id }, the real trackingNumber is set server-side.
-        // We MUST GET the parcel to retrieve the actual tracking number (e.g. "16-CN5YF1VIVA-ZR")
-        let trackingNumber = result.id; // fallback to UUID if GET fails
-        try {
-          const parcelData = await this.request<{ id: string; trackingNumber?: string }>(
-            `/parcels/${result.id}`,
-            "GET",
-          );
-          if (parcelData?.trackingNumber) {
-            trackingNumber = parcelData.trackingNumber;
-            console.log(`[ZR] Real tracking number: ${trackingNumber} (parcelId: ${result.id})`);
-          } else {
-            console.warn(`[ZR] GET parcel returned no trackingNumber, using UUID: ${result.id}`);
-          }
-        } catch (getError) {
-          console.warn(`[ZR] Failed to GET parcel after creation, using UUID: ${result.id}`, getError);
-        }
-
         return {
           success: true,
           parcelId: result.id,
-          tracking: trackingNumber,
+          tracking: result.id,
           message: "Colis créé",
           data: result,
         };
@@ -562,7 +289,7 @@ class ZRExpressClient {
         data: result,
       };
     } catch (error: any) {
-      console.error("[ZR] createParcel error:", error);
+      console.error("ZR Express createParcel error:", error);
       return {
         success: false,
         message: error?.message || "Erreur création colis ZR Express",
@@ -571,21 +298,6 @@ class ZRExpressClient {
   }
 
   // ── High-level: Create Shipment from order data ──────────────────────
-
-  /**
-   * Format phone number to international format (+213...)
-   * Algerian numbers: 0XXXXXXXXX → +213XXXXXXXXX
-   */
-  private formatPhoneInternational(phone: string): string {
-    let cleaned = phone.replace(/[\s\-().]/g, "");
-    // Already international
-    if (cleaned.startsWith("+213")) return cleaned;
-    // Remove 213 prefix without + (must check before "0" since "213..." doesn't start with "0")
-    if (cleaned.startsWith("213") && cleaned.length > 11) cleaned = cleaned.slice(3);
-    // Bug #21: Remove leading 0 AFTER stripping "213" prefix (was only done before)
-    if (cleaned.startsWith("0")) cleaned = cleaned.slice(1);
-    return `+213${cleaned}`;
-  }
 
   async createShipment(orderData: {
     customerName: string;
@@ -601,65 +313,16 @@ class ZRExpressClient {
     notes?: string;
   }): Promise<ZRColisResponse> {
     try {
-      console.log("[ZR] createShipment input:", JSON.stringify(orderData));
-
-      // 1. Resolve territory
       const cityId = await this.resolveWilayaId(orderData.wilayaId);
       if (!cityId) {
         return {
           success: false,
-          message: `Wilaya non trouvée dans ZR Express: "${orderData.wilayaId}". Vérifiez que la wilaya existe dans votre compte ZR Express.`,
+          message: `Wilaya non trouvée: ${orderData.wilayaId}`,
         };
       }
 
-      // Resolve commune — required by ZR Express API
-      // Pass cityId so we pick the commune that belongs to the correct wilaya
-      let districtId = await this.resolveCommuneId(orderData.commune, orderData.wilayaId, cityId);
+      const districtId = await this.resolveCommuneId(orderData.commune, orderData.wilayaId);
 
-      // If commune not found, try the wilaya's main commune (same name as wilaya)
-      if (!districtId) {
-        const wilayaEntry = WILAYAS.find((w) => w.id === orderData.wilayaId || w.name.toLowerCase() === orderData.wilayaId.toLowerCase());
-        if (wilayaEntry) {
-          const fallbackResults = await this.searchTerritories(wilayaEntry.name);
-          // MUST filter by parentId to pick a commune that belongs to the correct wilaya
-          const fallbackCommune = fallbackResults.find(
-            (t) => (t.level === "commune" || t.level === "district") && t.parentId === cityId
-          ) || fallbackResults.find(
-            (t) => (t.level === "commune" || t.level === "district")
-          );
-          if (fallbackCommune) {
-            districtId = fallbackCommune.id;
-            console.log(`[ZR] Commune fallback: "${orderData.commune}" → "${fallbackCommune.name}" (${fallbackCommune.id}, parent:${fallbackCommune.parentId})`);
-          }
-        }
-      }
-
-      if (!districtId) {
-        return {
-          success: false,
-          message: `Commune non trouvée dans ZR Express: "${orderData.commune}". La commune est requise pour la livraison.`,
-        };
-      }
-
-      console.log(`[ZR] Resolved territory: wilaya "${orderData.wilayaId}" → ${cityId}, commune "${orderData.commune}" → ${districtId}`);
-
-      // 2. Format & validate phone
-      const rawPhone = orderData.customerPhone.replace(/\s/g, "");
-      if (!rawPhone || rawPhone.replace(/\D/g, "").length < 9) {
-        return {
-          success: false,
-          message: `Numéro de téléphone invalide: "${rawPhone}". Minimum 9 chiffres requis.`,
-        };
-      }
-      const phone1 = this.formatPhoneInternational(rawPhone);
-
-      // 3. Get or create customer in ZR Express
-      const customerId = await this.getOrCreateCustomer(orderData.customerName, phone1);
-
-      // 4. Get or create default product
-      const { productId, productSku } = await this.getOrCreateDefaultProduct();
-
-      // 5. Determine delivery type & resolve hub for pickup-point
       const deliveryType: "home" | "pickup-point" =
         orderData.deliveryType === "STOP_DESK" ||
         orderData.deliveryType === "DESK" ||
@@ -667,53 +330,31 @@ class ZRExpressClient {
           ? "pickup-point"
           : "home";
 
-      let hubId: string | undefined;
-      if (deliveryType === "pickup-point") {
-        const resolvedHub = await this.resolveHubId(orderData.commune, cityId, orderData.address);
-        if (!resolvedHub) {
-          return {
-            success: false,
-            message: `Point relais non trouvé dans ZR Express pour "${orderData.commune}". Vérifiez qu'un hub existe dans cette zone.`,
-          };
-        }
-        hubId = resolvedHub;
-      }
-
-      // 6. Build parcel
       const parcel: ZRCreateParcel = {
         customer: {
-          customerId,
           name: orderData.customerName,
           phone: {
-            number1: phone1,
-            number2: orderData.customerPhoneB
-              ? this.formatPhoneInternational(orderData.customerPhoneB)
-              : undefined,
+            number1: orderData.customerPhone.replace(/\s/g, ""),
+            number2: orderData.customerPhoneB || undefined,
           },
         },
         deliveryAddress: {
           cityTerritoryId: cityId,
-          districtTerritoryId: districtId,
+          districtTerritoryId: districtId || undefined,
           street: orderData.address,
         },
-        hubId,
         orderedProducts: [
           {
-            productId,
-            productSku,
-            productName: orderData.products || DEFAULT_PRODUCT_NAME,
+            productName: orderData.products || "Articles Harp",
             unitPrice: orderData.total,
             quantity: 1,
-            stockType: "none",
           },
         ],
         deliveryType,
-        description: orderData.notes || orderData.products || "Commande Harp",
+        description: orderData.notes || undefined,
         amount: orderData.total,
         externalId: orderData.externalId,
       };
-
-      console.log("[ZR] Parcel payload:", JSON.stringify(parcel));
 
       return await this.createParcel(parcel);
     } catch (error: any) {
@@ -730,12 +371,7 @@ class ZRExpressClient {
   async getParcel(parcelId: string): Promise<any> {
     try {
       return await this.request(`/parcels/${parcelId}`, "GET");
-    } catch (error: any) {
-      // Bug #40: Log the error type (404 vs 500) instead of silently swallowing
-      const is404 = error?.message?.includes("404");
-      if (!is404) {
-        console.error(`[ZR Express] getParcel(${parcelId}) error:`, error?.message);
-      }
+    } catch {
       return null;
     }
   }
@@ -745,11 +381,7 @@ class ZRExpressClient {
   async getParcelByTracking(trackingNumber: string): Promise<any> {
     try {
       return await this.request(`/parcels/tracking/${trackingNumber}`, "GET");
-    } catch (error: any) {
-      const is404 = error?.message?.includes("404");
-      if (!is404) {
-        console.error(`[ZR Express] getParcelByTracking(${trackingNumber}) error:`, error?.message);
-      }
+    } catch {
       return null;
     }
   }
