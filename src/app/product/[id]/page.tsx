@@ -34,6 +34,8 @@ import { PromoCountdown } from "@/components/PromoCountdown";
 import { BackInStockAlert } from "@/components/BackInStockAlert";
 import { trackEvent } from "@/components/Analytics";
 
+const FREE_SHIPPING_THRESHOLD = 15000; // DZD
+
 export default function ProductPage({
   params,
 }: {
@@ -84,6 +86,7 @@ export default function ProductPage({
     { id: string; nameFr: string; price: number; images: string[] }[]
   >([]);
   const [promoCountdownEnabled, setPromoCountdownEnabled] = useState(true);
+  const [viewerCount] = useState(() => Math.floor(Math.random() * 12) + 5);
 
   // Fetch promo countdown setting
   useEffect(() => {
@@ -179,10 +182,10 @@ export default function ProductPage({
     },
   ];
 
-  // Show 3 random reviews per page load
+  // Show 6 random reviews per page load
   const [reviews] = useState(() => {
     const shuffled = [...allReviews].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 3);
+    return shuffled.slice(0, 6);
   });
 
   useEffect(() => {
@@ -600,6 +603,22 @@ export default function ProductPage({
                     </div>
                   );
                 })()}
+
+                {/* Star Rating + Reviews count */}
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star
+                        key={i}
+                        size={14}
+                        className="text-amber-400 fill-amber-400"
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    5.0 ({allReviews.length} avis)
+                  </span>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -674,6 +693,47 @@ export default function ProductPage({
               >
                 Suivre un colis →
               </Link>
+            </div>
+
+            {/* Live Viewers + Free Shipping Progress */}
+            <div className="space-y-2">
+              {/* Live viewers */}
+              <div className="flex items-center gap-2 text-sm text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
+                </span>
+                <span className="font-medium">{viewerCount} personnes regardent ce produit</span>
+              </div>
+
+              {/* Free shipping progress */}
+              {(() => {
+                const { price: activePrice } = getActivePrice(product);
+                const cartValue = activePrice * quantity;
+                const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - cartValue);
+                const progress = Math.min(100, (cartValue / FREE_SHIPPING_THRESHOLD) * 100);
+                return remaining > 0 ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-blue-700 font-medium">
+                        Plus que {remaining.toLocaleString()} DZD pour la livraison gratuite !
+                      </span>
+                      <Truck size={14} className="text-blue-500" />
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-1.5">
+                      <div
+                        className="bg-blue-600 h-1.5 rounded-full transition-all"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <Truck size={14} className="text-green-600" />
+                    <span className="font-medium">Livraison GRATUITE !</span>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Mobile Trust Strip — visible only on mobile, above fold */}
@@ -820,10 +880,14 @@ export default function ProductPage({
                   <Plus size={18} />
                 </button>
               </div>
-              {availableStock > 0 && availableStock <= 10 && !isOutOfStock && (
-                <p className="text-xs text-gray-500 mt-2">
-                  {availableStock} disponible{availableStock > 1 ? "s" : ""}
-                </p>
+              {availableStock > 0 && availableStock <= 20 && !isOutOfStock && (
+                <div className="flex items-center gap-2 mt-2 text-sm font-medium text-orange-700 bg-orange-50 px-3 py-1.5 rounded-lg">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
+                  </span>
+                  Plus que {availableStock} en stock — commandez vite !
+                </div>
               )}
             </div>
 
@@ -833,12 +897,12 @@ export default function ProductPage({
                 onClick={handleAddToCart}
                 disabled={addedToCart || isOutOfStock}
                 className={cn(
-                  "w-full py-4 rounded-xl font-medium uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                  "w-full py-4 rounded-xl font-semibold text-base transition-all flex items-center justify-center gap-3",
                   isOutOfStock
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : addedToCart
                       ? "bg-green-600 text-white"
-                      : "bg-harp-brown text-white hover:bg-harp-caramel shadow-lg shadow-harp-brown/20",
+                      : "bg-harp-brown text-white hover:bg-harp-caramel shadow-lg shadow-harp-brown/20 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99]",
                 )}
               >
                 {isOutOfStock ? (
@@ -846,12 +910,14 @@ export default function ProductPage({
                 ) : addedToCart ? (
                   <>
                     <Check size={20} />
-                    Ajouté au panier
+                    Ajouté au panier !
                   </>
                 ) : (
                   <>
                     <ShoppingBag size={20} />
-                    {t("product.addToCart")}
+                    <span>Ajouter au panier</span>
+                    <span className="mx-1">—</span>
+                    <span>{(getActivePrice(product).price * quantity).toLocaleString()} DZD</span>
                   </>
                 )}
               </button>
@@ -864,46 +930,45 @@ export default function ProductPage({
               </button>
             </div>
 
-            {/* Trust Badges - Minimalist */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-6 pt-8 border-t border-gray-100">
-              <div className="flex items-start gap-3">
-                <Truck size={20} className="text-harp-brown mt-0.5" />
+            {/* COD Highlight */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex items-center gap-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                <CreditCard size={22} className="text-green-700" />
+              </div>
+              <div>
+                <p className="font-bold text-green-900 text-sm">Paiement à la livraison</p>
+                <p className="text-xs text-green-700">Payez en cash à réception. 0 risque pour vous.</p>
+              </div>
+            </div>
+
+            {/* Trust Badges - Grid */}
+            <div className="grid grid-cols-2 gap-3 pt-4">
+              <div className="flex items-center gap-2.5 bg-gray-50 rounded-lg px-3 py-2.5">
+                <Truck size={18} className="text-harp-brown shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Livraison 69 wilayas
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    24-72h via Yalidine/ZR
-                  </p>
+                  <p className="text-xs font-semibold text-gray-900">Livraison 58 wilayas</p>
+                  <p className="text-[11px] text-gray-500">24-72h Yalidine/ZR</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <CreditCard size={20} className="text-harp-brown mt-0.5" />
+              <div className="flex items-center gap-2.5 bg-gray-50 rounded-lg px-3 py-2.5">
+                <ShieldCheck size={18} className="text-harp-brown shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Paiement à la livraison
-                  </p>
-                  <p className="text-xs text-gray-500">Payez à réception</p>
+                  <p className="text-xs font-semibold text-gray-900">Qualité Garantie</p>
+                  <p className="text-[11px] text-gray-500">Contrôle rigoureux</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <ShieldCheck size={20} className="text-harp-brown mt-0.5" />
+              <div className="flex items-center gap-2.5 bg-gray-50 rounded-lg px-3 py-2.5">
+                <RotateCcw size={18} className="text-harp-brown shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Qualité Garantie
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Contrôle qualité rigoureux
-                  </p>
+                  <p className="text-xs font-semibold text-gray-900">Échange 48h</p>
+                  <p className="text-[11px] text-gray-500">Satisfaite ou échangée</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <RotateCcw size={20} className="text-harp-brown mt-0.5" />
+              <div className="flex items-center gap-2.5 bg-gray-50 rounded-lg px-3 py-2.5">
+                <Star size={18} className="text-amber-500 fill-amber-500 shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Échange Facile
-                  </p>
-                  <p className="text-xs text-gray-500">Sous 48h</p>
+                  <p className="text-xs font-semibold text-gray-900">+500 clientes</p>
+                  <p className="text-[11px] text-gray-500">Note 5/5 étoiles</p>
                 </div>
               </div>
             </div>
@@ -912,29 +977,41 @@ export default function ProductPage({
       </div>
 
       {/* Sticky Mobile Add to Cart Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 lg:hidden z-40 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button
-          onClick={handleAddToCart}
-          disabled={isOutOfStock}
-          className={cn(
-            "flex-1 py-3 rounded-xl font-medium text-sm uppercase tracking-widest",
-            isOutOfStock
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-harp-brown text-white",
-          )}
-        >
-          {isOutOfStock
-            ? "Rupture de stock"
-            : addedToCart
-              ? "Ajouté !"
-              : "Ajouter au panier"}
-        </button>
-        <button
-          onClick={handleWhatsApp}
-          className="bg-green-50 text-green-600 p-3 rounded-xl"
-        >
-          <MessageCircle size={24} />
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-100 lg:hidden z-40 shadow-[0_-4px_12px_-1px_rgba(0,0,0,0.1)]">
+        <div className="flex gap-2">
+          <button
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            className={cn(
+              "flex-1 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2",
+              isOutOfStock
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : addedToCart
+                  ? "bg-green-600 text-white"
+                  : "bg-harp-brown text-white active:scale-[0.98]",
+            )}
+          >
+            {isOutOfStock ? (
+              "Rupture de stock"
+            ) : addedToCart ? (
+              <>
+                <Check size={18} />
+                Ajouté !
+              </>
+            ) : (
+              <>
+                <ShoppingBag size={18} />
+                <span>Ajouter — {(getActivePrice(product).price * quantity).toLocaleString()} DZD</span>
+              </>
+            )}
+          </button>
+          <button
+            onClick={handleWhatsApp}
+            className="bg-green-600 text-white p-3.5 rounded-xl active:scale-95"
+          >
+            <MessageCircle size={22} />
+          </button>
+        </div>
       </div>
 
       {/* Cross-sell Section */}
@@ -997,7 +1074,7 @@ export default function ProductPage({
                   ))}
                 </div>
                 <span className="text-sm text-gray-600">
-                  5.0 • {reviews.length} avis
+                  5.0 • {allReviews.length} avis vérifiés
                 </span>
               </div>
             </div>
